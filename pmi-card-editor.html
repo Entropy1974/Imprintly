@@ -7850,7 +7850,9 @@ const applyTemplate = function(t) {
       ]},
     { id: "tools",  step: 4, icon: "🔧", label: "Tools",  desc: "Position, cover, color swap & fine-tuning",
       tabs: [
-        { id: "position", label: "Position", icon: "📍" },
+        { id: "position",  label: "Position",   icon: "📍" },
+        { id: "cover",     label: "Cover",      icon: "🖌" },
+        { id: "colorswap", label: "Color Swap", icon: "🎨" },
       ]},
     { id: "export", step: 5, icon: "💾", label: "Export", desc: "Save designs, manage contacts & export files",
       tabs: [
@@ -8641,326 +8643,6 @@ const applyTemplate = function(t) {
                 </div>
               )}
 
-
-              {/* ── Cover / Erase Elements ── */}
-              <div style={{ borderTop: "1px solid #111", padding: "10px 14px" }}>
-                <div style={{ fontSize: 10, color: "#888", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Cover / Erase Elements</div>
-                {!coverToolActive ? (
-                  <div>
-                    <div style={{ fontSize: 9, color: "#555", marginBottom: 8, lineHeight: 1.5 }}>
-                      Draw rectangles over baked-in text, icons, or QR codes to cover them with a color-matched fill.
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={function() { setCoverToolActive(true); setCoverSide("front"); setColorSwapActive(false); }}
-                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#0d1a00", border: "1px solid #1a3300", color: "#88cc44", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
-                        ✏ Cover Front
-                      </button>
-                      <button onClick={function() { setCoverToolActive(true); setCoverSide("back"); setColorSwapActive(false); }}
-                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#0a0a1a", border: "1px solid #1a1a33", color: "#88aaff", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
-                        ✏ Cover Back
-                      </button>
-                    </div>
-                    {((s.coverRects && s.coverRects.length > 0) || (s.coverRectsBack && s.coverRectsBack.length > 0)) && (
-                      <div style={{ marginTop: 8, fontSize: 9, color: "#555" }}>
-                        {s.coverRects && s.coverRects.length > 0 && <span>Front: {s.coverRects.length} cover{s.coverRects.length>1?"s":""} — </span>}
-                        {s.coverRectsBack && s.coverRectsBack.length > 0 && <span>Back: {s.coverRectsBack.length} cover{s.coverRectsBack.length>1?"s":""} — </span>}
-                        <button onClick={function() { clearCoverRects("front"); clearCoverRects("back"); }}
-                          style={{ background: "none", border: "none", color: "#883333", fontSize: 9, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
-                          Clear All
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: 9, color: (eyedropperRectId || gradientPickId) ? "#ffaa00" : "#cc8800", marginBottom: 8, padding: "4px 6px", background: (eyedropperRectId || gradientPickId) ? "#1a0e00" : "#0a0800", borderRadius: 4 }}>
-                      {eyedropperRectId
-                        ? <span>&#x1F4A7; <strong>Click the card</strong> to pick that background color. Click &#x2022; button again to cancel.</span>
-                        : gradientPickId
-                        ? <span style={{color:"#4488cc"}}>{gradientPickMode==="2pt" ? (gradientPickStep===1 ? "G2 Step 1/2: Click gradient START color" : "G2 Step 2/2: Click gradient END color") : (gradientPickStep===1 ? "G4 Step 1/4: Click TOP-LEFT background color" : gradientPickStep===2 ? "G4 Step 2/4: Click TOP-RIGHT background color" : gradientPickStep===3 ? "G4 Step 3/4: Click BOTTOM-LEFT background color" : "G4 Step 4/4: Click BOTTOM-RIGHT background color")}</span>
-                        : <span>Editing <strong>{coverSide === "back" ? "Back" : "Front"}</strong> — drag to cover areas.</span>
-                      }
-                    </div>
-                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                      <button onClick={function() { undoCoverRect(coverSide); }}
-                        disabled={!(coverSide==="back" ? s.coverRectsBack : s.coverRects) || (coverSide==="back" ? s.coverRectsBack : s.coverRects).length === 0}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a1a1a", border: "1px solid #2a2a2a", color: "#aaa", fontSize: 9, cursor: "pointer" }}>
-                        ↩ Undo Last
-                      </button>
-                      <button onClick={function() { clearCoverRects(coverSide); }}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a0000", border: "1px solid #330000", color: "#cc6666", fontSize: 9, cursor: "pointer" }}>
-                        ✕ Clear All
-                      </button>
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={function() { var other = coverSide==="front"?"back":"front"; setCoverSide(other); }}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "none", border: "1px solid #2a2a2a", color: "#666", fontSize: 9, cursor: "pointer" }}>
-                        Switch to {coverSide==="front"?"Back":"Front"}
-                      </button>
-                      <button onClick={function() { setCoverToolActive(false); coverDrawingRef.current = null; setCoverPreview(null); }}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a2200", border: "1px solid #2a3300", color: "#88cc44", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
-                        ✓ Done
-                      </button>
-                    </div>
-                    {(coverSide==="front" ? (s.coverRects||[]) : (s.coverRectsBack||[])).map(function(r, idx) {
-                      var swatchBg = r.fill || "#808080";
-                      if (r.useImagePatch && r.imagePatch) {
-                        swatchBg = "url(" + r.imagePatch.url + ")";
-                      } else if (r.gradientDef && r.gradientDef.type === "bilinear") {
-                        swatchBg = "url(" + r.gradientDef.url + ")";
-                      } else if (r.gradientDef) {
-                        var gd = r.gradientDef;
-                        var angle = Math.round(Math.atan2(gd.y2 - gd.y1, gd.x2 - gd.x1) * 180 / Math.PI);
-                        var cssStops = gd.stops.map(function(st3) { return st3.color + " " + st3.offset; }).join(", ");
-                        swatchBg = "linear-gradient(" + angle + "deg, " + cssStops + ")";
-                      }
-                      var hasClone = r.imagePatch && r.imagePatch.url;
-                      var isCloneActive = r.useImagePatch && hasClone;
-                      return (
-                        <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, padding: "4px 6px", background: "#0a0a0a", borderRadius: 4 }}>
-                          <div style={{ width: 18, height: 14, borderRadius: 2, background: swatchBg, backgroundSize: "cover", border: "1px solid #333", flexShrink: 0 }} />
-                          <span style={{ fontSize: 8, color: "#555", flex: 1 }}>{Math.round(r.w)}×{Math.round(r.h)}</span>
-                          {hasClone && (
-                            <button onClick={function() {
-                              var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
-                              setS(function(p) { var arr = (p[key]||[]).map(function(rv) { return rv.id===r.id ? Object.assign({},rv,{useImagePatch: !rv.useImagePatch}) : rv; }); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
-                            }}
-                              title={isCloneActive ? "Using pixel clone — click to switch to gradient fill" : "Click to use pixel-perfect clone from background image"}
-                              style={{ background: isCloneActive ? "#1a2200" : "none", border: isCloneActive ? "1px solid #88cc44" : "1px solid #333", borderRadius: 3, color: isCloneActive ? "#88cc44" : "#666", fontSize: 7, cursor: "pointer", padding: "2px 5px", fontWeight: 700, letterSpacing: "0.05em" }}>
-                              IMG
-                            </button>
-                          )}
-                          <button onClick={function() {
-                            if (gradientPickId === r.id && gradientPickMode === "2pt") { setGradientPickId(null); setGradientPickStep(0); }
-                            else { setGradientPickMode("2pt"); setGradientPickId(r.id); setGradientPickStep(1); gradientPickStartRef.current = null; setEyedropperRectId(null); }
-                          }}
-                            title={gradientPickId===r.id && gradientPickMode==="2pt" ? "Cancel" : "2-point linear gradient (start + end color)"}
-                            style={{ background: gradientPickId===r.id && gradientPickMode==="2pt" ? "#001a33" : "none", border: gradientPickId===r.id && gradientPickMode==="2pt" ? "1px solid #4488cc" : "1px solid #333", borderRadius: 3, color: gradientPickId===r.id && gradientPickMode==="2pt" ? "#4488cc" : "#666", fontSize: 7, cursor: "pointer", padding: "2px 4px", fontWeight: 700, letterSpacing: "0.02em" }}>
-                            G2
-                          </button>
-                          <button onClick={function() {
-                            if (gradientPickId === r.id && gradientPickMode === "4pt") { setGradientPickId(null); setGradientPickStep(0); }
-                            else { setGradientPickMode("4pt"); setGradientPickId(r.id); setGradientPickStep(1); gradientPickStartRef.current = null; setEyedropperRectId(null); }
-                          }}
-                            title={gradientPickId===r.id && gradientPickMode==="4pt" ? "Cancel" : "4-point bilinear gradient (TL, TR, BL, BR corners)"}
-                            style={{ background: gradientPickId===r.id && gradientPickMode==="4pt" ? "#001a33" : "none", border: gradientPickId===r.id && gradientPickMode==="4pt" ? "1px solid #4488cc" : "1px solid #333", borderRadius: 3, color: gradientPickId===r.id && gradientPickMode==="4pt" ? "#4488cc" : "#666", fontSize: 7, cursor: "pointer", padding: "2px 4px", fontWeight: 700, letterSpacing: "0.02em" }}>
-                            G4
-                          </button>
-                          <input type="color" value={r.fill && r.fill[0]==="#" ? r.fill : (r.gradientDef ? r.gradientDef.stops[0].color : "#808080")} onChange={function(e) {
-                            var newFill = e.target.value;
-                            var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
-                            setS(function(p) { var arr = (p[key]||[]).map(function(rv) { return rv.id===r.id ? Object.assign({},rv,{fill:newFill,gradientDef:null,useImagePatch:false}) : rv; }); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
-                          }} style={{ width: 22, height: 18, padding: 0, border: "none", background: "none", cursor: "pointer" }} title="Override color" />
-                          <button onClick={function() { setEyedropperRectId(eyedropperRectId === r.id ? null : r.id); }}
-                            title="Pick color from card background (click any spot on the card)"
-                            style={{ background: eyedropperRectId===r.id ? "#443300" : "none", border: eyedropperRectId===r.id ? "1px solid #cc8800" : "none", borderRadius: 3, color: eyedropperRectId===r.id ? "#ffaa00" : "#555", fontSize: 11, cursor: "pointer", padding: "1px 3px" }}>
-                            &#x1F4A7;
-                          </button>
-                          <button onClick={function() {
-                            var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
-                            setS(function(p) { var arr=(p[key]||[]).filter(function(rv){return rv.id!==r.id;}); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
-                          }} style={{ background: "none", border: "none", color: "#555", fontSize: 11, cursor: "pointer", padding: "0 2px" }}>✕</button>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-                            <span style={{ fontSize: 7, color: "#555" }}>Feather</span>
-                            <input type="range" min={0} max={20} value={r.feather || 0} onChange={function(e) {
-                              var val = Number(e.target.value);
-                              var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
-                              setS(function(p) { var arr=(p[key]||[]).map(function(rv){return rv.id===r.id ? Object.assign({},rv,{feather:val}) : rv;}); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
-                            }} style={{ width: 50, height: 10, accentColor: "#cc8800" }} />
-                            <span style={{ fontSize: 7, color: "#555", minWidth: 12 }}>{r.feather || 0}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* ── Color Swap Tool ── */}
-              <div style={{ borderTop: "1px solid #111", padding: "10px 14px" }}>
-                <div style={{ fontSize: 10, color: "#888", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Color Swap</div>
-                {!colorSwapActive ? (
-                  <div>
-                    <div style={{ fontSize: 9, color: "#555", marginBottom: 8, lineHeight: 1.5 }}>
-                      Click any color region on the card to recolor it. Works on backgrounds, logos, template graphics — anything visible.
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={function() { setColorSwapActive(true); setColorSwapSide("front"); setCoverToolActive(false); setEyedropperRectId(null); setGradientPickId(null); }}
-                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#0d001a", border: "1px solid #2a0044", color: "#bb66ff", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
-                        &#x1F3A8; Swap Front
-                      </button>
-                      <button onClick={function() { setColorSwapActive(true); setColorSwapSide("back"); setCoverToolActive(false); setEyedropperRectId(null); setGradientPickId(null); }}
-                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#001a0d", border: "1px solid #003322", color: "#66ccaa", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
-                        &#x1F3A8; Swap Back
-                      </button>
-                    </div>
-                    {((s.bgColorSwaps && s.bgColorSwaps.length > 0) || (s.bgColorSwapsBack && s.bgColorSwapsBack.length > 0)) && (
-                      <div style={{ marginTop: 8, fontSize: 9, color: "#555" }}>
-                        {s.bgColorSwaps && s.bgColorSwaps.length > 0 && <span>Front: {s.bgColorSwaps.length} swap{s.bgColorSwaps.length>1?"s":""} &#x2022; </span>}
-                        {s.bgColorSwapsBack && s.bgColorSwapsBack.length > 0 && <span>Back: {s.bgColorSwapsBack.length} swap{s.bgColorSwapsBack.length>1?"s":""} &#x2022; </span>}
-                        <button onClick={function() { setS(function(p) { return Object.assign({}, p, { bgColorSwaps: [], bgColorSwapsBack: [] }); }); }}
-                          style={{ background: "none", border: "none", color: "#883333", fontSize: 9, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
-                          Clear All
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    {/* Status bar */}
-                    <div style={{ fontSize: 9, color: "#bb88ff", marginBottom: 8, padding: "4px 6px", background: "#0d001a", borderRadius: 4 }}>
-                      {colorSwapDrawing && colorSwapDrawing.pickColor
-                        ? <span>&#x1F3AF; <strong>Click a color</strong> inside the rectangle to target for replacement.</span>
-                        : colorSwapMode === "rect"
-                        ? <span>&#x2B1C; <strong>Draw a rectangle</strong> on the <strong>{colorSwapSide === "back" ? "Back" : "Front"}</strong> card, then click to pick target color.</span>
-                        : <span>&#x1FA84; <strong>Click any color</strong> on the <strong>{colorSwapSide === "back" ? "Back" : "Front"}</strong> card to recolor it.</span>
-                      }
-                    </div>
-
-                    {/* Target Layer */}
-                    <div style={{ marginBottom: 6 }}>
-                      <div style={{ fontSize: 8, color: "#555", marginBottom: 3, textTransform: "uppercase" }}>Target Layer</div>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        {[["full", "Full Card"], ["bg", "Background"], ["logo", "Logo"]].map(function(opt) {
-                          var active = colorSwapTargetLayer === opt[0];
-                          return (
-                            <button key={opt[0]} onClick={function() { setColorSwapTargetLayer(opt[0]); }}
-                              style={{ flex: 1, padding: "5px 4px", borderRadius: 4, fontSize: 8, fontWeight: active ? 700 : 400, cursor: "pointer",
-                                background: active ? "#1a0033" : "none", border: active ? "1px solid #6622aa" : "1px solid #222", color: active ? "#bb66ff" : "#555" }}>
-                              {opt[1]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Selection Mode */}
-                    <div style={{ marginBottom: 6 }}>
-                      <div style={{ fontSize: 8, color: "#555", marginBottom: 3, textTransform: "uppercase" }}>Selection Mode</div>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        {[["wand", "&#x1FA84; Magic Wand"], ["rect", "&#x2B1C; Rectangle"]].map(function(opt) {
-                          var active = colorSwapMode === opt[0];
-                          return (
-                            <button key={opt[0]} onClick={function() { setColorSwapMode(opt[0]); setColorSwapDrawing(null); }}
-                              dangerouslySetInnerHTML={{__html: opt[1]}}
-                              style={{ flex: 1, padding: "5px 4px", borderRadius: 4, fontSize: 8, fontWeight: active ? 700 : 400, cursor: "pointer",
-                                background: active ? "#1a0033" : "none", border: active ? "1px solid #6622aa" : "1px solid #222", color: active ? "#bb66ff" : "#555" }}>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Recolor Mode */}
-                    <div style={{ marginBottom: 6 }}>
-                      <div style={{ fontSize: 8, color: "#555", marginBottom: 3, textTransform: "uppercase" }}>Recolor Mode</div>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        {[["hueShift", "Hue Shift"], ["flat", "Flat Replace"]].map(function(opt) {
-                          var active = colorSwapRecolorMode === opt[0];
-                          return (
-                            <button key={opt[0]} onClick={function() { setColorSwapRecolorMode(opt[0]); }}
-                              style={{ flex: 1, padding: "5px 4px", borderRadius: 4, fontSize: 8, fontWeight: active ? 700 : 400, cursor: "pointer",
-                                background: active ? "#1a0033" : "none", border: active ? "1px solid #6622aa" : "1px solid #222", color: active ? "#bb66ff" : "#555" }}>
-                              {opt[1]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Tolerance slider */}
-                    <div style={{ marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 8, color: "#555", minWidth: 48 }}>Tolerance</span>
-                      <input type="range" min={1} max={100} value={colorSwapTolerance} onChange={function(e) { setColorSwapTolerance(Number(e.target.value)); }}
-                        style={{ flex: 1, height: 10, accentColor: "#bb66ff" }} />
-                      <span style={{ fontSize: 8, color: "#888", minWidth: 18, textAlign: "right" }}>{colorSwapTolerance}</span>
-                    </div>
-
-                    {/* Replacement color */}
-                    <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 8, color: "#555" }}>New Color</span>
-                      <input type="color" value={colorSwapReplaceColor} onChange={function(e) { setColorSwapReplaceColor(e.target.value); }}
-                        style={{ width: 28, height: 20, padding: 0, border: "1px solid #333", background: "none", cursor: "pointer", borderRadius: 3 }} />
-                      <span style={{ fontSize: 8, color: "#666", fontFamily: "monospace" }}>{colorSwapReplaceColor}</span>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                      <button onClick={function() {
-                        var key = colorSwapSide === "back" ? "bgColorSwapsBack" : "bgColorSwaps";
-                        setS(function(p) {
-                          var arr = p[key] || [];
-                          if (arr.length === 0) return p;
-                          var patch = {};
-                          patch[key] = arr.slice(0, -1);
-                          return Object.assign({}, p, patch);
-                        });
-                      }}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a1a1a", border: "1px solid #2a2a2a", color: "#aaa", fontSize: 9, cursor: "pointer" }}>
-                        &#x21A9; Undo Last
-                      </button>
-                      <button onClick={function() {
-                        var key = colorSwapSide === "back" ? "bgColorSwapsBack" : "bgColorSwaps";
-                        setS(function(p) { var patch = {}; patch[key] = []; return Object.assign({}, p, patch); });
-                      }}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a0000", border: "1px solid #330000", color: "#cc6666", fontSize: 9, cursor: "pointer" }}>
-                        &#x2715; Clear All
-                      </button>
-                    </div>
-
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={function() { var other = colorSwapSide==="front"?"back":"front"; setColorSwapSide(other); setColorSwapDrawing(null); }}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "none", border: "1px solid #2a2a2a", color: "#666", fontSize: 9, cursor: "pointer" }}>
-                        Switch to {colorSwapSide==="front"?"Back":"Front"}
-                      </button>
-                      <button onClick={function() { setColorSwapActive(false); setColorSwapDrawing(null); setColorSwapPreview(null); }}
-                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a0022", border: "1px solid #330044", color: "#bb66ff", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
-                        &#x2713; Done
-                      </button>
-                    </div>
-
-                    {/* Swap list */}
-                    {(colorSwapSide==="front" ? (s.bgColorSwaps||[]) : (s.bgColorSwapsBack||[])).map(function(sw, idx) {
-                      return (
-                        <div key={sw.id} style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, padding: "4px 6px", background: "#0a0a0a", borderRadius: 4 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                            <div style={{ width: 14, height: 14, borderRadius: 2, background: sw.targetColor, border: "1px solid #333" }} />
-                            <span style={{ fontSize: 9, color: "#555" }}>&#x2192;</span>
-                            <div style={{ width: 14, height: 14, borderRadius: 2, background: sw.replacementColor, border: "1px solid #333" }} />
-                          </div>
-                          <span style={{ fontSize: 7, color: "#444", flex: 1 }}>{sw.mode === "wand" ? "Wand" : "Rect"} &#x2022; {sw.recolorMode === "hueShift" ? "Hue" : "Flat"} &#x2022; T:{sw.tolerance}</span>
-                          <button onClick={function() {
-                            var key = colorSwapSide==="back" ? "bgColorSwapsBack" : "bgColorSwaps";
-                            setS(function(p) {
-                              var arr = (p[key]||[]).map(function(v) { return v.id===sw.id ? Object.assign({},v,{active:!v.active}) : v; });
-                              var patch = {}; patch[key] = arr; return Object.assign({}, p, patch);
-                            });
-                          }}
-                            style={{ background: sw.active ? "#1a0033" : "none", border: sw.active ? "1px solid #6622aa" : "1px solid #333", borderRadius: 3, color: sw.active ? "#bb66ff" : "#555", fontSize: 7, cursor: "pointer", padding: "2px 5px", fontWeight: 700 }}>
-                            {sw.active ? "ON" : "OFF"}
-                          </button>
-                          <button onClick={function() {
-                            var key = colorSwapSide==="back" ? "bgColorSwapsBack" : "bgColorSwaps";
-                            setS(function(p) {
-                              var arr = (p[key]||[]).filter(function(v) { return v.id !== sw.id; });
-                              var patch = {}; patch[key] = arr; return Object.assign({}, p, patch);
-                            });
-                          }}
-                            style={{ background: "none", border: "none", color: "#555", fontSize: 11, cursor: "pointer", padding: "0 2px" }}>&#x2715;</button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Back to templates link */}
-              <div style={{ padding: "6px 14px", borderTop: "1px solid #111" }}>
-                <button onClick={function() { setTab("templates"); }}
-                  style={{ background: "none", border: "none", color: "#444", fontSize: 9, cursor: "pointer", padding: 0 }}>
-                  ← Back to Templates
-                </button>
-              </div>
             </div>
           )
 }
@@ -9329,6 +9011,329 @@ const applyTemplate = function(t) {
                   img.src = dataUrl;
                 }}
               />
+            </div>
+          )}
+
+
+          {(tab === "cover") && (
+            <div>
+              <TabHeader step={4} title="Tools — Cover / Erase" subtitle="Draw rectangles to cover baked-in content with color-matched fills" color="#2266cc" />
+              {/* ── Cover / Erase Elements ── */}
+              <div style={{ borderTop: "1px solid #111", padding: "10px 14px" }}>
+                <div style={{ fontSize: 10, color: "#888", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Cover / Erase Elements</div>
+                {!coverToolActive ? (
+                  <div>
+                    <div style={{ fontSize: 9, color: "#555", marginBottom: 8, lineHeight: 1.5 }}>
+                      Draw rectangles over baked-in text, icons, or QR codes to cover them with a color-matched fill.
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={function() { setCoverToolActive(true); setCoverSide("front"); setColorSwapActive(false); }}
+                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#0d1a00", border: "1px solid #1a3300", color: "#88cc44", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
+                        ✏ Cover Front
+                      </button>
+                      <button onClick={function() { setCoverToolActive(true); setCoverSide("back"); setColorSwapActive(false); }}
+                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#0a0a1a", border: "1px solid #1a1a33", color: "#88aaff", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
+                        ✏ Cover Back
+                      </button>
+                    </div>
+                    {((s.coverRects && s.coverRects.length > 0) || (s.coverRectsBack && s.coverRectsBack.length > 0)) && (
+                      <div style={{ marginTop: 8, fontSize: 9, color: "#555" }}>
+                        {s.coverRects && s.coverRects.length > 0 && <span>Front: {s.coverRects.length} cover{s.coverRects.length>1?"s":""} — </span>}
+                        {s.coverRectsBack && s.coverRectsBack.length > 0 && <span>Back: {s.coverRectsBack.length} cover{s.coverRectsBack.length>1?"s":""} — </span>}
+                        <button onClick={function() { clearCoverRects("front"); clearCoverRects("back"); }}
+                          style={{ background: "none", border: "none", color: "#883333", fontSize: 9, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                          Clear All
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: 9, color: (eyedropperRectId || gradientPickId) ? "#ffaa00" : "#cc8800", marginBottom: 8, padding: "4px 6px", background: (eyedropperRectId || gradientPickId) ? "#1a0e00" : "#0a0800", borderRadius: 4 }}>
+                      {eyedropperRectId
+                        ? <span>&#x1F4A7; <strong>Click the card</strong> to pick that background color. Click &#x2022; button again to cancel.</span>
+                        : gradientPickId
+                        ? <span style={{color:"#4488cc"}}>{gradientPickMode==="2pt" ? (gradientPickStep===1 ? "G2 Step 1/2: Click gradient START color" : "G2 Step 2/2: Click gradient END color") : (gradientPickStep===1 ? "G4 Step 1/4: Click TOP-LEFT background color" : gradientPickStep===2 ? "G4 Step 2/4: Click TOP-RIGHT background color" : gradientPickStep===3 ? "G4 Step 3/4: Click BOTTOM-LEFT background color" : "G4 Step 4/4: Click BOTTOM-RIGHT background color")}</span>
+                        : <span>Editing <strong>{coverSide === "back" ? "Back" : "Front"}</strong> — drag to cover areas.</span>
+                      }
+                    </div>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                      <button onClick={function() { undoCoverRect(coverSide); }}
+                        disabled={!(coverSide==="back" ? s.coverRectsBack : s.coverRects) || (coverSide==="back" ? s.coverRectsBack : s.coverRects).length === 0}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a1a1a", border: "1px solid #2a2a2a", color: "#aaa", fontSize: 9, cursor: "pointer" }}>
+                        ↩ Undo Last
+                      </button>
+                      <button onClick={function() { clearCoverRects(coverSide); }}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a0000", border: "1px solid #330000", color: "#cc6666", fontSize: 9, cursor: "pointer" }}>
+                        ✕ Clear All
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={function() { var other = coverSide==="front"?"back":"front"; setCoverSide(other); }}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "none", border: "1px solid #2a2a2a", color: "#666", fontSize: 9, cursor: "pointer" }}>
+                        Switch to {coverSide==="front"?"Back":"Front"}
+                      </button>
+                      <button onClick={function() { setCoverToolActive(false); coverDrawingRef.current = null; setCoverPreview(null); }}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a2200", border: "1px solid #2a3300", color: "#88cc44", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
+                        ✓ Done
+                      </button>
+                    </div>
+                    {(coverSide==="front" ? (s.coverRects||[]) : (s.coverRectsBack||[])).map(function(r, idx) {
+                      var swatchBg = r.fill || "#808080";
+                      if (r.useImagePatch && r.imagePatch) {
+                        swatchBg = "url(" + r.imagePatch.url + ")";
+                      } else if (r.gradientDef && r.gradientDef.type === "bilinear") {
+                        swatchBg = "url(" + r.gradientDef.url + ")";
+                      } else if (r.gradientDef) {
+                        var gd = r.gradientDef;
+                        var angle = Math.round(Math.atan2(gd.y2 - gd.y1, gd.x2 - gd.x1) * 180 / Math.PI);
+                        var cssStops = gd.stops.map(function(st3) { return st3.color + " " + st3.offset; }).join(", ");
+                        swatchBg = "linear-gradient(" + angle + "deg, " + cssStops + ")";
+                      }
+                      var hasClone = r.imagePatch && r.imagePatch.url;
+                      var isCloneActive = r.useImagePatch && hasClone;
+                      return (
+                        <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, padding: "4px 6px", background: "#0a0a0a", borderRadius: 4 }}>
+                          <div style={{ width: 18, height: 14, borderRadius: 2, background: swatchBg, backgroundSize: "cover", border: "1px solid #333", flexShrink: 0 }} />
+                          <span style={{ fontSize: 8, color: "#555", flex: 1 }}>{Math.round(r.w)}×{Math.round(r.h)}</span>
+                          {hasClone && (
+                            <button onClick={function() {
+                              var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
+                              setS(function(p) { var arr = (p[key]||[]).map(function(rv) { return rv.id===r.id ? Object.assign({},rv,{useImagePatch: !rv.useImagePatch}) : rv; }); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
+                            }}
+                              title={isCloneActive ? "Using pixel clone — click to switch to gradient fill" : "Click to use pixel-perfect clone from background image"}
+                              style={{ background: isCloneActive ? "#1a2200" : "none", border: isCloneActive ? "1px solid #88cc44" : "1px solid #333", borderRadius: 3, color: isCloneActive ? "#88cc44" : "#666", fontSize: 7, cursor: "pointer", padding: "2px 5px", fontWeight: 700, letterSpacing: "0.05em" }}>
+                              IMG
+                            </button>
+                          )}
+                          <button onClick={function() {
+                            if (gradientPickId === r.id && gradientPickMode === "2pt") { setGradientPickId(null); setGradientPickStep(0); }
+                            else { setGradientPickMode("2pt"); setGradientPickId(r.id); setGradientPickStep(1); gradientPickStartRef.current = null; setEyedropperRectId(null); }
+                          }}
+                            title={gradientPickId===r.id && gradientPickMode==="2pt" ? "Cancel" : "2-point linear gradient (start + end color)"}
+                            style={{ background: gradientPickId===r.id && gradientPickMode==="2pt" ? "#001a33" : "none", border: gradientPickId===r.id && gradientPickMode==="2pt" ? "1px solid #4488cc" : "1px solid #333", borderRadius: 3, color: gradientPickId===r.id && gradientPickMode==="2pt" ? "#4488cc" : "#666", fontSize: 7, cursor: "pointer", padding: "2px 4px", fontWeight: 700, letterSpacing: "0.02em" }}>
+                            G2
+                          </button>
+                          <button onClick={function() {
+                            if (gradientPickId === r.id && gradientPickMode === "4pt") { setGradientPickId(null); setGradientPickStep(0); }
+                            else { setGradientPickMode("4pt"); setGradientPickId(r.id); setGradientPickStep(1); gradientPickStartRef.current = null; setEyedropperRectId(null); }
+                          }}
+                            title={gradientPickId===r.id && gradientPickMode==="4pt" ? "Cancel" : "4-point bilinear gradient (TL, TR, BL, BR corners)"}
+                            style={{ background: gradientPickId===r.id && gradientPickMode==="4pt" ? "#001a33" : "none", border: gradientPickId===r.id && gradientPickMode==="4pt" ? "1px solid #4488cc" : "1px solid #333", borderRadius: 3, color: gradientPickId===r.id && gradientPickMode==="4pt" ? "#4488cc" : "#666", fontSize: 7, cursor: "pointer", padding: "2px 4px", fontWeight: 700, letterSpacing: "0.02em" }}>
+                            G4
+                          </button>
+                          <input type="color" value={r.fill && r.fill[0]==="#" ? r.fill : (r.gradientDef ? r.gradientDef.stops[0].color : "#808080")} onChange={function(e) {
+                            var newFill = e.target.value;
+                            var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
+                            setS(function(p) { var arr = (p[key]||[]).map(function(rv) { return rv.id===r.id ? Object.assign({},rv,{fill:newFill,gradientDef:null,useImagePatch:false}) : rv; }); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
+                          }} style={{ width: 22, height: 18, padding: 0, border: "none", background: "none", cursor: "pointer" }} title="Override color" />
+                          <button onClick={function() { setEyedropperRectId(eyedropperRectId === r.id ? null : r.id); }}
+                            title="Pick color from card background (click any spot on the card)"
+                            style={{ background: eyedropperRectId===r.id ? "#443300" : "none", border: eyedropperRectId===r.id ? "1px solid #cc8800" : "none", borderRadius: 3, color: eyedropperRectId===r.id ? "#ffaa00" : "#555", fontSize: 11, cursor: "pointer", padding: "1px 3px" }}>
+                            &#x1F4A7;
+                          </button>
+                          <button onClick={function() {
+                            var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
+                            setS(function(p) { var arr=(p[key]||[]).filter(function(rv){return rv.id!==r.id;}); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
+                          }} style={{ background: "none", border: "none", color: "#555", fontSize: 11, cursor: "pointer", padding: "0 2px" }}>✕</button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+                            <span style={{ fontSize: 7, color: "#555" }}>Feather</span>
+                            <input type="range" min={0} max={20} value={r.feather || 0} onChange={function(e) {
+                              var val = Number(e.target.value);
+                              var key = coverSide==="back" ? "coverRectsBack" : "coverRects";
+                              setS(function(p) { var arr=(p[key]||[]).map(function(rv){return rv.id===r.id ? Object.assign({},rv,{feather:val}) : rv;}); var patch={}; patch[key]=arr; return Object.assign({},p,patch); });
+                            }} style={{ width: 50, height: 10, accentColor: "#cc8800" }} />
+                            <span style={{ fontSize: 7, color: "#555", minWidth: 12 }}>{r.feather || 0}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(tab === "colorswap") && (
+            <div>
+              <TabHeader step={4} title="Tools — Color Swap" subtitle="Click any color region to recolor backgrounds, logos and graphics" color="#2266cc" />
+              {/* ── Color Swap Tool ── */}
+              <div style={{ borderTop: "1px solid #111", padding: "10px 14px" }}>
+                <div style={{ fontSize: 10, color: "#888", fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Color Swap</div>
+                {!colorSwapActive ? (
+                  <div>
+                    <div style={{ fontSize: 9, color: "#555", marginBottom: 8, lineHeight: 1.5 }}>
+                      Click any color region on the card to recolor it. Works on backgrounds, logos, template graphics — anything visible.
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={function() { setColorSwapActive(true); setColorSwapSide("front"); setCoverToolActive(false); setEyedropperRectId(null); setGradientPickId(null); }}
+                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#0d001a", border: "1px solid #2a0044", color: "#bb66ff", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
+                        &#x1F3A8; Swap Front
+                      </button>
+                      <button onClick={function() { setColorSwapActive(true); setColorSwapSide("back"); setCoverToolActive(false); setEyedropperRectId(null); setGradientPickId(null); }}
+                        style={{ flex: 1, padding: "8px", borderRadius: 6, background: "#001a0d", border: "1px solid #003322", color: "#66ccaa", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
+                        &#x1F3A8; Swap Back
+                      </button>
+                    </div>
+                    {((s.bgColorSwaps && s.bgColorSwaps.length > 0) || (s.bgColorSwapsBack && s.bgColorSwapsBack.length > 0)) && (
+                      <div style={{ marginTop: 8, fontSize: 9, color: "#555" }}>
+                        {s.bgColorSwaps && s.bgColorSwaps.length > 0 && <span>Front: {s.bgColorSwaps.length} swap{s.bgColorSwaps.length>1?"s":""} &#x2022; </span>}
+                        {s.bgColorSwapsBack && s.bgColorSwapsBack.length > 0 && <span>Back: {s.bgColorSwapsBack.length} swap{s.bgColorSwapsBack.length>1?"s":""} &#x2022; </span>}
+                        <button onClick={function() { setS(function(p) { return Object.assign({}, p, { bgColorSwaps: [], bgColorSwapsBack: [] }); }); }}
+                          style={{ background: "none", border: "none", color: "#883333", fontSize: 9, cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                          Clear All
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {/* Status bar */}
+                    <div style={{ fontSize: 9, color: "#bb88ff", marginBottom: 8, padding: "4px 6px", background: "#0d001a", borderRadius: 4 }}>
+                      {colorSwapDrawing && colorSwapDrawing.pickColor
+                        ? <span>&#x1F3AF; <strong>Click a color</strong> inside the rectangle to target for replacement.</span>
+                        : colorSwapMode === "rect"
+                        ? <span>&#x2B1C; <strong>Draw a rectangle</strong> on the <strong>{colorSwapSide === "back" ? "Back" : "Front"}</strong> card, then click to pick target color.</span>
+                        : <span>&#x1FA84; <strong>Click any color</strong> on the <strong>{colorSwapSide === "back" ? "Back" : "Front"}</strong> card to recolor it.</span>
+                      }
+                    </div>
+
+                    {/* Target Layer */}
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 8, color: "#555", marginBottom: 3, textTransform: "uppercase" }}>Target Layer</div>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {[["full", "Full Card"], ["bg", "Background"], ["logo", "Logo"]].map(function(opt) {
+                          var active = colorSwapTargetLayer === opt[0];
+                          return (
+                            <button key={opt[0]} onClick={function() { setColorSwapTargetLayer(opt[0]); }}
+                              style={{ flex: 1, padding: "5px 4px", borderRadius: 4, fontSize: 8, fontWeight: active ? 700 : 400, cursor: "pointer",
+                                background: active ? "#1a0033" : "none", border: active ? "1px solid #6622aa" : "1px solid #222", color: active ? "#bb66ff" : "#555" }}>
+                              {opt[1]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Selection Mode */}
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 8, color: "#555", marginBottom: 3, textTransform: "uppercase" }}>Selection Mode</div>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {[["wand", "&#x1FA84; Magic Wand"], ["rect", "&#x2B1C; Rectangle"]].map(function(opt) {
+                          var active = colorSwapMode === opt[0];
+                          return (
+                            <button key={opt[0]} onClick={function() { setColorSwapMode(opt[0]); setColorSwapDrawing(null); }}
+                              dangerouslySetInnerHTML={{__html: opt[1]}}
+                              style={{ flex: 1, padding: "5px 4px", borderRadius: 4, fontSize: 8, fontWeight: active ? 700 : 400, cursor: "pointer",
+                                background: active ? "#1a0033" : "none", border: active ? "1px solid #6622aa" : "1px solid #222", color: active ? "#bb66ff" : "#555" }}>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Recolor Mode */}
+                    <div style={{ marginBottom: 6 }}>
+                      <div style={{ fontSize: 8, color: "#555", marginBottom: 3, textTransform: "uppercase" }}>Recolor Mode</div>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {[["hueShift", "Hue Shift"], ["flat", "Flat Replace"]].map(function(opt) {
+                          var active = colorSwapRecolorMode === opt[0];
+                          return (
+                            <button key={opt[0]} onClick={function() { setColorSwapRecolorMode(opt[0]); }}
+                              style={{ flex: 1, padding: "5px 4px", borderRadius: 4, fontSize: 8, fontWeight: active ? 700 : 400, cursor: "pointer",
+                                background: active ? "#1a0033" : "none", border: active ? "1px solid #6622aa" : "1px solid #222", color: active ? "#bb66ff" : "#555" }}>
+                              {opt[1]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Tolerance slider */}
+                    <div style={{ marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 8, color: "#555", minWidth: 48 }}>Tolerance</span>
+                      <input type="range" min={1} max={100} value={colorSwapTolerance} onChange={function(e) { setColorSwapTolerance(Number(e.target.value)); }}
+                        style={{ flex: 1, height: 10, accentColor: "#bb66ff" }} />
+                      <span style={{ fontSize: 8, color: "#888", minWidth: 18, textAlign: "right" }}>{colorSwapTolerance}</span>
+                    </div>
+
+                    {/* Replacement color */}
+                    <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 8, color: "#555" }}>New Color</span>
+                      <input type="color" value={colorSwapReplaceColor} onChange={function(e) { setColorSwapReplaceColor(e.target.value); }}
+                        style={{ width: 28, height: 20, padding: 0, border: "1px solid #333", background: "none", cursor: "pointer", borderRadius: 3 }} />
+                      <span style={{ fontSize: 8, color: "#666", fontFamily: "monospace" }}>{colorSwapReplaceColor}</span>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                      <button onClick={function() {
+                        var key = colorSwapSide === "back" ? "bgColorSwapsBack" : "bgColorSwaps";
+                        setS(function(p) {
+                          var arr = p[key] || [];
+                          if (arr.length === 0) return p;
+                          var patch = {};
+                          patch[key] = arr.slice(0, -1);
+                          return Object.assign({}, p, patch);
+                        });
+                      }}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a1a1a", border: "1px solid #2a2a2a", color: "#aaa", fontSize: 9, cursor: "pointer" }}>
+                        &#x21A9; Undo Last
+                      </button>
+                      <button onClick={function() {
+                        var key = colorSwapSide === "back" ? "bgColorSwapsBack" : "bgColorSwaps";
+                        setS(function(p) { var patch = {}; patch[key] = []; return Object.assign({}, p, patch); });
+                      }}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a0000", border: "1px solid #330000", color: "#cc6666", fontSize: 9, cursor: "pointer" }}>
+                        &#x2715; Clear All
+                      </button>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={function() { var other = colorSwapSide==="front"?"back":"front"; setColorSwapSide(other); setColorSwapDrawing(null); }}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "none", border: "1px solid #2a2a2a", color: "#666", fontSize: 9, cursor: "pointer" }}>
+                        Switch to {colorSwapSide==="front"?"Back":"Front"}
+                      </button>
+                      <button onClick={function() { setColorSwapActive(false); setColorSwapDrawing(null); setColorSwapPreview(null); }}
+                        style={{ flex: 1, padding: "7px", borderRadius: 6, background: "#1a0022", border: "1px solid #330044", color: "#bb66ff", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
+                        &#x2713; Done
+                      </button>
+                    </div>
+
+                    {/* Swap list */}
+                    {(colorSwapSide==="front" ? (s.bgColorSwaps||[]) : (s.bgColorSwapsBack||[])).map(function(sw, idx) {
+                      return (
+                        <div key={sw.id} style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, padding: "4px 6px", background: "#0a0a0a", borderRadius: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <div style={{ width: 14, height: 14, borderRadius: 2, background: sw.targetColor, border: "1px solid #333" }} />
+                            <span style={{ fontSize: 9, color: "#555" }}>&#x2192;</span>
+                            <div style={{ width: 14, height: 14, borderRadius: 2, background: sw.replacementColor, border: "1px solid #333" }} />
+                          </div>
+                          <span style={{ fontSize: 7, color: "#444", flex: 1 }}>{sw.mode === "wand" ? "Wand" : "Rect"} &#x2022; {sw.recolorMode === "hueShift" ? "Hue" : "Flat"} &#x2022; T:{sw.tolerance}</span>
+                          <button onClick={function() {
+                            var key = colorSwapSide==="back" ? "bgColorSwapsBack" : "bgColorSwaps";
+                            setS(function(p) {
+                              var arr = (p[key]||[]).map(function(v) { return v.id===sw.id ? Object.assign({},v,{active:!v.active}) : v; });
+                              var patch = {}; patch[key] = arr; return Object.assign({}, p, patch);
+                            });
+                          }}
+                            style={{ background: sw.active ? "#1a0033" : "none", border: sw.active ? "1px solid #6622aa" : "1px solid #333", borderRadius: 3, color: sw.active ? "#bb66ff" : "#555", fontSize: 7, cursor: "pointer", padding: "2px 5px", fontWeight: 700 }}>
+                            {sw.active ? "ON" : "OFF"}
+                          </button>
+                          <button onClick={function() {
+                            var key = colorSwapSide==="back" ? "bgColorSwapsBack" : "bgColorSwaps";
+                            setS(function(p) {
+                              var arr = (p[key]||[]).filter(function(v) { return v.id !== sw.id; });
+                              var patch = {}; patch[key] = arr; return Object.assign({}, p, patch);
+                            });
+                          }}
+                            style={{ background: "none", border: "none", color: "#555", fontSize: 11, cursor: "pointer", padding: "0 2px" }}>&#x2715;</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
