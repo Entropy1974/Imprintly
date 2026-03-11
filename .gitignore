@@ -1,0 +1,20 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Temp files
+*.tmp
+*.bak
+
+# Claude config (session-specific)
+.claude/
+
+# Test artifacts
+test-*.png
+test-*.jpg
