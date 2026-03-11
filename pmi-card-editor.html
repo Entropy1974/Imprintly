@@ -6244,6 +6244,7 @@ function App() {
   // ── Bottom sheet state (tablet/mobile) ──
   var _bss = React.useState("collapsed"); // "collapsed" | "half" | "full"
   var sheetState = _bss[0]; var setSheetState = _bss[1];
+  var sheetTouchStartY = React.useRef(null);
   const sidebarDragging = useRef(false);
   const [revertSnapshot, setRevertSnapshot] = useState(null);  // { state, label, serviceColor }
 
@@ -7859,7 +7860,7 @@ const applyTemplate = function(t) {
     navigator.clipboard.writeText(JSON.stringify({ card: s, curves: curves }, null, 2)).then(function() { setCopied(true); setTimeout(function() { setCopied(false); }, 2000); });
   };
 
-  const availW = typeof window !== "undefined" ? window.innerWidth - 330 : 800;
+  const availW = typeof window !== "undefined" ? (isDesktop ? window.innerWidth - sidebarWidth - 10 : window.innerWidth) : 800;
   const maxW = Math.min(availW - 40, 900);
   const scale = (previewZoom / 100) * (maxW / 900);
 
@@ -7935,8 +7936,9 @@ const applyTemplate = function(t) {
             display: "flex",
             flexDirection: "column",
             order: isDesktop ? 0 : 1,
-            maxHeight: isDesktop ? "100vh" : (sheetState === "full" ? "85vh" : sheetState === "half" ? "50vh" : "140px"),
+            maxHeight: isDesktop ? "100vh" : (sheetState === "full" ? "90vh" : sheetState === "half" ? "45vh" : "110px"),
             transition: "max-height 0.3s ease",
+            willChange: "max-height",
             overflow: "hidden",
             borderTop: isDesktop ? "none" : "1px solid var(--border-subtle)",
             flexShrink: 0 }}>
@@ -7951,13 +7953,27 @@ const applyTemplate = function(t) {
                 return "collapsed";
               });
             }}
+            onTouchStart={function(e) {
+              sheetTouchStartY.current = e.touches[0].clientY;
+            }}
+            onTouchEnd={function(e) {
+              if (sheetTouchStartY.current === null) return;
+              var deltaY = e.changedTouches[0].clientY - sheetTouchStartY.current;
+              sheetTouchStartY.current = null;
+              if (deltaY < -40) {
+                setSheetState(function(prev) { return prev === "collapsed" ? "half" : prev === "half" ? "full" : "full"; });
+              } else if (deltaY > 40) {
+                setSheetState(function(prev) { return prev === "full" ? "half" : prev === "half" ? "collapsed" : "collapsed"; });
+              }
+            }}
             style={{ display: "flex", justifyContent: "center", alignItems: "center",
-              padding: "8px 0 4px", cursor: "pointer", flexShrink: 0 }}>
-            <div style={{ width: 40, height: 4, borderRadius: 2, background: "#444" }} />
+              padding: "10px 0 6px", cursor: "pointer", flexShrink: 0, touchAction: "none" }}>
+            <div style={{ width: 48, height: 5, borderRadius: 3, background: sheetState === "collapsed" ? "#555" : "#666",
+              transition: "background 0.2s" }} />
           </div>
         )}
         <div style={{ padding: "12px 16px 8px", borderBottom: "1px solid #1e1e1e", flexShrink: 0 }}>
-          <div style={{ fontSize: "var(--fs-sm)", letterSpacing: "0.18em", color: "#cc8800", fontWeight: 700, textTransform: "uppercase", marginBottom: 1, display: isDesktop ? "block" : (sheetState !== "collapsed" ? "block" : "none") }}>Professional Business Cards</div>
+          <div style={{ fontSize: "var(--fs-sm)", letterSpacing: "0.18em", color: "#cc8800", fontWeight: 700, textTransform: "uppercase", marginBottom: 1, display: isDesktop ? "block" : "none" }}>Professional Business Cards</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-bright)" }}>Imprintly</div>
             <button onClick={function() { setHelpDocKey(currentStage.id); setHelpOpen(true); }}
@@ -7975,7 +7991,7 @@ const applyTemplate = function(t) {
               var isActive = st.id === currentStage.id;
               return (
                 <button key={st.id}
-                  onClick={function() { setTab(st.tabs[0].id); if (!isDesktop && sheetState === "collapsed") setSheetState("half"); }}
+                  onClick={function() { if (!isDesktop && isActive) { setSheetState(function(prev) { return prev === "collapsed" ? "half" : "collapsed"; }); return; } setTab(st.tabs[0].id); if (!isDesktop && sheetState === "collapsed") setSheetState("half"); }}
                   style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
                     padding: "8px 14px 6px", border: "none", borderRadius: 0,
                     background: isActive ? "#1a1200" : "transparent",
@@ -7996,7 +8012,7 @@ const applyTemplate = function(t) {
               {currentStage.tabs.map(function(t) {
                 var isSubActive = tab === t.id;
                 return (
-                  <button key={t.id} onClick={function() { setTab(t.id); }}
+                  <button key={t.id} onClick={function() { setTab(t.id); if (!isDesktop && sheetState === "collapsed") setSheetState("half"); }}
                     style={{ padding: "5px 10px", background: "none", border: "none",
                       borderBottom: isSubActive ? "2px solid #ffbb33" : "2px solid transparent",
                       color: isSubActive ? "#ffbb33" : "#555",
@@ -9466,7 +9482,7 @@ const applyTemplate = function(t) {
           </button>
         </div>
 
-        <div style={{ padding: "10px 14px", borderTop: "1px solid #1e1e1e", flexShrink: 0 }}>
+        <div style={{ padding: isDesktop ? "10px 14px" : "6px 8px", borderTop: "1px solid #1e1e1e", flexShrink: 0 }}>
 
           {/* ── Export Panel ───────────────────────────────────────── */}
           <div style={{ marginBottom: 8 }}>
@@ -9575,8 +9591,9 @@ const applyTemplate = function(t) {
           />
         ) : null}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", display: tab === "ai" ? "none" : "flex" }}>
-        <div style={{ padding: "9px 18px", borderBottom: "1px solid #191919", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+        <div style={{ padding: isDesktop ? "9px 18px" : "5px 10px", borderBottom: "1px solid #191919", display: "flex", alignItems: "center", gap: isDesktop ? 12 : 8, flexShrink: 0 }}>
           <span style={{ fontSize: "var(--fs-base)", color: "var(--text-dim)" }}>Preview</span>
+          {isDesktop && (
           <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1 }}>
             <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-dim)" }}>Zoom</span>
             <input type="range" min={30} max={100} value={previewZoom} onChange={function(e) { setPreviewZoom(Number(e.target.value)); }} style={{ width: 110, accentColor: "#cc8800" }} />
@@ -9584,9 +9601,11 @@ const applyTemplate = function(t) {
             <button onClick={function() { setPreviewZoom(88); }} style={{ padding: "2px 9px", borderRadius: 9, background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-tertiary)", fontSize: "var(--fs-sm)", cursor: "pointer" }}>Fit</button>
             <button onClick={function() { setPreviewZoom(100); }} style={{ padding: "2px 9px", borderRadius: 9, background: "var(--bg-panel)", border: "1px solid var(--border-subtle)", color: "var(--text-tertiary)", fontSize: "var(--fs-sm)", cursor: "pointer" }}>Full</button>
           </div>
+          )}
+          {!isDesktop && <div style={{ flex: 1 }} />}
           <span style={{ fontSize: "var(--fs-sm)", color: "#333", background: "var(--bg-input)", border: "1px solid #1e1e1e", borderRadius: 14, padding: "3px 9px" }}>3.5" × 2"</span>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", padding: "24px 18px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+        <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", padding: isDesktop ? "24px 18px" : "10px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: isDesktop ? 24 : 12 }}>
           <div>
             <div style={{ fontSize: "var(--fs-sm)", letterSpacing: "0.15em", color: "#333", textTransform: "uppercase", marginBottom: 7, textAlign: "center" }}>Front</div>
             <div ref={cardRef} style={{position:"relative", display:"inline-block"}}>
