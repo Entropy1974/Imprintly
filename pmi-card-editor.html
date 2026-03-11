@@ -156,6 +156,26 @@
         min-height: 44px;
         font-size: max(16px, var(--fs-md));  /* Prevent iOS zoom */
       }
+      /* Tool mode toggle buttons (wand/rect, G2/G4/IMG) */
+      button[title], [data-tool-btn] {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 6px 10px;
+      }
+      /* Variation color swatches — enlarge for touch */
+      [data-var-swatch] {
+        min-width: 36px;
+        min-height: 36px;
+      }
+      /* Font pills in template variation strip */
+      [data-font-pill] {
+        min-height: 40px;
+        padding: 6px 14px;
+      }
+      /* Slider controls (zoom, tolerance, feather) — taller thumb area */
+      input[type="range"] {
+        min-height: 44px;
+      }
     }
 
     /* ── Utility classes ── */
@@ -6072,6 +6092,8 @@ function App() {
   const [tab, setTab] = useState("templates");
   const [templateDefaults, setTemplateDefaults] = useState(DEFAULT_STATE);
   const [previewZoom, setPreviewZoom] = useState(88);
+  var pinchStartDistRef = React.useRef(null);
+  var pinchStartZoomRef = React.useRef(null);
   const [copied, setCopied] = useState(false);
   const cardRef = useRef();
   const backRef = useRef();
@@ -6465,14 +6487,22 @@ function App() {
     });
   };
 
+  // ── Touch/mouse coordinate helper ──
+  var getPointerXY = function(e) {
+    if (e.touches && e.touches.length > 0) return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches.length > 0) return { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
+    return { clientX: e.clientX, clientY: e.clientY };
+  };
+
   var updateMagnifier = function(e, side) {
     var ref = side === "back" ? backRef : cardRef;
     var el = ref && ref.current;
     if (!el) { setMagPos(null); return; }
     var rect = el.getBoundingClientRect();
     var sc = rect.width / 900;
-    var cardX = Math.round((e.clientX - rect.left) / sc);
-    var cardY = Math.round((e.clientY - rect.top) / sc);
+    var ptr = getPointerXY(e);
+    var cardX = Math.round((ptr.clientX - rect.left) / sc);
+    var cardY = Math.round((ptr.clientY - rect.top) / sc);
     if (cardX < 0 || cardX > 899 || cardY < 0 || cardY > 499) { setMagPos(null); return; }
     var imageUrl = side === "back" ? ((s.bgImageBack && s.bgImageBack.url) || s.bgImage.url) : s.bgImage.url;
     if (!imageUrl) { setMagPos(null); return; }
@@ -6491,7 +6521,7 @@ function App() {
         var py = Math.max(0, Math.min(499, cardY));
         var d = ctx2.getImageData(px, py, 1, 1).data;
         var hex = "#" + [d[0],d[1],d[2]].map(function(v) { var h = v.toString(16); return h.length===1?"0"+h:h; }).join("");
-        setMagPos({ clientX: e.clientX, clientY: e.clientY, cardX: cardX, cardY: cardY, hex: hex, rect: rect, sc: sc });
+        setMagPos({ clientX: ptr.clientX, clientY: ptr.clientY, cardX: cardX, cardY: cardY, hex: hex, rect: rect, sc: sc });
       };
       img2.src = imageUrl;
     } else {
@@ -6500,11 +6530,36 @@ function App() {
       var py2 = Math.max(0, Math.min(499, cardY));
       var d2 = ctx3.getImageData(px2, py2, 1, 1).data;
       var hex2 = "#" + [d2[0],d2[1],d2[2]].map(function(v) { var h = v.toString(16); return h.length===1?"0"+h:h; }).join("");
-      setMagPos({ clientX: e.clientX, clientY: e.clientY, cardX: cardX, cardY: cardY, hex: hex2, rect: rect, sc: sc });
+      setMagPos({ clientX: ptr.clientX, clientY: ptr.clientY, cardX: cardX, cardY: cardY, hex: hex2, rect: rect, sc: sc });
     }
   };
 
   var clearMagnifier = function() { setMagPos(null); };
+
+  // ── Pinch-to-zoom handlers ──
+  var handlePinchStart = function(e) {
+    if (e.touches.length < 2) return;
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchStartDistRef.current = Math.hypot(dx, dy);
+    pinchStartZoomRef.current = previewZoom;
+  };
+  var handlePinchMove = function(e) {
+    if (e.touches.length < 2 || !pinchStartDistRef.current) return;
+    e.preventDefault();
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    var dist = Math.hypot(dx, dy);
+    var ratio = dist / pinchStartDistRef.current;
+    var newZoom = Math.round(Math.max(30, Math.min(100, pinchStartZoomRef.current * ratio)));
+    setPreviewZoom(newZoom);
+  };
+  var handlePinchEnd = function(e) {
+    if (e.touches.length < 2) {
+      pinchStartDistRef.current = null;
+      pinchStartZoomRef.current = null;
+    }
+  };
 
   var handleGradientPick = function(e, side) {
     if (!gradientPickId) return;
@@ -6702,9 +6757,10 @@ function App() {
     if (!el) return { x: 0, y: 0 };
     var rect = el.getBoundingClientRect();
     var sc = rect.width / 900;
+    var ptr = getPointerXY(e);
     return {
-      x: Math.round((e.clientX - rect.left) / sc),
-      y: Math.round((e.clientY - rect.top)  / sc)
+      x: Math.round((ptr.clientX - rect.left) / sc),
+      y: Math.round((ptr.clientY - rect.top)  / sc)
     };
   };
 
@@ -6791,6 +6847,8 @@ function App() {
     var onDocUp = function(ev) {
       document.removeEventListener("mousemove", onDocMove);
       document.removeEventListener("mouseup", onDocUp);
+      document.removeEventListener("touchmove", onDocMove);
+      document.removeEventListener("touchend", onDocUp);
       if (!colorSwapDrawingRef.current) return;
       var cd = colorSwapDrawingRef.current;
       var rx = Math.max(0, Math.min(cd.x0, cd.x1));
@@ -6808,6 +6866,8 @@ function App() {
     };
     document.addEventListener("mousemove", onDocMove);
     document.addEventListener("mouseup", onDocUp);
+    document.addEventListener("touchmove", onDocMove, {passive: false});
+    document.addEventListener("touchend", onDocUp);
   };
 
   // ── Color Swap: Rect color pick (after drawing rect) ──
@@ -6899,6 +6959,8 @@ function App() {
     var onDocUp = function(ev) {
       document.removeEventListener("mousemove", onDocMove);
       document.removeEventListener("mouseup", onDocUp);
+      document.removeEventListener("touchmove", onDocMove);
+      document.removeEventListener("touchend", onDocUp);
       if (!coverDrawingRef.current) return;
       // Clamp final coords to card bounds [0..900, 0..500]
       var clamp = function(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
@@ -6916,6 +6978,8 @@ function App() {
     };
     document.addEventListener("mousemove", onDocMove);
     document.addEventListener("mouseup", onDocUp);
+    document.addEventListener("touchmove", onDocMove, {passive: false});
+    document.addEventListener("touchend", onDocUp);
   };
   var handleCoverMouseMove = function(e) {
     // Only used as fallback — primary tracking is via document listeners
@@ -9512,7 +9576,7 @@ const applyTemplate = function(t) {
           {!isDesktop && <div style={{ flex: 1 }} />}
           <span style={{ fontSize: "var(--fs-sm)", color: "#333", background: "var(--bg-input)", border: "1px solid #1e1e1e", borderRadius: 14, padding: "3px 9px" }}>3.5" × 2"</span>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", padding: isDesktop ? "24px 18px" : "10px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: isDesktop ? 24 : 12 }}>
+        <div onTouchStart={handlePinchStart} onTouchMove={handlePinchMove} onTouchEnd={handlePinchEnd} style={{ flex: 1, overflowY: "auto", overflowX: "auto", padding: isDesktop ? "24px 18px" : "10px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: isDesktop ? 24 : 12, touchAction: "pan-x pan-y" }}>
           <div>
             <div style={{ fontSize: "var(--fs-sm)", letterSpacing: "0.15em", color: "#333", textTransform: "uppercase", marginBottom: 7, textAlign: "center" }}>Front</div>
             <div ref={cardRef} style={{position:"relative", display:"inline-block"}}>
@@ -9521,53 +9585,70 @@ const applyTemplate = function(t) {
                 : <CardFront s={s} curves={curves} scale={scale} coverPreview={coverToolActive && coverSide==="front" ? coverPreview : null} />
               }
               {coverToolActive && coverSide==="front" && !eyedropperRectId && !gradientPickId && (
-                <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:20,userSelect:"none"}}
+                <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:20,userSelect:"none",touchAction:"none"}}
                   onMouseDown={function(e){handleCoverMouseDown(e,"front");}}
+                  onTouchStart={function(e){e.preventDefault();handleCoverMouseDown(e,"front");}}
+                  style2_touchAction="none"
                 />
               )}
               {eyedropperRectId && coverSide==="front" && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(255,200,0,0.05)",boxSizing:"border-box",border:"2px solid rgba(255,200,0,0.5)"}}
+                  background:"rgba(255,200,0,0.05)",boxSizing:"border-box",border:"2px solid rgba(255,200,0,0.5)",touchAction:"none"}}
                   onClick={function(e){handleEyedropperClick(e, "front");}}
                   onMouseMove={function(e){updateMagnifier(e, "front");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "front");}}
+                  onTouchMove={function(e){updateMagnifier(e, "front");}}
+                  onTouchEnd={function(e){e.preventDefault();handleEyedropperClick(e, "front");clearMagnifier();}}
                   title="Click anywhere on the card to pick that color"
                 />
               )}
               {gradientPickId && coverSide==="front" && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(68,136,204,0.08)",boxSizing:"border-box",border:"2px solid rgba(68,136,204,0.6)"}}
+                  background:"rgba(68,136,204,0.08)",boxSizing:"border-box",border:"2px solid rgba(68,136,204,0.6)",touchAction:"none"}}
                   onClick={function(e){handleGradientPick(e, "front");}}
                   onMouseMove={function(e){updateMagnifier(e, "front");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "front");}}
+                  onTouchMove={function(e){updateMagnifier(e, "front");}}
+                  onTouchEnd={function(e){e.preventDefault();handleGradientPick(e, "front");clearMagnifier();}}
                   title={gradientPickMode==="2pt" ? (gradientPickStep===1 ? "Click gradient START color" : "Click gradient END color") : (gradientPickStep===1 ? "Step 1/4: Click TOP-LEFT" : gradientPickStep===2 ? "Step 2/4: Click TOP-RIGHT" : gradientPickStep===3 ? "Step 3/4: Click BOTTOM-LEFT" : "Step 4/4: Click BOTTOM-RIGHT")}
                 />
               )}
               {/* Color Swap overlays - Front */}
               {colorSwapActive && colorSwapSide==="front" && colorSwapMode==="wand" && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"cell",zIndex:25,userSelect:"none",
-                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)"}}
+                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)",touchAction:"none"}}
                   onClick={function(e){handleColorSwapWandClick(e, "front");}}
                   onMouseMove={function(e){updateMagnifier(e, "front");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "front");}}
+                  onTouchMove={function(e){updateMagnifier(e, "front");}}
+                  onTouchEnd={function(e){e.preventDefault();handleColorSwapWandClick(e, "front");clearMagnifier();}}
                   title="Click a color to recolor it"
                 />
               )}
               {colorSwapActive && colorSwapSide==="front" && colorSwapMode==="rect" && !(colorSwapDrawing && colorSwapDrawing.pickColor) && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)"}}
+                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)",touchAction:"none"}}
                   onMouseDown={function(e){handleColorSwapRectDown(e, "front");}}
                   onMouseMove={function(e){updateMagnifier(e, "front");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();handleColorSwapRectDown(e, "front");}}
+                  onTouchMove={function(e){updateMagnifier(e, "front");}}
+                  onTouchEnd={function(e){e.preventDefault();clearMagnifier();}}
                   title="Draw a rectangle to select a region"
                 />
               )}
               {colorSwapActive && colorSwapSide==="front" && colorSwapDrawing && colorSwapDrawing.pickColor && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(255,120,0,0.08)",boxSizing:"border-box",border:"2px solid rgba(255,120,0,0.7)"}}
+                  background:"rgba(255,120,0,0.08)",boxSizing:"border-box",border:"2px solid rgba(255,120,0,0.7)",touchAction:"none"}}
                   onClick={function(e){handleColorSwapRectColorPick(e, "front");}}
                   onMouseMove={function(e){updateMagnifier(e, "front");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "front");}}
+                  onTouchMove={function(e){updateMagnifier(e, "front");}}
+                  onTouchEnd={function(e){e.preventDefault();handleColorSwapRectColorPick(e, "front");clearMagnifier();}}
                   title="Click a color inside the rectangle to target"
                 />
               )}
@@ -9599,53 +9680,69 @@ const applyTemplate = function(t) {
             <div ref={backRef} style={{position:"relative", display:"inline-block"}}>
               <CardBack s={s} curves={curves} scale={scale} coverPreview={coverToolActive && coverSide==="back" ? coverPreview : null} />
               {coverToolActive && coverSide==="back" && !eyedropperRectId && !gradientPickId && (
-                <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:20,userSelect:"none"}}
+                <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:20,userSelect:"none",touchAction:"none"}}
                   onMouseDown={function(e){handleCoverMouseDown(e,"back");}}
+                  onTouchStart={function(e){e.preventDefault();handleCoverMouseDown(e,"back");}}
                 />
               )}
               {eyedropperRectId && coverSide==="back" && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(255,200,0,0.05)",boxSizing:"border-box",border:"2px solid rgba(255,200,0,0.5)"}}
+                  background:"rgba(255,200,0,0.05)",boxSizing:"border-box",border:"2px solid rgba(255,200,0,0.5)",touchAction:"none"}}
                   onClick={function(e){handleEyedropperClick(e, "back");}}
                   onMouseMove={function(e){updateMagnifier(e, "back");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "back");}}
+                  onTouchMove={function(e){updateMagnifier(e, "back");}}
+                  onTouchEnd={function(e){e.preventDefault();handleEyedropperClick(e, "back");clearMagnifier();}}
                   title="Click anywhere on the card to pick that color"
                 />
               )}
               {/* Color Swap overlays - Back */}
               {colorSwapActive && colorSwapSide==="back" && colorSwapMode==="wand" && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"cell",zIndex:25,userSelect:"none",
-                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)"}}
+                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)",touchAction:"none"}}
                   onClick={function(e){handleColorSwapWandClick(e, "back");}}
                   onMouseMove={function(e){updateMagnifier(e, "back");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "back");}}
+                  onTouchMove={function(e){updateMagnifier(e, "back");}}
+                  onTouchEnd={function(e){e.preventDefault();handleColorSwapWandClick(e, "back");clearMagnifier();}}
                   title="Click a color to recolor it"
                 />
               )}
               {colorSwapActive && colorSwapSide==="back" && colorSwapMode==="rect" && !(colorSwapDrawing && colorSwapDrawing.pickColor) && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)"}}
+                  background:"rgba(180,0,255,0.05)",boxSizing:"border-box",border:"2px solid rgba(180,0,255,0.5)",touchAction:"none"}}
                   onMouseDown={function(e){handleColorSwapRectDown(e, "back");}}
                   onMouseMove={function(e){updateMagnifier(e, "back");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();handleColorSwapRectDown(e, "back");}}
+                  onTouchMove={function(e){updateMagnifier(e, "back");}}
+                  onTouchEnd={function(e){e.preventDefault();clearMagnifier();}}
                   title="Draw a rectangle to select a region"
                 />
               )}
               {colorSwapActive && colorSwapSide==="back" && colorSwapDrawing && colorSwapDrawing.pickColor && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(255,120,0,0.08)",boxSizing:"border-box",border:"2px solid rgba(255,120,0,0.7)"}}
+                  background:"rgba(255,120,0,0.08)",boxSizing:"border-box",border:"2px solid rgba(255,120,0,0.7)",touchAction:"none"}}
                   onClick={function(e){handleColorSwapRectColorPick(e, "back");}}
                   onMouseMove={function(e){updateMagnifier(e, "back");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "back");}}
+                  onTouchMove={function(e){updateMagnifier(e, "back");}}
+                  onTouchEnd={function(e){e.preventDefault();handleColorSwapRectColorPick(e, "back");clearMagnifier();}}
                   title="Click a color inside the rectangle to target"
                 />
               )}
               {gradientPickId && coverSide==="back" && (
                 <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,cursor:"crosshair",zIndex:25,userSelect:"none",
-                  background:"rgba(68,136,204,0.08)",boxSizing:"border-box",border:"2px solid rgba(68,136,204,0.6)"}}
+                  background:"rgba(68,136,204,0.08)",boxSizing:"border-box",border:"2px solid rgba(68,136,204,0.6)",touchAction:"none"}}
                   onClick={function(e){handleGradientPick(e, "back");}}
                   onMouseMove={function(e){updateMagnifier(e, "back");}}
                   onMouseLeave={clearMagnifier}
+                  onTouchStart={function(e){e.preventDefault();updateMagnifier(e, "back");}}
+                  onTouchMove={function(e){updateMagnifier(e, "back");}}
+                  onTouchEnd={function(e){e.preventDefault();handleGradientPick(e, "back");clearMagnifier();}}
                   title={gradientPickMode==="2pt" ? (gradientPickStep===1 ? "Click gradient START color" : "Click gradient END color") : (gradientPickStep===1 ? "Step 1/4: Click TOP-LEFT" : gradientPickStep===2 ? "Step 2/4: Click TOP-RIGHT" : gradientPickStep===3 ? "Step 3/4: Click BOTTOM-LEFT" : "Step 4/4: Click BOTTOM-RIGHT")}
                 />
               )}
