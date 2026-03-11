@@ -3444,6 +3444,36 @@ function persistCustomTemplates(data) {
   });
 }
 
+var _memLogoLibrary = [];
+
+function loadLogoLibraryFromStorage() {
+  return new Promise(function(resolve) {
+    if (window.storage) {
+      window.storage.get("logo_library").then(function(result) {
+        if (result && result.value) {
+          try { resolve(JSON.parse(result.value)); return; } catch (e) {}
+        }
+        resolve([]);
+      }).catch(function() { resolve(_memLogoLibrary.slice()); });
+    } else {
+      resolve(_memLogoLibrary.slice());
+    }
+  });
+}
+
+function persistLogoLibrary(arr) {
+  _memLogoLibrary = arr;
+  return new Promise(function(resolve) {
+    if (window.storage) {
+      window.storage.set("logo_library", JSON.stringify(arr)).then(function() {
+        resolve();
+      }).catch(function() { resolve(); });
+    } else {
+      resolve();
+    }
+  });
+}
+
 
 
 // ─────────────────────────────────────────────────────────────────
@@ -6133,6 +6163,8 @@ function App() {
   const backRef = useRef();
   const [exporting, setExporting] = useState(null); // null | 'svg'|'png'|'jpg'|'pdf'
   const [customCats, setCustomCats] = useState({});  // { catId: { name, templates: [] } }
+  const [logoLibrary, setLogoLibrary] = useState([]); // [{ id, name, dataUrl, dateAdded }]
+  const [renamingLogoId, setRenamingLogoId] = useState(null); // id of logo being renamed
   // customTemplates is derived from customCats — kept in sync when customCats updates
   var customTemplates = Object.values(customCats).reduce(function(acc, cat) { return acc.concat(cat.templates || []); }, []);
   const [analyzingBg, setAnalyzingBg] = useState(false);
@@ -6251,6 +6283,11 @@ function App() {
     loadCustomTemplatesFromStorage().then(function(data) { setCustomCats(data || {}); });
   }, []);
 
+  // Load logo library from storage
+  useEffect(function() {
+    loadLogoLibraryFromStorage().then(function(arr) { setLogoLibrary(arr || []); });
+  }, []);
+
   // Keep customCats in sync after any save
   var refreshCustomCats = function() {
     loadCustomTemplatesFromStorage().then(function(data) { setCustomCats(data || {}); });
@@ -6303,6 +6340,7 @@ function App() {
 
   const handleLogoUpload = function(e) {
     const f = e.target.files && e.target.files[0]; if (!f) return;
+    var logoName = f.name.replace(/\.[^.]+$/, '') || ("Logo " + (logoLibrary.length + 1));
     const reader = new FileReader();
     reader.onload = function(ev) {
       var dataUrl = ev.target.result;
@@ -6317,6 +6355,13 @@ function App() {
             logoColorSwapsFront: [], logoColorSwapsBack: [],
             logoAspect: aspect,
           });
+        });
+        // Auto-save to logo library
+        var newEntry = { id: "logo_" + Date.now(), name: logoName, dataUrl: dataUrl, dateAdded: new Date().toISOString() };
+        setLogoLibrary(function(prev) {
+          var updated = prev.concat([newEntry]);
+          persistLogoLibrary(updated);
+          return updated;
         });
       };
       img.onerror = function() {
@@ -8043,47 +8088,71 @@ const applyTemplate = function(t) {
                   })}
                 </div>
 
-                {/* ── Upload / Preset mode ── */}
+                {/* ── Upload / Library mode ── */}
                 {s.logoMode === "upload" && (
                   <div>
-                    {/* Preset logos */}
-                    <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 7 }}>Bundled Presets</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 12 }}>
-                      {/* Official logo - bundled preset */}
-                      <div
-                        onClick={function() { loadPresetLogo(LEGACY_LOGO_DEFAULT); }}
-                        style={{ border: "2px solid " + (s.uploadedLogo === LEGACY_LOGO_DEFAULT ? "#cc8800" : "#2a2a2a"), borderRadius: 8, padding: "8px 6px", cursor: "pointer", background: s.uploadedLogo === LEGACY_LOGO_DEFAULT ? "#1f0010" : "#1a1a1a", textAlign: "center" }}>
-                        <img src={LEGACY_LOGO_DEFAULT} alt="Default Logo" style={{ width: "100%", height: 52, objectFit: "contain", display: "block", marginBottom: 4 }} />
-                        <div style={{ fontSize: 9, color: s.uploadedLogo === LEGACY_LOGO_DEFAULT ? "#ffbb33" : "#666", fontWeight: 700 }}>PMI Logo</div>
-                      </div>
-                      {/* Add more presets here in the future */}
-                      <div style={{ border: "2px dashed #2a2a2a", borderRadius: 8, padding: "8px 6px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 76, opacity: 0.4 }}>
-                        <div style={{ fontSize: 20, marginBottom: 3 }}>＋</div>
-                        <div style={{ fontSize: 9, color: "#555" }}>Future preset</div>
-                      </div>
-                    </div>
-
-                    {/* Custom upload */}
-                    <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 7 }}>Custom Upload</div>
-                    <div
-                      onClick={function() { logoRef.current && logoRef.current.click(); }}
-                      style={{ border: "2px dashed #333", borderRadius: 10, padding: "12px", textAlign: "center", cursor: "pointer", background: "#141414", marginBottom: 8, transition: "border-color 0.2s" }}>
-                      {s.uploadedLogo && s.uploadedLogo !== LEGACY_LOGO_DEFAULT
-                        ? <img src={s.uploadedLogo} alt="logo" style={{ maxWidth: "100%", maxHeight: 80, objectFit: "contain", borderRadius: 4 }} />
-                        : <div>
-                            <div style={{ fontSize: 22, opacity: 0.25, marginBottom: 4 }}>⬆</div>
-                            <div style={{ fontSize: 11, color: "#666", fontWeight: 700 }}>Click to upload your own</div>
-                            <div style={{ fontSize: 10, color: "#444", marginTop: 2 }}>PNG, JPG, or SVG</div>
+                    <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 7 }}>Logo Library</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 12 }}>
+                      {/* Saved library logos */}
+                      {logoLibrary.map(function(entry) {
+                        var isActive = s.uploadedLogo === entry.dataUrl;
+                        var isRenaming = renamingLogoId === entry.id;
+                        return (
+                          <div key={entry.id}
+                            onClick={function() { if (!isRenaming) loadPresetLogo(entry.dataUrl); }}
+                            style={{ border: "2px solid " + (isActive ? "#cc8800" : "#2a2a2a"), borderRadius: 8, padding: "6px 4px", cursor: "pointer", background: isActive ? "#1f0010" : "#1a1a1a", textAlign: "center", position: "relative" }}>
+                            {/* Delete button */}
+                            <button onClick={function(ev) {
+                                ev.stopPropagation();
+                                setLogoLibrary(function(prev) {
+                                  var updated = prev.filter(function(l) { return l.id !== entry.id; });
+                                  persistLogoLibrary(updated);
+                                  return updated;
+                                });
+                                if (isActive) { setS(function(p) { return Object.assign({}, p, { uploadedLogo: null, logoMode: "none", processedLogoFront: null, processedLogoBack: null }); }); }
+                              }}
+                              style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.7)", border: "none", color: "#888", fontSize: 10, cursor: "pointer", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}
+                              title="Remove from library">✕</button>
+                            <img src={entry.dataUrl} alt={entry.name} style={{ width: "100%", height: 44, objectFit: "contain", display: "block", marginBottom: 3 }} />
+                            {isRenaming ? (
+                              <input
+                                autoFocus
+                                defaultValue={entry.name}
+                                onClick={function(ev) { ev.stopPropagation(); }}
+                                onBlur={function(ev) {
+                                  var newName = ev.target.value.trim() || entry.name;
+                                  setLogoLibrary(function(prev) {
+                                    var updated = prev.map(function(l) { return l.id === entry.id ? Object.assign({}, l, { name: newName }) : l; });
+                                    persistLogoLibrary(updated);
+                                    return updated;
+                                  });
+                                  setRenamingLogoId(null);
+                                }}
+                                onKeyDown={function(ev) { if (ev.key === "Enter") ev.target.blur(); if (ev.key === "Escape") setRenamingLogoId(null); }}
+                                style={{ width: "100%", fontSize: 8, background: "#0a0a0a", border: "1px solid #cc8800", borderRadius: 3, color: "#ffbb33", padding: "1px 3px", textAlign: "center", outline: "none", boxSizing: "border-box" }}
+                              />
+                            ) : (
+                              <div
+                                onClick={function(ev) { ev.stopPropagation(); setRenamingLogoId(entry.id); }}
+                                title="Click to rename"
+                                style={{ fontSize: 8, color: isActive ? "#ffbb33" : "#666", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "text" }}>
+                                {entry.name}
+                              </div>
+                            )}
                           </div>
-                      }
+                        );
+                      })}
+
+                      {/* Upload tile */}
+                      <div
+                        onClick={function() { logoRef.current && logoRef.current.click(); }}
+                        style={{ border: "2px dashed #2a2a2a", borderRadius: 8, padding: "6px 4px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 68, cursor: "pointer", background: "#141414", transition: "border-color 0.2s" }}>
+                        <div style={{ fontSize: 18, opacity: 0.3, marginBottom: 2 }}>+</div>
+                        <div style={{ fontSize: 8, color: "#555", fontWeight: 700 }}>Upload</div>
+                        <div style={{ fontSize: 7, color: "#444" }}>PNG / JPG / SVG</div>
+                      </div>
                     </div>
                     <input ref={logoRef} type="file" accept="image/*,.svg" onChange={handleLogoUpload} style={{ display: "none" }} />
-                    {s.uploadedLogo && s.uploadedLogo !== LEGACY_LOGO_DEFAULT && (
-                      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                        <button onClick={function() { logoRef.current && logoRef.current.click(); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: "#222", border: "1px solid #333", color: "#bbb", fontSize: 11, cursor: "pointer" }}>Replace</button>
-                        <button onClick={function() { loadPresetLogo(LEGACY_LOGO_DEFAULT); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: "#222", border: "1px solid #333", color: "#888", fontSize: 11, cursor: "pointer" }}>↺ Use PMI Logo</button>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -8099,8 +8168,9 @@ const applyTemplate = function(t) {
               </Sec>
               {s.logoMode === "upload" && s.uploadedLogo && (
                 <React.Fragment>
-                <Sec title="Logo Colors" defaultOpen={true}>
-                  <div style={{ fontSize: 11, color: "#888", marginBottom: 12, lineHeight: 1.5 }}>Set text and ribbon colors for each side. Changes are applied directly to the logo image.</div>
+                {s.uploadedLogo === LEGACY_LOGO_DEFAULT && (
+                <Sec title="PMI Logo Colors" defaultOpen={true}>
+                  <div style={{ fontSize: 11, color: "#888", marginBottom: 12, lineHeight: 1.5 }}>Set text and ribbon colors for the PMI logo. Changes are applied directly to the logo image.</div>
 
                   <div style={{ fontSize: 11, color: "#cc8800", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Front</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -8158,6 +8228,7 @@ const applyTemplate = function(t) {
                     }} style={{ fontSize: 10, background: "#333", border: "none", color: "#aaa", borderRadius: 4, padding: "2px 6px", cursor: "pointer" }}>Reset</button>}
                   </div>
                 </Sec>
+                )}
                 <Sec title="Front Image Adjustments" defaultOpen={true}>
                   <SL label="Brightness" value={s.imageFxFront.brightness} onChange={function(v) { upFxFront("brightness", v); }} min={20} max={200} unit="%" onReset={function() { upFxFront("brightness", 100); }} />
                   <SL label="Contrast" value={s.imageFxFront.contrast} onChange={function(v) { upFxFront("contrast", v); }} min={20} max={200} unit="%" onReset={function() { upFxFront("contrast", 100); }} />
@@ -8174,7 +8245,7 @@ const applyTemplate = function(t) {
               )}
               {s.logoMode === "upload" && s.uploadedLogo && (
                 <React.Fragment>
-                <Sec title="Front Color Replacement" defaultOpen={false}>
+                <Sec title="Front Color Replacement" defaultOpen={s.uploadedLogo !== LEGACY_LOGO_DEFAULT}>
                   <p style={{ fontSize: 11, color: "#555", margin: "0 0 10px", lineHeight: 1.5 }}>Replace colors in the front logo independently.</p>
                   <LogoColorEditor
                     originalLogo={s.uploadedLogo}
@@ -8184,7 +8255,7 @@ const applyTemplate = function(t) {
                     onProcessed={function(dataUrl) { up("processedLogoFront", dataUrl); }}
                   />
                 </Sec>
-                <Sec title="Back Color Replacement" defaultOpen={false}>
+                <Sec title="Back Color Replacement" defaultOpen={s.uploadedLogo !== LEGACY_LOGO_DEFAULT}>
                   <p style={{ fontSize: 11, color: "#555", margin: "0 0 10px", lineHeight: 1.5 }}>Replace colors in the back logo independently.</p>
                   <LogoColorEditor
                     originalLogo={s.uploadedLogo}
