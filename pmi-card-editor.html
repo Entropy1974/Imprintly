@@ -5,6 +5,254 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Imprintly — Professional Business Card Creator</title>
   <style>
+    /* ═══════════════════════════════════════════════
+       IMPRINTLY DESIGN TOKENS
+       CSS Custom Properties for theming & responsive
+       ═══════════════════════════════════════════════ */
+    :root {
+      /* ── Color: Backgrounds ── */
+      --bg-app: #0a0a0a;
+      --bg-input: #111;
+      --bg-panel: #1a1a1a;
+      --bg-elevated: #222;
+      --bg-subtle: #252525;
+
+      /* ── Color: Text ── */
+      --text-primary: #ddd;
+      --text-secondary: #888;
+      --text-tertiary: #666;
+      --text-muted: #555;
+      --text-bright: #fff;
+      --text-error: #ff6b6b;
+      --text-success: #6fc96f;
+
+      /* ── Color: Borders ── */
+      --border-default: #333;
+      --border-subtle: #2a2a2a;
+      --border-faint: #252525;
+
+      /* ── Color: Accents ── */
+      --accent-primary: #cc8800;
+      --accent-primary-light: #ffbb33;
+      --accent-primary-bg: #1a1200;
+      --accent-blue: #5599dd;
+      --accent-blue-text: #7070cf;
+      --accent-blue-bg: #1a1a2a;
+      --accent-blue-border: #2a2a5a;
+      --accent-green: #6fc96f;
+      --accent-green-bg: #1a3a1a;
+      --accent-green-border: #2a5a2a;
+      --accent-red: #ff6b6b;
+      --accent-red-bg: #3a1515;
+      --accent-red-border: #5a2525;
+
+      /* ── Typography ── */
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-card: "Montserrat", sans-serif;
+      --fs-2xs: 8px;
+      --fs-xs: 9px;
+      --fs-sm: 10px;
+      --fs-base: 11px;
+      --fs-md: 12px;
+      --fs-lg: 13px;
+      --fs-xl: 15px;
+
+      /* ── Spacing ── */
+      --sp-1: 2px;
+      --sp-2: 4px;
+      --sp-3: 6px;
+      --sp-4: 8px;
+      --sp-5: 10px;
+      --sp-6: 12px;
+      --sp-7: 14px;
+      --sp-8: 16px;
+      --sp-9: 20px;
+      --sp-10: 24px;
+
+      /* ── Border Radius ── */
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 10px;
+      --radius-pill: 20px;
+
+      /* ── Shadows ── */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.5);
+
+      /* ── Layout ── */
+      --sidebar-min: 280px;
+      --sidebar-max: 700px;
+      --sidebar-default: 340px;
+      --header-height: 48px;
+      --toolbar-height: 36px;
+
+      /* ── Transitions ── */
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.25s ease;
+
+      /* ── Z-Index ── */
+      --z-sidebar: 10;
+      --z-overlay: 100;
+      --z-modal: 200;
+      --z-tooltip: 300;
+
+      /* ── Breakpoints (for reference in JS — CSS uses media queries) ── */
+      /* Phone:  < 600px  */
+      /* Tablet: 600-1024px */
+      /* Desktop: > 1024px */
+    }
+
+    /* ── Responsive breakpoints ── */
+    @media (max-width: 1024px) {
+      :root {
+        --fs-base: 12px;
+        --fs-sm: 11px;
+        --header-height: 44px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      :root {
+        --fs-base: 13px;
+        --fs-sm: 12px;
+        --header-height: 40px;
+      }
+    }
+
+    /* ── Base resets for responsive ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-app);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Touch target minimum ── */
+    @media (pointer: coarse) {
+      button, [role="button"], input[type="checkbox"], input[type="radio"] {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      input, select, textarea {
+        min-height: 44px;
+        font-size: max(16px, var(--fs-md));  /* Prevent iOS zoom */
+      }
+    }
+
+    /* ── Utility classes ── */
+    .imp-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-6);
+    }
+
+    .imp-input {
+      width: 100%;
+      font-size: var(--fs-base);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: var(--sp-2) var(--sp-4);
+    }
+
+    .imp-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-2);
+      padding: var(--sp-3) var(--sp-4);
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: var(--fs-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity var(--transition-fast), background var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .imp-btn:hover { opacity: 0.85; }
+    .imp-btn:active { opacity: 0.7; }
+
+    .imp-btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), #996600);
+      color: var(--text-bright);
+    }
+
+    .imp-btn-secondary {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      color: var(--text-secondary);
+    }
+
+    .imp-btn-success {
+      background: var(--accent-green-bg);
+      border: 1px solid var(--accent-green-border);
+      color: var(--accent-green);
+    }
+
+    .imp-btn-danger {
+      background: var(--accent-red-bg);
+      border: 1px solid var(--accent-red-border);
+      color: var(--accent-red);
+    }
+
+    .imp-label {
+      font-size: var(--fs-sm);
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .imp-section {
+      margin-bottom: var(--sp-6);
+    }
+
+    .imp-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+    }
+
+    .imp-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+    }
+
+    .imp-stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+
+    .imp-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-4);
+    }
+
+    /* ── Scrollbar styling (dark theme) ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
     body { font-family: 'Montserrat', sans-serif; }
