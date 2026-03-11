@@ -481,7 +481,6 @@ const TEMPLATE_CATEGORIES = [
   { id: "bold",      label: "Bold & Creative" },
   { id: "gradient",  label: "Gradient" },
   { id: "dark",      label: "Dark & Moody" },
-  { id: "pmi",       label: "Signature" },
 ];
 
 // Helper: shared style presets
@@ -511,566 +510,350 @@ var TREB = "'Trebuchet MS', sans-serif";
 var COUR = "'Courier New', monospace";
 var ARIB = "'Arial Black', sans-serif";
 
-// mkStyles(nameColor, titleColor, bodyColor, accentColor, fontFamily,
-//          nameSz?, titleSz?, bodySz?, nameBold?, titleItalic?)
+// ─────────────────────────────────────────────────────────────────
+// resolveTemplate: merge base + variation + optional font override
+// ─────────────────────────────────────────────────────────────────
+function resolveTemplate(base, variation, fontFamily) {
+  var merged = Object.assign({}, base.baseConfig, variation.config);
+  var srcStyles = variation.styles;
+  var styles;
+  if (fontFamily && srcStyles.personName && fontFamily !== srcStyles.personName.fontFamily) {
+    styles = {};
+    Object.keys(srcStyles).forEach(function(k) {
+      if (srcStyles[k] && typeof srcStyles[k] === "object" && srcStyles[k].fontFamily) {
+        styles[k] = Object.assign({}, srcStyles[k], { fontFamily: fontFamily });
+      } else {
+        styles[k] = srcStyles[k];
+      }
+    });
+  } else {
+    styles = srcStyles;
+  }
+  return {
+    id: base.id + "__" + variation.id,
+    category: base.category,
+    name: base.name + " — " + variation.label,
+    description: base.description,
+    isModernSplit: base.isModernSplit || false,
+    config: merged,
+    styles: styles,
+    preview: {
+      left: merged.lightBg || "#111",
+      right: merged.darkBg || "#111",
+      accent: merged.accentColor || "#888",
+      text: "#ffffff",
+    },
+  };
+}
 
-var TEMPLATES = [
+// ─────────────────────────────────────────────────────────────────
+// BASE_TEMPLATES: grouped by structure, with color/font variations
+// ─────────────────────────────────────────────────────────────────
+var BASE_TEMPLATES = [
 
-  // ══ PMI Signature ════════════════════════════════════════════════
+  // ══ Modern Split ═══════════════════════════════════════════════
+  // Diagonal split with arc swoosh — the core split design
   {
-    id: "pmi_clean_white", category: "pmi",
-    name: "Clean White", description: "White card with fading pink arc — matches reference Image 1",
-    preview: { left: "#ffffff", right: "#ffffff", accent: "#e91e8c", text: "#1a1a1a" },
-    config: {
-      lightBg: "#ffffff", darkBg: "#ffffff",
-      accentColor: "#e91e8c", accentColorEnd: "#e91e8c",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#e91e8c", swooshFadeEnd: "#e91e8c",
-      swooshThickness: 20, swooshOpacity: 90,
-      iconColor: "#e91e8c", dividerColor: "#e91e8c",
-    },
-    styles: mkStyles("#1a1a1a","#555","#333","#e91e8c","'Montserrat', sans-serif"),
-  },
-  {
-    id: "pmi_split_dark", category: "pmi",
-    name: "Split Dark", description: "Split dark/light with solid pink arc — matches reference Image 2",
-    preview: { left: "#f2f2f2", right: "#3a3a3a", accent: "#d4006e", text: "#ffffff" },
-    config: {
-      lightBg: "#f2f2f2", darkBg: "#3a3a3a",
-      accentColor: "#d4006e", accentColorEnd: "#9a0050",
-      splitPosition: 42, splitAngle: 83,
+    id: "modern_split", category: "modern",
+    name: "Modern Split", description: "Bold diagonal split with arc swoosh",
+    baseConfig: {
+      splitPosition: 42, splitAngle: 84,
       swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#d4006e", swooshFadeEnd: "#9a0050",
-      swooshThickness: 14, swooshOpacity: 92,
-      iconColor: "#d4006e", dividerColor: "#d4006e",
+      swooshThickness: 12, swooshOpacity: 88,
     },
-    styles: mkStyles("#ffffff","#cccccc","#dddddd","#d4006e","'Montserrat', sans-serif"),
-  },
-  {
-    id: "pmi_split_dark_deep", category: "pmi",
-    name: "Deep Split", description: "Deeper split with richer dark panel and magenta accent",
-    preview: { left: "#f0f0f0", right: "#1e1e1e", accent: "#ff2080", text: "#ffffff" },
-    config: {
-      lightBg: "#f0f0f0", darkBg: "#1e1e1e",
-      accentColor: "#ff2080", accentColorEnd: "#a0005a",
-      splitPosition: 38, splitAngle: 82,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#ff2080", swooshFadeEnd: "#a0005a",
-      swooshThickness: 16, swooshOpacity: 95,
-      iconColor: "#ff2080", dividerColor: "#ff2080",
-    },
-    styles: mkStyles("#ffffff","#bbbbbb","#cccccc","#ff2080","'Montserrat', sans-serif"),
-  },
-  {
-    id: "pmi_midnight", category: "pmi",
-    name: "Midnight", description: "All-dark card with glowing pink arc",
-    preview: { left: "#111111", right: "#1a1a1a", accent: "#ff2090", text: "#ffffff" },
-    config: {
-      lightBg: "#111111", darkBg: "#1a1a1a",
-      accentColor: "#ff2090", accentColorEnd: "#c0006a",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#ff2090", swooshFadeEnd: "#ff2090",
-      swooshThickness: 18, swooshOpacity: 88,
-      iconColor: "#ff2090", dividerColor: "#ff2090",
-    },
-    styles: mkStyles("#ffffff","#dddddd","#cccccc","#ff2090","'Montserrat', sans-serif"),
-  },
-  {
-    id: "pmi_rose_gold", category: "pmi",
-    name: "Rose Gold", description: "Warm cream background with rose gold arc",
-    preview: { left: "#faf5f0", right: "#2a1a14", accent: "#c8736a", text: "#ffffff" },
-    config: {
-      lightBg: "#faf5f0", darkBg: "#2a1a14",
-      accentColor: "#c8736a", accentColorEnd: "#8a3020",
-      splitPosition: 44, splitAngle: 85,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#c8736a", swooshFadeEnd: "#8a3020",
-      swooshThickness: 14, swooshOpacity: 90,
-      iconColor: "#c8736a", dividerColor: "#c8736a",
-    },
-    styles: mkStyles("#ffffff","#e0c8b8","#d0b8a8","#c8736a","'Montserrat', sans-serif"),
-  },
-  {
-    id: "pmi_navy_pink", category: "pmi",
-    name: "Navy Pink", description: "Navy split with signature pink arc",
-    preview: { left: "#f4f6fb", right: "#0d1b3e", accent: "#e91e8c", text: "#ffffff" },
-    config: {
-      lightBg: "#f4f6fb", darkBg: "#0d1b3e",
-      accentColor: "#e91e8c", accentColorEnd: "#9a0050",
-      splitPosition: 40, splitAngle: 84,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#e91e8c", swooshFadeEnd: "#9a0050",
-      swooshThickness: 14, swooshOpacity: 92,
-      iconColor: "#e91e8c", dividerColor: "#e91e8c",
-    },
-    styles: mkStyles("#ffffff","#99b4e0","#aac0e8","#e91e8c","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+      { id: "treb", label: "Trebuchet", family: TREB },
+    ],
+    variations: [
+      { id: "violet", label: "Violet", swatch: "#7c3aed",
+        config: { lightBg: "#f0eeff", darkBg: "#1a0a40", accentColor: "#7c3aed", accentColorEnd: "#4a1090", swooshFadeStart: "#7c3aed", swooshFadeEnd: "#4a1090", iconColor: "#7c3aed", dividerColor: "#7c3aed" },
+        styles: mkStyles("#ffffff","#c0a0ff","#d0b8ff","#7c3aed", MONT) },
+      { id: "emerald", label: "Emerald", swatch: "#10b981",
+        config: { lightBg: "#e8f8f0", darkBg: "#0a2818", accentColor: "#10b981", accentColorEnd: "#047857", swooshFadeStart: "#10b981", swooshFadeEnd: "#047857", iconColor: "#10b981", dividerColor: "#10b981", splitPosition: 44, splitAngle: 86 },
+        styles: mkStyles("#ffffff","#80d8b0","#90e0c0","#10b981", MONT) },
+      { id: "coral", label: "Coral", swatch: "#f97316",
+        config: { lightBg: "#fff5f0", darkBg: "#2a1008", accentColor: "#f97316", accentColorEnd: "#c24a00", swooshFadeStart: "#f97316", swooshFadeEnd: "#c24a00", iconColor: "#f97316", dividerColor: "#f97316", swooshThickness: 14, swooshOpacity: 90, splitAngle: 83 },
+        styles: mkStyles("#ffffff","#f0a880","#f0b898","#f97316", MONT) },
+      { id: "navy", label: "Navy", swatch: "#3b82f6",
+        config: { lightBg: "#eef4ff", darkBg: "#0a1830", accentColor: "#3b82f6", accentColorEnd: "#1d4ed8", swooshFadeStart: "#3b82f6", swooshFadeEnd: "#1d4ed8", iconColor: "#3b82f6", dividerColor: "#3b82f6", splitPosition: 40 },
+        styles: mkStyles("#ffffff","#90b8f8","#a0c8ff","#3b82f6", MONT) },
+      { id: "pink", label: "Pink", swatch: "#d4006e",
+        config: { lightBg: "#f2f2f2", darkBg: "#3a3a3a", accentColor: "#d4006e", accentColorEnd: "#9a0050", swooshFadeStart: "#d4006e", swooshFadeEnd: "#9a0050", swooshThickness: 14, swooshOpacity: 92, splitAngle: 83 },
+        styles: mkStyles("#ffffff","#cccccc","#dddddd","#d4006e", MONT) },
+      { id: "magenta", label: "Deep Magenta", swatch: "#ff2080",
+        config: { lightBg: "#f0f0f0", darkBg: "#1e1e1e", accentColor: "#ff2080", accentColorEnd: "#a0005a", swooshFadeStart: "#ff2080", swooshFadeEnd: "#a0005a", swooshThickness: 16, swooshOpacity: 95, splitPosition: 38, splitAngle: 82 },
+        styles: mkStyles("#ffffff","#bbbbbb","#cccccc","#ff2080", MONT) },
+      { id: "rose_gold", label: "Rose Gold", swatch: "#c8736a",
+        config: { lightBg: "#faf5f0", darkBg: "#2a1a14", accentColor: "#c8736a", accentColorEnd: "#8a3020", swooshFadeStart: "#c8736a", swooshFadeEnd: "#8a3020", swooshThickness: 14, swooshOpacity: 90, splitPosition: 44, splitAngle: 85 },
+        styles: mkStyles("#ffffff","#e0c8b8","#d0b8a8","#c8736a", MONT) },
+      { id: "navy_pink", label: "Navy Pink", swatch: "#e91e8c",
+        config: { lightBg: "#f4f6fb", darkBg: "#0d1b3e", accentColor: "#e91e8c", accentColorEnd: "#9a0050", swooshFadeStart: "#e91e8c", swooshFadeEnd: "#9a0050", swooshThickness: 14, swooshOpacity: 92, splitPosition: 40, splitAngle: 84 },
+        styles: mkStyles("#ffffff","#99b4e0","#aac0e8","#e91e8c", MONT) },
+    ],
   },
 
-  // ══ Executive ════════════════════════════════════════════════════
+  // ══ Modern Void ════════════════════════════════════════════════
+  // Modern split layout with watermark
   {
-    id: "exec_navy_gold", category: "executive",
-    name: "Navy Gold", description: "Classic navy with gold accents",
-    preview: { left: "#f8f6f0", right: "#0a1628", accent: "#c9a84c", text: "#ffffff" },
-    config: {
-      lightBg: "#f8f6f0", darkBg: "#0a1628",
-      accentColor: "#c9a84c", accentColorEnd: "#8a6820",
-      splitPosition: 42, splitAngle: 86,
-      swooshVisible: true, swooshStyle: "diagonal", swooshFade: false,
-      swooshFadeStart: "#c9a84c", swooshFadeEnd: "#8a6820",
-      swooshThickness: 8, swooshOpacity: 85,
-      iconColor: "#c9a84c", dividerColor: "#c9a84c",
-    },
-    styles: mkStyles("#ffffff","#c9a84c","#d0c0a0","#c9a84c","'Montserrat', sans-serif"),
-  },
-  {
-    id: "exec_charcoal_gold", category: "executive",
-    name: "Charcoal Gold", description: "Sophisticated charcoal with warm gold",
-    preview: { left: "#f5f4f0", right: "#2c2c2c", accent: "#d4a840", text: "#ffffff" },
-    config: {
-      lightBg: "#f5f4f0", darkBg: "#2c2c2c",
-      accentColor: "#d4a840", accentColorEnd: "#8a6010",
-      splitPosition: 44, splitAngle: 87,
-      swooshVisible: true, swooshStyle: "slash", swooshFade: false,
-      swooshFadeStart: "#d4a840", swooshFadeEnd: "#8a6010",
-      swooshThickness: 6, swooshOpacity: 80,
-      iconColor: "#d4a840", dividerColor: "#d4a840",
-    },
-    styles: mkStyles("#ffffff","#d4a840","#ccbbaa","#d4a840","'Montserrat', sans-serif"),
-  },
-  {
-    id: "exec_slate_silver", category: "executive",
-    name: "Slate Silver", description: "Cool slate tones with silver details",
-    preview: { left: "#f0f2f4", right: "#2a3340", accent: "#8aa8c8", text: "#ffffff" },
-    config: {
-      lightBg: "#f0f2f4", darkBg: "#2a3340",
-      accentColor: "#8aa8c8", accentColorEnd: "#4a6888",
+    id: "modern_void", category: "modern",
+    name: "Modern Void", description: "Deep 4-panel modern layout with watermark",
+    isModernSplit: true,
+    baseConfig: {
       splitPosition: 40, splitAngle: 85,
-      swooshVisible: true, swooshStyle: "arc_low", swooshFade: false,
-      swooshFadeStart: "#8aa8c8", swooshFadeEnd: "#4a6888",
-      swooshThickness: 10, swooshOpacity: 80,
-      iconColor: "#8aa8c8", dividerColor: "#8aa8c8",
+      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
+      swooshThickness: 14, swooshOpacity: 85,
+      msWatermarkColor: "#6b21ff", msWatermarkOpacity: 9,
     },
-    styles: mkStyles("#ffffff","#a0c0d8","#b0cce0","#8aa8c8","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+    ],
+    variations: [
+      { id: "void", label: "Violet", swatch: "#6b21ff",
+        config: { lightBg: "#f0f2ff", darkBg: "#1a1d3e", accentColor: "#6b21ff", accentColorEnd: "#3a0090", swooshFadeStart: "#6b21ff", swooshFadeEnd: "#6b21ff", iconColor: "#6b21ff", dividerColor: "#6b21ff" },
+        styles: mkStyles("#ffffff","#b090ff","#c0a8ff","#6b21ff", MONT) },
+    ],
   },
+
+  // ══ Modern Ribbon ══════════════════════════════════════════════
+  // Split with brand ribbon swoosh
   {
-    id: "exec_ivory_black", category: "executive",
-    name: "Ivory Black", description: "Timeless ivory and black with minimal styling",
-    preview: { left: "#f8f6ee", right: "#1a1a1a", accent: "#444444", text: "#ffffff" },
-    config: {
-      lightBg: "#f8f6ee", darkBg: "#1a1a1a",
-      accentColor: "#444444", accentColorEnd: "#222222",
+    id: "modern_ribbon", category: "modern",
+    name: "Modern Ribbon", description: "Monochrome split with subtle ribbon accent",
+    baseConfig: {
+      splitPosition: 42, splitAngle: 86,
+      swooshVisible: true, swooshStyle: "brand_ribbon", swooshFade: false,
+      swooshThickness: 6, swooshOpacity: 70,
+    },
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+    ],
+    variations: [
+      { id: "mono", label: "Mono", swatch: "#888888",
+        config: { lightBg: "#f4f4f4", darkBg: "#1c1c1c", accentColor: "#888888", accentColorEnd: "#444444", swooshFadeStart: "#888888", swooshFadeEnd: "#444444", iconColor: "#888888", dividerColor: "#888888" },
+        styles: mkStyles("#ffffff","#aaaaaa","#bbbbbb","#888888", MONT) },
+    ],
+  },
+
+  // ══ Executive ══════════════════════════════════════════════════
+  // Professional split with varied swoosh styles per variation
+  {
+    id: "executive", category: "executive",
+    name: "Executive", description: "Professional split with refined accent lines",
+    baseConfig: {
+      splitPosition: 42, splitAngle: 86,
+      swooshVisible: true, swooshThickness: 8, swooshOpacity: 85,
+    },
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+      { id: "cour", label: "Mono", family: COUR },
+    ],
+    variations: [
+      { id: "navy_gold", label: "Navy Gold", swatch: "#c9a84c",
+        config: { lightBg: "#f8f6f0", darkBg: "#0a1628", accentColor: "#c9a84c", accentColorEnd: "#8a6820", swooshStyle: "diagonal", swooshFade: false, swooshFadeStart: "#c9a84c", swooshFadeEnd: "#8a6820", iconColor: "#c9a84c", dividerColor: "#c9a84c" },
+        styles: mkStyles("#ffffff","#c9a84c","#d0c0a0","#c9a84c", MONT) },
+      { id: "charcoal_gold", label: "Charcoal Gold", swatch: "#d4a840",
+        config: { lightBg: "#f5f4f0", darkBg: "#2c2c2c", accentColor: "#d4a840", accentColorEnd: "#8a6010", swooshStyle: "slash", swooshFade: false, swooshFadeStart: "#d4a840", swooshFadeEnd: "#8a6010", swooshThickness: 6, swooshOpacity: 80, splitPosition: 44, splitAngle: 87, iconColor: "#d4a840", dividerColor: "#d4a840" },
+        styles: mkStyles("#ffffff","#d4a840","#ccbbaa","#d4a840", MONT) },
+      { id: "slate_silver", label: "Slate Silver", swatch: "#8aa8c8",
+        config: { lightBg: "#f0f2f4", darkBg: "#2a3340", accentColor: "#8aa8c8", accentColorEnd: "#4a6888", swooshStyle: "arc_low", swooshFade: false, swooshFadeStart: "#8aa8c8", swooshFadeEnd: "#4a6888", swooshThickness: 10, swooshOpacity: 80, splitPosition: 40, splitAngle: 85, iconColor: "#8aa8c8", dividerColor: "#8aa8c8" },
+        styles: mkStyles("#ffffff","#a0c0d8","#b0cce0","#8aa8c8", MONT) },
+      { id: "blueprint", label: "Blueprint", swatch: "#4a80c8",
+        config: { lightBg: "#e8eef8", darkBg: "#1a2a4a", accentColor: "#4a80c8", accentColorEnd: "#2050a0", swooshStyle: "arc_top", swooshFade: false, swooshFadeStart: "#4a80c8", swooshFadeEnd: "#2050a0", swooshThickness: 10, swooshOpacity: 85, splitPosition: 38, splitAngle: 83, iconColor: "#4a80c8", dividerColor: "#4a80c8" },
+        styles: mkStyles("#ffffff","#88b0e0","#99bce8","#4a80c8", MONT) },
+    ],
+  },
+
+  // ══ Executive Minimal ══════════════════════════════════════════
+  {
+    id: "exec_minimal", category: "executive",
+    name: "Executive Minimal", description: "Timeless ivory and black with minimal styling",
+    baseConfig: {
       splitPosition: 46, splitAngle: 90,
       swooshVisible: false, swooshStyle: "arc",
       swooshThickness: 8, swooshOpacity: 70,
-      iconColor: "#888888", dividerColor: "#888888",
     },
-    styles: mkStyles("#ffffff","#aaaaaa","#bbbbbb","#888888","'Montserrat', sans-serif"),
-  },
-  {
-    id: "exec_blueprint", category: "executive",
-    name: "Blueprint", description: "Technical blueprint blue with white lines",
-    preview: { left: "#e8eef8", right: "#1a2a4a", accent: "#4a80c8", text: "#ffffff" },
-    config: {
-      lightBg: "#e8eef8", darkBg: "#1a2a4a",
-      accentColor: "#4a80c8", accentColorEnd: "#2050a0",
-      splitPosition: 38, splitAngle: 83,
-      swooshVisible: true, swooshStyle: "arc_top", swooshFade: false,
-      swooshFadeStart: "#4a80c8", swooshFadeEnd: "#2050a0",
-      swooshThickness: 10, swooshOpacity: 85,
-      iconColor: "#4a80c8", dividerColor: "#4a80c8",
-    },
-    styles: mkStyles("#ffffff","#88b0e0","#99bce8","#4a80c8","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+    ],
+    variations: [
+      { id: "ivory_black", label: "Ivory Black", swatch: "#444444",
+        config: { lightBg: "#f8f6ee", darkBg: "#1a1a1a", accentColor: "#444444", accentColorEnd: "#222222", iconColor: "#888888", dividerColor: "#888888" },
+        styles: mkStyles("#ffffff","#aaaaaa","#bbbbbb","#888888", MONT) },
+    ],
   },
 
-  // ══ Modern Split ═════════════════════════════════════════════════
+  // ══ Bold Arc ═══════════════════════════════════════════════════
+  // High-contrast splits with bold arc swoosh
   {
-    id: "modern_violet", category: "modern",
-    name: "Modern Violet", description: "Deep violet split with modern layout",
-    preview: { left: "#f0eeff", right: "#1a0a40", accent: "#7c3aed", text: "#ffffff" },
-    config: {
-      lightBg: "#f0eeff", darkBg: "#1a0a40",
-      accentColor: "#7c3aed", accentColorEnd: "#4a1090",
-      splitPosition: 42, splitAngle: 84,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#7c3aed", swooshFadeEnd: "#4a1090",
-      swooshThickness: 12, swooshOpacity: 88,
-      iconColor: "#7c3aed", dividerColor: "#7c3aed",
-    },
-    styles: mkStyles("#ffffff","#c0a0ff","#d0b8ff","#7c3aed","'Montserrat', sans-serif"),
-  },
-  {
-    id: "modern_void", category: "modern",
-    name: "Modern Void", description: "Deep navy 4-panel modern layout with violet accent",
-    preview: { left: "#f0f2ff", right: "#1a1d3e", accent: "#6b21ff", text: "#ffffff" },
-    config: {
-      lightBg: "#f0f2ff", darkBg: "#1a1d3e",
-      accentColor: "#6b21ff", accentColorEnd: "#3a0090",
-      splitPosition: 40, splitAngle: 85,
-      isModernSplit: true,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#6b21ff", swooshFadeEnd: "#6b21ff",
-      swooshThickness: 14, swooshOpacity: 85,
-      msWatermarkColor: "#6b21ff", msWatermarkOpacity: 9,
-      iconColor: "#6b21ff", dividerColor: "#6b21ff",
-    },
-    styles: mkStyles("#ffffff","#b090ff","#c0a8ff","#6b21ff","'Montserrat', sans-serif"),
-  },
-  {
-    id: "modern_emerald", category: "modern",
-    name: "Modern Emerald", description: "Rich emerald green split",
-    preview: { left: "#e8f8f0", right: "#0a2818", accent: "#10b981", text: "#ffffff" },
-    config: {
-      lightBg: "#e8f8f0", darkBg: "#0a2818",
-      accentColor: "#10b981", accentColorEnd: "#047857",
-      splitPosition: 44, splitAngle: 86,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#10b981", swooshFadeEnd: "#047857",
-      swooshThickness: 12, swooshOpacity: 88,
-      iconColor: "#10b981", dividerColor: "#10b981",
-    },
-    styles: mkStyles("#ffffff","#80d8b0","#90e0c0","#10b981","'Montserrat', sans-serif"),
-  },
-  {
-    id: "modern_coral", category: "modern",
-    name: "Modern Coral", description: "Warm coral with deep charcoal split",
-    preview: { left: "#fff5f0", right: "#2a1008", accent: "#f97316", text: "#ffffff" },
-    config: {
-      lightBg: "#fff5f0", darkBg: "#2a1008",
-      accentColor: "#f97316", accentColorEnd: "#c24a00",
-      splitPosition: 42, splitAngle: 83,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#f97316", swooshFadeEnd: "#c24a00",
-      swooshThickness: 14, swooshOpacity: 90,
-      iconColor: "#f97316", dividerColor: "#f97316",
-    },
-    styles: mkStyles("#ffffff","#f0a880","#f0b898","#f97316","'Montserrat', sans-serif"),
-  },
-  {
-    id: "modern_navy", category: "modern",
-    name: "Modern Navy", description: "Clean navy split with sky blue accent",
-    preview: { left: "#eef4ff", right: "#0a1830", accent: "#3b82f6", text: "#ffffff" },
-    config: {
-      lightBg: "#eef4ff", darkBg: "#0a1830",
-      accentColor: "#3b82f6", accentColorEnd: "#1d4ed8",
-      splitPosition: 40, splitAngle: 84,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#3b82f6", swooshFadeEnd: "#1d4ed8",
-      swooshThickness: 12, swooshOpacity: 88,
-      iconColor: "#3b82f6", dividerColor: "#3b82f6",
-    },
-    styles: mkStyles("#ffffff","#90b8f8","#a0c8ff","#3b82f6","'Montserrat', sans-serif"),
-  },
-  {
-    id: "modern_mono", category: "modern",
-    name: "Modern Mono", description: "Monochrome split with cool grey tones",
-    preview: { left: "#f4f4f4", right: "#1c1c1c", accent: "#888888", text: "#ffffff" },
-    config: {
-      lightBg: "#f4f4f4", darkBg: "#1c1c1c",
-      accentColor: "#888888", accentColorEnd: "#444444",
-      splitPosition: 42, splitAngle: 86,
-      swooshVisible: true, swooshStyle: "brand_ribbon", swooshFade: false,
-      swooshFadeStart: "#888888", swooshFadeEnd: "#444444",
-      swooshThickness: 6, swooshOpacity: 70,
-      iconColor: "#888888", dividerColor: "#888888",
-    },
-    styles: mkStyles("#ffffff","#aaaaaa","#bbbbbb","#888888","'Montserrat', sans-serif"),
-  },
-
-  // ══ Bold & Creative ══════════════════════════════════════════════
-  {
-    id: "bold_crimson", category: "bold",
-    name: "Bold Crimson", description: "High-contrast crimson with black",
-    preview: { left: "#fff0f0", right: "#1a0000", accent: "#dc2626", text: "#ffffff" },
-    config: {
-      lightBg: "#fff0f0", darkBg: "#1a0000",
-      accentColor: "#dc2626", accentColorEnd: "#7f1d1d",
+    id: "bold_arc", category: "bold",
+    name: "Bold Arc", description: "High-contrast split with bold arc swoosh",
+    baseConfig: {
       splitPosition: 38, splitAngle: 82,
       swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#dc2626", swooshFadeEnd: "#7f1d1d",
       swooshThickness: 16, swooshOpacity: 95,
-      iconColor: "#dc2626", dividerColor: "#dc2626",
     },
-    styles: mkStyles("#ffffff","#ff8888","#ff9999","#dc2626","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "arib", label: "Black", family: ARIB },
+      { id: "treb", label: "Trebuchet", family: TREB },
+    ],
+    variations: [
+      { id: "crimson", label: "Crimson", swatch: "#dc2626",
+        config: { lightBg: "#fff0f0", darkBg: "#1a0000", accentColor: "#dc2626", accentColorEnd: "#7f1d1d", swooshFadeStart: "#dc2626", swooshFadeEnd: "#7f1d1d", iconColor: "#dc2626", dividerColor: "#dc2626" },
+        styles: mkStyles("#ffffff","#ff8888","#ff9999","#dc2626", MONT) },
+      { id: "forest", label: "Forest", swatch: "#16a34a",
+        config: { lightBg: "#f0f8f0", darkBg: "#0a1e0a", accentColor: "#16a34a", accentColorEnd: "#14532d", swooshFadeStart: "#16a34a", swooshFadeEnd: "#14532d", swooshThickness: 12, swooshOpacity: 88, splitPosition: 40, splitAngle: 84, iconColor: "#16a34a", dividerColor: "#16a34a" },
+        styles: mkStyles("#ffffff","#80c080","#90d090","#16a34a", MONT) },
+      { id: "electric_blue", label: "Electric Blue", swatch: "#0ea5e9",
+        config: { lightBg: "#f0f8ff", darkBg: "#000a1e", accentColor: "#0ea5e9", accentColorEnd: "#0369a1", swooshFade: true, swooshFadeStart: "#0ea5e9", swooshFadeEnd: "#0ea5e9", swooshThickness: 18, swooshOpacity: 92, iconColor: "#0ea5e9", dividerColor: "#0ea5e9" },
+        styles: mkStyles("#ffffff","#70d0ff","#88d8ff","#0ea5e9", MONT) },
+    ],
   },
+
+  // ══ Bold Accent ════════════════════════════════════════════════
+  // Bold designs with unique swoosh styles
   {
-    id: "violet_luxury", category: "bold",
-    name: "Violet Luxury", description: "Rich violet with gold shimmer",
-    preview: { left: "#f8f0ff", right: "#1a0030", accent: "#9333ea", text: "#ffffff" },
-    config: {
-      lightBg: "#f8f0ff", darkBg: "#1a0030",
-      accentColor: "#9333ea", accentColorEnd: "#6d28d9",
+    id: "bold_accent", category: "bold",
+    name: "Bold Accent", description: "Statement designs with unique swoosh accents",
+    baseConfig: {
       splitPosition: 40, splitAngle: 84,
-      swooshVisible: true, swooshStyle: "double", swooshFade: false,
-      swooshFadeStart: "#9333ea", swooshFadeEnd: "#6d28d9",
+      swooshVisible: true, swooshFade: false,
       swooshThickness: 10, swooshOpacity: 90,
-      iconColor: "#9333ea", dividerColor: "#9333ea",
     },
-    styles: mkStyles("#ffffff","#d0a0ff","#e0b8ff","#9333ea","'Montserrat', sans-serif"),
-  },
-  {
-    id: "sunset_coral", category: "bold",
-    name: "Sunset Coral", description: "Vibrant coral orange with deep brown",
-    preview: { left: "#fff8f0", right: "#2a1000", accent: "#fb923c", text: "#ffffff" },
-    config: {
-      lightBg: "#fff8f0", darkBg: "#2a1000",
-      accentColor: "#fb923c", accentColorEnd: "#ea580c",
-      splitPosition: 44, splitAngle: 85,
-      swooshVisible: true, swooshStyle: "wave", swooshFade: false,
-      swooshFadeStart: "#fb923c", swooshFadeEnd: "#ea580c",
-      swooshThickness: 12, swooshOpacity: 90,
-      iconColor: "#fb923c", dividerColor: "#fb923c",
-    },
-    styles: mkStyles("#ffffff","#fda070","#ffb888","#fb923c","'Montserrat', sans-serif"),
-  },
-  {
-    id: "forest_pro", category: "bold",
-    name: "Forest Pro", description: "Deep forest green — confident and grounded",
-    preview: { left: "#f0f8f0", right: "#0a1e0a", accent: "#16a34a", text: "#ffffff" },
-    config: {
-      lightBg: "#f0f8f0", darkBg: "#0a1e0a",
-      accentColor: "#16a34a", accentColorEnd: "#14532d",
-      splitPosition: 40, splitAngle: 84,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#16a34a", swooshFadeEnd: "#14532d",
-      swooshThickness: 12, swooshOpacity: 88,
-      iconColor: "#16a34a", dividerColor: "#16a34a",
-    },
-    styles: mkStyles("#ffffff","#80c080","#90d090","#16a34a","'Montserrat', sans-serif"),
-  },
-  {
-    id: "bold_electric_blue", category: "bold",
-    name: "Electric Blue", description: "Bold electric blue with deep navy",
-    preview: { left: "#f0f8ff", right: "#000a1e", accent: "#0ea5e9", text: "#ffffff" },
-    config: {
-      lightBg: "#f0f8ff", darkBg: "#000a1e",
-      accentColor: "#0ea5e9", accentColorEnd: "#0369a1",
-      splitPosition: 38, splitAngle: 82,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#0ea5e9", swooshFadeEnd: "#0ea5e9",
-      swooshThickness: 18, swooshOpacity: 92,
-      iconColor: "#0ea5e9", dividerColor: "#0ea5e9",
-    },
-    styles: mkStyles("#ffffff","#70d0ff","#88d8ff","#0ea5e9","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+    ],
+    variations: [
+      { id: "violet_luxury", label: "Violet Luxury", swatch: "#9333ea",
+        config: { lightBg: "#f8f0ff", darkBg: "#1a0030", accentColor: "#9333ea", accentColorEnd: "#6d28d9", swooshStyle: "double", swooshFadeStart: "#9333ea", swooshFadeEnd: "#6d28d9", iconColor: "#9333ea", dividerColor: "#9333ea" },
+        styles: mkStyles("#ffffff","#d0a0ff","#e0b8ff","#9333ea", MONT) },
+      { id: "sunset_coral", label: "Sunset Coral", swatch: "#fb923c",
+        config: { lightBg: "#fff8f0", darkBg: "#2a1000", accentColor: "#fb923c", accentColorEnd: "#ea580c", swooshStyle: "wave", swooshThickness: 12, swooshFadeStart: "#fb923c", swooshFadeEnd: "#ea580c", splitPosition: 44, splitAngle: 85, iconColor: "#fb923c", dividerColor: "#fb923c" },
+        styles: mkStyles("#ffffff","#fda070","#ffb888","#fb923c", MONT) },
+    ],
   },
 
-  // ══ Minimal & Clean ══════════════════════════════════════════════
+  // ══ Minimal & Clean ════════════════════════════════════════════
+  // Full-bleed single-color cards with subtle accents
   {
-    id: "clean_mono", category: "minimal",
-    name: "Clean Mono", description: "Pure white with minimal black typography",
-    preview: { left: "#ffffff", right: "#ffffff", accent: "#1a1a1a", text: "#1a1a1a" },
-    config: {
-      lightBg: "#ffffff", darkBg: "#ffffff",
-      accentColor: "#1a1a1a", accentColorEnd: "#1a1a1a",
+    id: "minimal", category: "minimal",
+    name: "Minimal", description: "Clean full-bleed cards with subtle accent details",
+    baseConfig: {
       splitPosition: 100, splitAngle: 90,
-      swooshVisible: false, swooshStyle: "arc",
-      swooshThickness: 4, swooshOpacity: 60,
-      iconColor: "#444444", dividerColor: "#cccccc",
     },
-    styles: mkStyles("#1a1a1a","#555555","#444444","#1a1a1a","'Montserrat', sans-serif"),
-  },
-  {
-    id: "minimal_warm", category: "minimal",
-    name: "Minimal Warm", description: "Warm off-white with terracotta accent",
-    preview: { left: "#fdf8f0", right: "#fdf8f0", accent: "#c2773a", text: "#2a1a0a" },
-    config: {
-      lightBg: "#fdf8f0", darkBg: "#fdf8f0",
-      accentColor: "#c2773a", accentColorEnd: "#8a4010",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc_fade", swooshFade: true,
-      swooshFadeStart: "#c2773a", swooshFadeEnd: "#c2773a",
-      swooshThickness: 12, swooshOpacity: 75,
-      iconColor: "#c2773a", dividerColor: "#e0c0a0",
-    },
-    styles: mkStyles("#2a1a0a","#6a4020","#5a3010","#c2773a","'Montserrat', sans-serif"),
-  },
-  {
-    id: "minimal_ice", category: "minimal",
-    name: "Minimal Ice", description: "Crisp icy white with pale blue tones",
-    preview: { left: "#f4f8ff", right: "#f4f8ff", accent: "#64a8e0", text: "#1a2a3a" },
-    config: {
-      lightBg: "#f4f8ff", darkBg: "#f4f8ff",
-      accentColor: "#64a8e0", accentColorEnd: "#2870b0",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc_top", swooshFade: true,
-      swooshFadeStart: "#64a8e0", swooshFadeEnd: "#64a8e0",
-      swooshThickness: 10, swooshOpacity: 70,
-      iconColor: "#64a8e0", dividerColor: "#b0d0f0",
-    },
-    styles: mkStyles("#1a2a3a","#4a7090","#3a6080","#64a8e0","'Montserrat', sans-serif"),
-  },
-  {
-    id: "minimal_grey_pop", category: "minimal",
-    name: "Grey Pop", description: "Neutral grey with a single bold pop of color",
-    preview: { left: "#f2f2f2", right: "#f2f2f2", accent: "#e91e8c", text: "#1a1a1a" },
-    config: {
-      lightBg: "#f2f2f2", darkBg: "#f2f2f2",
-      accentColor: "#e91e8c", accentColorEnd: "#e91e8c",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#e91e8c", swooshFadeEnd: "#e91e8c",
-      swooshThickness: 14, swooshOpacity: 80,
-      iconColor: "#e91e8c", dividerColor: "#e91e8c",
-    },
-    styles: mkStyles("#1a1a1a","#555555","#444444","#e91e8c","'Montserrat', sans-serif"),
-  },
-  {
-    id: "minimal_earth", category: "minimal",
-    name: "Minimal Earth", description: "Natural earth tones — sand, clay, stone",
-    preview: { left: "#f5efe8", right: "#f5efe8", accent: "#8b5e3c", text: "#2a1a0a" },
-    config: {
-      lightBg: "#f5efe8", darkBg: "#f5efe8",
-      accentColor: "#8b5e3c", accentColorEnd: "#5a3010",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "brand_ribbon", swooshFade: false,
-      swooshFadeStart: "#8b5e3c", swooshFadeEnd: "#5a3010",
-      swooshThickness: 8, swooshOpacity: 72,
-      iconColor: "#8b5e3c", dividerColor: "#c8a888",
-    },
-    styles: mkStyles("#2a1a0a","#6a4020","#5a3010","#8b5e3c","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+      { id: "treb", label: "Trebuchet", family: TREB },
+    ],
+    variations: [
+      { id: "clean_mono", label: "Clean Mono", swatch: "#1a1a1a",
+        config: { lightBg: "#ffffff", darkBg: "#ffffff", accentColor: "#1a1a1a", accentColorEnd: "#1a1a1a", swooshVisible: false, swooshStyle: "arc", swooshThickness: 4, swooshOpacity: 60, iconColor: "#444444", dividerColor: "#cccccc" },
+        styles: mkStyles("#1a1a1a","#555555","#444444","#1a1a1a", MONT) },
+      { id: "warm", label: "Warm", swatch: "#c2773a",
+        config: { lightBg: "#fdf8f0", darkBg: "#fdf8f0", accentColor: "#c2773a", accentColorEnd: "#8a4010", swooshVisible: true, swooshStyle: "arc_fade", swooshFade: true, swooshFadeStart: "#c2773a", swooshFadeEnd: "#c2773a", swooshThickness: 12, swooshOpacity: 75, iconColor: "#c2773a", dividerColor: "#e0c0a0" },
+        styles: mkStyles("#2a1a0a","#6a4020","#5a3010","#c2773a", MONT) },
+      { id: "ice", label: "Ice", swatch: "#64a8e0",
+        config: { lightBg: "#f4f8ff", darkBg: "#f4f8ff", accentColor: "#64a8e0", accentColorEnd: "#2870b0", swooshVisible: true, swooshStyle: "arc_top", swooshFade: true, swooshFadeStart: "#64a8e0", swooshFadeEnd: "#64a8e0", swooshThickness: 10, swooshOpacity: 70, iconColor: "#64a8e0", dividerColor: "#b0d0f0" },
+        styles: mkStyles("#1a2a3a","#4a7090","#3a6080","#64a8e0", MONT) },
+      { id: "grey_pop", label: "Grey Pop", swatch: "#e91e8c",
+        config: { lightBg: "#f2f2f2", darkBg: "#f2f2f2", accentColor: "#e91e8c", accentColorEnd: "#e91e8c", swooshVisible: true, swooshStyle: "arc", swooshFade: true, swooshFadeStart: "#e91e8c", swooshFadeEnd: "#e91e8c", swooshThickness: 14, swooshOpacity: 80, iconColor: "#e91e8c", dividerColor: "#e91e8c" },
+        styles: mkStyles("#1a1a1a","#555555","#444444","#e91e8c", MONT) },
+      { id: "earth", label: "Earth", swatch: "#8b5e3c",
+        config: { lightBg: "#f5efe8", darkBg: "#f5efe8", accentColor: "#8b5e3c", accentColorEnd: "#5a3010", swooshVisible: true, swooshStyle: "brand_ribbon", swooshFade: false, swooshFadeStart: "#8b5e3c", swooshFadeEnd: "#5a3010", swooshThickness: 8, swooshOpacity: 72, iconColor: "#8b5e3c", dividerColor: "#c8a888" },
+        styles: mkStyles("#2a1a0a","#6a4020","#5a3010","#8b5e3c", MONT) },
+      { id: "clean_white", label: "Clean White", swatch: "#e91e8c",
+        config: { lightBg: "#ffffff", darkBg: "#ffffff", accentColor: "#e91e8c", accentColorEnd: "#e91e8c", swooshVisible: true, swooshStyle: "arc", swooshFade: true, swooshFadeStart: "#e91e8c", swooshFadeEnd: "#e91e8c", swooshThickness: 20, swooshOpacity: 90, iconColor: "#e91e8c", dividerColor: "#e91e8c" },
+        styles: mkStyles("#1a1a1a","#555","#333","#e91e8c", MONT) },
+    ],
   },
 
-  // ══ Gradient ═════════════════════════════════════════════════════
+  // ══ Gradient ═══════════════════════════════════════════════════
+  // Split designs with gradient swoosh accents
   {
-    id: "gradient_sunrise", category: "gradient",
-    name: "Sunrise", description: "Warm pink-to-orange sunrise gradient accent",
-    preview: { left: "#fff5f0", right: "#1e0808", accent: "#f43f5e", text: "#ffffff" },
-    config: {
-      lightBg: "#fff5f0", darkBg: "#1e0808",
-      accentColor: "#f43f5e", accentColorEnd: "#f97316",
+    id: "gradient", category: "gradient",
+    name: "Gradient", description: "Split designs with gradient swoosh accents",
+    baseConfig: {
       splitPosition: 40, splitAngle: 84,
       swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#f43f5e", swooshFadeEnd: "#f97316",
       swooshThickness: 14, swooshOpacity: 90,
-      iconColor: "#f43f5e", dividerColor: "#f43f5e",
     },
-    styles: mkStyles("#ffffff","#ffa0a0","#ffb8a0","#f43f5e","'Montserrat', sans-serif"),
-  },
-  {
-    id: "gradient_ocean_deep", category: "gradient",
-    name: "Ocean Deep", description: "Deep sea gradient from teal to navy",
-    preview: { left: "#e8f8f8", right: "#051525", accent: "#0891b2", text: "#ffffff" },
-    config: {
-      lightBg: "#e8f8f8", darkBg: "#051525",
-      accentColor: "#0891b2", accentColorEnd: "#1e3a5f",
-      splitPosition: 40, splitAngle: 83,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#0891b2", swooshFadeEnd: "#1e3a5f",
-      swooshThickness: 14, swooshOpacity: 88,
-      iconColor: "#0891b2", dividerColor: "#0891b2",
-    },
-    styles: mkStyles("#ffffff","#80c8e0","#90d8f0","#0891b2","'Montserrat', sans-serif"),
-  },
-  {
-    id: "gradient_purple_gold", category: "gradient",
-    name: "Purple Gold", description: "Luxe purple fading to warm gold",
-    preview: { left: "#f8f0ff", right: "#180828", accent: "#9333ea", text: "#ffffff" },
-    config: {
-      lightBg: "#f8f0ff", darkBg: "#180828",
-      accentColor: "#9333ea", accentColorEnd: "#d97706",
-      splitPosition: 40, splitAngle: 84,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#9333ea", swooshFadeEnd: "#d97706",
-      swooshThickness: 14, swooshOpacity: 90,
-      iconColor: "#9333ea", dividerColor: "#9333ea",
-    },
-    styles: mkStyles("#ffffff","#c8a0ff","#d8b8ff","#9333ea","'Montserrat', sans-serif"),
-  },
-  {
-    id: "gradient_slate_teal", category: "gradient",
-    name: "Slate Teal", description: "Cool slate blue blending into teal",
-    preview: { left: "#eef4f8", right: "#0a1e28", accent: "#14b8a6", text: "#ffffff" },
-    config: {
-      lightBg: "#eef4f8", darkBg: "#0a1e28",
-      accentColor: "#14b8a6", accentColorEnd: "#0e7490",
-      splitPosition: 42, splitAngle: 85,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: false,
-      swooshFadeStart: "#14b8a6", swooshFadeEnd: "#0e7490",
-      swooshThickness: 12, swooshOpacity: 88,
-      iconColor: "#14b8a6", dividerColor: "#14b8a6",
-    },
-    styles: mkStyles("#ffffff","#60d0c8","#80d8d0","#14b8a6","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+    ],
+    variations: [
+      { id: "sunrise", label: "Sunrise", swatch: "#f43f5e",
+        config: { lightBg: "#fff5f0", darkBg: "#1e0808", accentColor: "#f43f5e", accentColorEnd: "#f97316", swooshFadeStart: "#f43f5e", swooshFadeEnd: "#f97316", iconColor: "#f43f5e", dividerColor: "#f43f5e" },
+        styles: mkStyles("#ffffff","#ffa0a0","#ffb8a0","#f43f5e", MONT) },
+      { id: "ocean_deep", label: "Ocean Deep", swatch: "#0891b2",
+        config: { lightBg: "#e8f8f8", darkBg: "#051525", accentColor: "#0891b2", accentColorEnd: "#1e3a5f", swooshFadeStart: "#0891b2", swooshFadeEnd: "#1e3a5f", splitAngle: 83, iconColor: "#0891b2", dividerColor: "#0891b2" },
+        styles: mkStyles("#ffffff","#80c8e0","#90d8f0","#0891b2", MONT) },
+      { id: "purple_gold", label: "Purple Gold", swatch: "#9333ea",
+        config: { lightBg: "#f8f0ff", darkBg: "#180828", accentColor: "#9333ea", accentColorEnd: "#d97706", swooshFadeStart: "#9333ea", swooshFadeEnd: "#d97706", iconColor: "#9333ea", dividerColor: "#9333ea" },
+        styles: mkStyles("#ffffff","#c8a0ff","#d8b8ff","#9333ea", MONT) },
+      { id: "slate_teal", label: "Slate Teal", swatch: "#14b8a6",
+        config: { lightBg: "#eef4f8", darkBg: "#0a1e28", accentColor: "#14b8a6", accentColorEnd: "#0e7490", swooshFadeStart: "#14b8a6", swooshFadeEnd: "#0e7490", splitPosition: 42, splitAngle: 85, swooshThickness: 12, swooshOpacity: 88, iconColor: "#14b8a6", dividerColor: "#14b8a6" },
+        styles: mkStyles("#ffffff","#60d0c8","#80d8d0","#14b8a6", MONT) },
+    ],
   },
 
-  // ══ Dark & Moody ═════════════════════════════════════════════════
+  // ══ Dark & Moody ═══════════════════════════════════════════════
+  // Full-bleed dark cards with glowing arc accents
   {
-    id: "dark_obsidian", category: "dark",
-    name: "Obsidian", description: "Pure black with electric pink glow",
-    preview: { left: "#0a0a0a", right: "#0a0a0a", accent: "#e91e8c", text: "#ffffff" },
-    config: {
-      lightBg: "#0a0a0a", darkBg: "#0a0a0a",
-      accentColor: "#e91e8c", accentColorEnd: "#a0004a",
+    id: "dark_moody", category: "dark",
+    name: "Dark & Moody", description: "Full-bleed dark cards with glowing arc accents",
+    baseConfig: {
       splitPosition: 100, splitAngle: 90,
       swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#e91e8c", swooshFadeEnd: "#e91e8c",
       swooshThickness: 16, swooshOpacity: 85,
-      iconColor: "#e91e8c", dividerColor: "#440020",
     },
-    styles: mkStyles("#ffffff","#e91e8c","#ff50a0","#e91e8c","'Montserrat', sans-serif"),
-  },
-  {
-    id: "dark_neon_cyber", category: "dark",
-    name: "Neon Cyber", description: "Cyberpunk dark with neon cyan",
-    preview: { left: "#050510", right: "#050510", accent: "#00ffee", text: "#ffffff" },
-    config: {
-      lightBg: "#050510", darkBg: "#050510",
-      accentColor: "#00d4c8", accentColorEnd: "#0088aa",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#00d4c8", swooshFadeEnd: "#00d4c8",
-      swooshThickness: 14, swooshOpacity: 88,
-      iconColor: "#00d4c8", dividerColor: "#003a38",
-    },
-    styles: mkStyles("#ffffff","#00d4c8","#00e8e0","#00d4c8","'Montserrat', sans-serif"),
-  },
-  {
-    id: "dark_deep_navy", category: "dark",
-    name: "Deep Navy", description: "Midnight navy with ice blue accent",
-    preview: { left: "#060d20", right: "#060d20", accent: "#60a8e8", text: "#ffffff" },
-    config: {
-      lightBg: "#060d20", darkBg: "#060d20",
-      accentColor: "#60a8e8", accentColorEnd: "#2060a0",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#60a8e8", swooshFadeEnd: "#60a8e8",
-      swooshThickness: 16, swooshOpacity: 80,
-      iconColor: "#60a8e8", dividerColor: "#102040",
-    },
-    styles: mkStyles("#ffffff","#90c0f0","#a0d0ff","#60a8e8","'Montserrat', sans-serif"),
-  },
-  {
-    id: "dark_plum", category: "dark",
-    name: "Dark Plum", description: "Rich plum with soft rose highlight",
-    preview: { left: "#100818", right: "#100818", accent: "#c084fc", text: "#ffffff" },
-    config: {
-      lightBg: "#100818", darkBg: "#100818",
-      accentColor: "#c084fc", accentColorEnd: "#7e22ce",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#c084fc", swooshFadeEnd: "#c084fc",
-      swooshThickness: 14, swooshOpacity: 82,
-      iconColor: "#c084fc", dividerColor: "#301040",
-    },
-    styles: mkStyles("#ffffff","#d0a0ff","#e0b8ff","#c084fc","'Montserrat', sans-serif"),
-  },
-  {
-    id: "dark_graphite_orange", category: "dark",
-    name: "Graphite Orange", description: "Dark graphite with vivid orange energy",
-    preview: { left: "#141414", right: "#141414", accent: "#f97316", text: "#ffffff" },
-    config: {
-      lightBg: "#141414", darkBg: "#141414",
-      accentColor: "#f97316", accentColorEnd: "#c2410c",
-      splitPosition: 100, splitAngle: 90,
-      swooshVisible: true, swooshStyle: "arc", swooshFade: true,
-      swooshFadeStart: "#f97316", swooshFadeEnd: "#f97316",
-      swooshThickness: 16, swooshOpacity: 88,
-      iconColor: "#f97316", dividerColor: "#402000",
-    },
-    styles: mkStyles("#ffffff","#f97316","#fb9640","#f97316","'Montserrat', sans-serif"),
+    fonts: [
+      { id: "mont", label: "Sans", family: MONT },
+      { id: "geo",  label: "Serif", family: GEO },
+      { id: "cour", label: "Mono", family: COUR },
+    ],
+    variations: [
+      { id: "obsidian", label: "Obsidian", swatch: "#e91e8c",
+        config: { lightBg: "#0a0a0a", darkBg: "#0a0a0a", accentColor: "#e91e8c", accentColorEnd: "#a0004a", swooshFadeStart: "#e91e8c", swooshFadeEnd: "#e91e8c", iconColor: "#e91e8c", dividerColor: "#440020" },
+        styles: mkStyles("#ffffff","#e91e8c","#ff50a0","#e91e8c", MONT) },
+      { id: "neon_cyber", label: "Neon Cyber", swatch: "#00d4c8",
+        config: { lightBg: "#050510", darkBg: "#050510", accentColor: "#00d4c8", accentColorEnd: "#0088aa", swooshFadeStart: "#00d4c8", swooshFadeEnd: "#00d4c8", swooshThickness: 14, swooshOpacity: 88, iconColor: "#00d4c8", dividerColor: "#003a38" },
+        styles: mkStyles("#ffffff","#00d4c8","#00e8e0","#00d4c8", MONT) },
+      { id: "deep_navy", label: "Deep Navy", swatch: "#60a8e8",
+        config: { lightBg: "#060d20", darkBg: "#060d20", accentColor: "#60a8e8", accentColorEnd: "#2060a0", swooshFadeStart: "#60a8e8", swooshFadeEnd: "#60a8e8", swooshOpacity: 80, iconColor: "#60a8e8", dividerColor: "#102040" },
+        styles: mkStyles("#ffffff","#90c0f0","#a0d0ff","#60a8e8", MONT) },
+      { id: "plum", label: "Dark Plum", swatch: "#c084fc",
+        config: { lightBg: "#100818", darkBg: "#100818", accentColor: "#c084fc", accentColorEnd: "#7e22ce", swooshFadeStart: "#c084fc", swooshFadeEnd: "#c084fc", swooshThickness: 14, swooshOpacity: 82, iconColor: "#c084fc", dividerColor: "#301040" },
+        styles: mkStyles("#ffffff","#d0a0ff","#e0b8ff","#c084fc", MONT) },
+      { id: "graphite_orange", label: "Graphite Orange", swatch: "#f97316",
+        config: { lightBg: "#141414", darkBg: "#141414", accentColor: "#f97316", accentColorEnd: "#c2410c", swooshFadeStart: "#f97316", swooshFadeEnd: "#f97316", swooshOpacity: 88, iconColor: "#f97316", dividerColor: "#402000" },
+        styles: mkStyles("#ffffff","#f97316","#fb9640","#f97316", MONT) },
+      { id: "midnight", label: "Midnight", swatch: "#ff2090",
+        config: { lightBg: "#111111", darkBg: "#1a1a1a", accentColor: "#ff2090", accentColorEnd: "#c0006a", swooshFadeStart: "#ff2090", swooshFadeEnd: "#ff2090", swooshThickness: 18, swooshOpacity: 88, iconColor: "#ff2090", dividerColor: "#ff2090" },
+        styles: mkStyles("#ffffff","#dddddd","#cccccc","#ff2090", MONT) },
+    ],
   },
 
 ];
+
+// ─────────────────────────────────────────────────────────────────
+// Backward-compat: flatten BASE_TEMPLATES into TEMPLATES array
+// Used by CustomTemplatesPanel, AI features, and any legacy references
+// ─────────────────────────────────────────────────────────────────
+var TEMPLATES = [];
+BASE_TEMPLATES.forEach(function(base) {
+  base.variations.forEach(function(v) {
+    TEMPLATES.push(resolveTemplate(base, v, null));
+  });
+});
 
 
 // ─────────────────────────────────────────────────────────────────
@@ -1502,34 +1285,36 @@ function TemplatesPanel(props) {
   const { onApply, customTemplates, onDeleteCustom, currentState, currentCurves } = props;
   const [activeCategory, setActiveCategory] = React.useState("modern");
   const [hovered, setHovered] = React.useState(null);
-  // Layout preference: drives thumbnail rendering AND is baked in on template click
   const [layoutPref, setLayoutPref] = React.useState(
     (currentState && currentState.cardLayout === "modern_split") ? "modern_split" : "classic"
   );
+  // Variation selection state
+  const [selectedBaseId, setSelectedBaseId] = React.useState(null);
+  const [selectedVarIdx, setSelectedVarIdx] = React.useState(0);
+  const [selectedFontIdx, setSelectedFontIdx] = React.useState(0);
 
   var allCategories = TEMPLATE_CATEGORIES.concat(
     customTemplates && customTemplates.length > 0
       ? [{ id: "custom", label: "📥 Imported" }]
       : []
   );
-  var filtered = activeCategory === "custom"
-    ? (customTemplates || [])
-    : TEMPLATES.filter(function(t) { return t.category === activeCategory; });
 
-  // Build a TemplateThumb-compatible object that overrides layout based on layoutPref
+  // Filter base templates for current category
+  var filteredBases = activeCategory === "custom"
+    ? null
+    : BASE_TEMPLATES.filter(function(b) { return b.category === activeCategory; });
+  // Custom templates still use flat array
+  var filteredCustom = activeCategory === "custom" ? (customTemplates || []) : null;
+
   function tWithLayout(t) {
     var isModern = layoutPref === "modern_split";
     var cfg = t.config || {};
-    // For classic: use the template's own splitPosition (or 42 default); cap at 55 so diagonal is always visible
-    // For modern_split: use the template's splitPosition, or fall back to 42 if it's a full-bleed template
     var origSplit = cfg.splitPosition != null ? cfg.splitPosition : 42;
     var newSplit, newAngle;
     if (isModern) {
-      // Modern Split — use template split if it has one; otherwise use a reasonable default
       newSplit = origSplit < 98 ? origSplit : 42;
       newAngle = cfg.splitAngle != null ? cfg.splitAngle : 86;
     } else {
-      // Classic Split — always show a visible diagonal split
       newSplit = Math.min(origSplit < 98 ? origSplit : 42, 55);
       newAngle = cfg.splitAngle != null ? cfg.splitAngle : 86;
     }
@@ -1539,10 +1324,8 @@ function TemplatesPanel(props) {
     });
   }
 
-  // Apply template with layout preference baked in
   function handleApply(t) {
-      // Custom user-saved templates: apply exactly as saved, no layout override
-      if (t.category === "custom") { onApply(t); return; }
+    if (t.category === "custom") { onApply(t); return; }
     var isModern = layoutPref === "modern_split";
     var cfg = t.config || {};
     var origSplit = cfg.splitPosition != null ? cfg.splitPosition : 42;
@@ -1556,6 +1339,34 @@ function TemplatesPanel(props) {
     });
     onApply(tPatched);
   }
+
+  // Apply a base template with specific variation + font
+  function handleBaseApply(base, varIdx, fontIdx) {
+    var variation = base.variations[varIdx] || base.variations[0];
+    var fontFamily = (base.fonts && base.fonts[fontIdx]) ? base.fonts[fontIdx].family : null;
+    var resolved = resolveTemplate(base, variation, fontFamily);
+    handleApply(resolved);
+  }
+
+  // When clicking a base template card
+  function handleBaseClick(base, idx) {
+    if (selectedBaseId === base.id) {
+      // Already selected — re-clicking collapses
+      setSelectedBaseId(null);
+      return;
+    }
+    setSelectedBaseId(base.id);
+    setSelectedVarIdx(0);
+    setSelectedFontIdx(0);
+    handleBaseApply(base, 0, 0);
+  }
+
+  // Reset selection when changing category
+  React.useEffect(function() {
+    setSelectedBaseId(null);
+    setSelectedVarIdx(0);
+    setSelectedFontIdx(0);
+  }, [activeCategory]);
 
   return (
     <div>
@@ -1600,36 +1411,132 @@ function TemplatesPanel(props) {
         })}
       </div>
 
-      {/* ── Template Grid ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {filtered.map(function(t) {
-          var isHov = hovered === t.id;
-          var tLayout = tWithLayout(t);
-          return (
-            <div key={t.id}
-              onMouseEnter={function() { setHovered(t.id); }}
-              onMouseLeave={function() { setHovered(null); }}
-              style={{ borderRadius: "var(--radius-default)", overflow: "hidden", border: "2px solid " + (isHov ? "#cc8800" : "#2a2a2a"), background: "var(--bg-input)", position: "relative" }}>
-              <div onClick={function() { handleApply(t); }} style={{ cursor: "pointer" }}>
-                {t.bgImageUrl
-                  ? <div style={{ width: "100%", height: 50, overflow: "hidden", background: "#000" }}>
-                      <img src={t.bgImageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }} />
-                    </div>
-                  : <TemplateThumb t={tLayout} />}
-                <div style={{ padding: "6px 8px 8px" }}>
-                  <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, color: isHov ? "#fff" : "#ccc", marginBottom: 2 }}>{t.name}</div>
-                  {t.description && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-tertiary)", lineHeight: 1.3 }}>{t.description}</div>}
-                </div>
-              </div>
-              {t.category === "custom" && onDeleteCustom && (
-                <button onClick={function(ev) { ev.stopPropagation(); onDeleteCustom(t.id); }}
-                  style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.7)", border: "none", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)", fontSize: "var(--fs-sm)", cursor: "pointer", padding: "2px 5px", lineHeight: 1 }}
-                  title="Remove">✕</button>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* ── Base Template Grid with Variation Strips ── */}
+      {filteredBases && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {filteredBases.map(function(base) {
+            var isSelected = selectedBaseId === base.id;
+            var isHov = hovered === base.id;
+            // Show the currently selected variation (or default)
+            var displayVar = isSelected ? (base.variations[selectedVarIdx] || base.variations[0]) : base.variations[0];
+            var displayFont = isSelected && base.fonts && base.fonts[selectedFontIdx] ? base.fonts[selectedFontIdx].family : null;
+            var displayTemplate = resolveTemplate(base, displayVar, displayFont);
+            var tLayout = tWithLayout(displayTemplate);
+
+            var items = [];
+
+            // Template card
+            items.push(
+              React.createElement("div", {
+                key: base.id,
+                onMouseEnter: function() { setHovered(base.id); },
+                onMouseLeave: function() { setHovered(null); },
+                style: { borderRadius: "var(--radius-default)", overflow: "hidden", border: "2px solid " + (isSelected ? "#cc8800" : isHov ? "#cc8800" : "#2a2a2a"), background: "var(--bg-input)", cursor: "pointer", transition: "border-color 0.15s" },
+                onClick: function() { handleBaseClick(base); }
+              },
+                React.createElement(TemplateThumb, { t: tLayout }),
+                React.createElement("div", { style: { padding: "6px 8px 8px" } },
+                  React.createElement("div", { style: { fontSize: "var(--fs-base)", fontWeight: 700, color: isSelected || isHov ? "#fff" : "#ccc", marginBottom: 2 } }, base.name),
+                  base.description ? React.createElement("div", { style: { fontSize: "var(--fs-xs)", color: "var(--text-tertiary)", lineHeight: 1.3 } }, base.description) : null,
+                  !isSelected && base.variations.length > 1 ? React.createElement("div", { style: { fontSize: "var(--fs-2xs)", color: "var(--text-muted)", marginTop: 3 } }, base.variations.length + " color variations") : null
+                )
+              )
+            );
+
+            // Inline variation strip (only when selected)
+            if (isSelected && (base.variations.length > 1 || (base.fonts && base.fonts.length > 1))) {
+              items.push(
+                React.createElement("div", {
+                  key: base.id + "_strip",
+                  style: { gridColumn: "1 / -1", background: "var(--bg-elevated)", borderRadius: "var(--radius-default)", padding: "10px 12px", border: "1px solid var(--border-subtle)" }
+                },
+                  // Color swatches row
+                  base.variations.length > 1 ? React.createElement("div", { style: { marginBottom: base.fonts && base.fonts.length > 1 ? 8 : 0 } },
+                    React.createElement("div", { style: { fontSize: "var(--fs-2xs)", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 } }, "Colors"),
+                    React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
+                      base.variations.map(function(v, vi) {
+                        var isVarActive = selectedVarIdx === vi;
+                        return React.createElement("button", {
+                          key: v.id,
+                          title: v.label,
+                          onClick: function() {
+                            setSelectedVarIdx(vi);
+                            handleBaseApply(base, vi, selectedFontIdx);
+                          },
+                          style: {
+                            width: 24, height: 24, borderRadius: "50%", border: isVarActive ? "2px solid #cc8800" : "2px solid #444",
+                            background: v.swatch, cursor: "pointer", padding: 0, outline: "none",
+                            boxShadow: isVarActive ? "0 0 0 2px #cc880044" : "none", transition: "border-color 0.15s, box-shadow 0.15s"
+                          }
+                        });
+                      })
+                    )
+                  ) : null,
+                  // Font pills row
+                  base.fonts && base.fonts.length > 1 ? React.createElement("div", null,
+                    React.createElement("div", { style: { fontSize: "var(--fs-2xs)", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 } }, "Font"),
+                    React.createElement("div", { style: { display: "flex", gap: 4, flexWrap: "wrap" } },
+                      base.fonts.map(function(f, fi) {
+                        var isFontActive = selectedFontIdx === fi;
+                        return React.createElement("button", {
+                          key: f.id,
+                          onClick: function() {
+                            setSelectedFontIdx(fi);
+                            handleBaseApply(base, selectedVarIdx, fi);
+                          },
+                          style: {
+                            padding: "3px 10px", borderRadius: 14, border: "1px solid " + (isFontActive ? "#cc8800" : "#444"),
+                            background: isFontActive ? "#cc8800" : "transparent", color: isFontActive ? "#fff" : "#888",
+                            fontSize: "var(--fs-xs)", fontWeight: isFontActive ? 700 : 400, cursor: "pointer",
+                            fontFamily: f.family, transition: "background 0.15s, color 0.15s, border-color 0.15s"
+                          }
+                        }, f.label);
+                      })
+                    )
+                  ) : null
+                )
+              );
+            }
+
+            return items;
+          }).reduce(function(acc, items) { return acc.concat(items); }, [])
+          }
+        </div>
+      )}
+
+      {/* ── Custom (imported) templates — flat grid, unchanged ── */}
+      {filteredCustom && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {filteredCustom.map(function(t) {
+            var isHov = hovered === t.id;
+            var tLayout = tWithLayout(t);
+            return (
+              React.createElement("div", {
+                key: t.id,
+                onMouseEnter: function() { setHovered(t.id); },
+                onMouseLeave: function() { setHovered(null); },
+                style: { borderRadius: "var(--radius-default)", overflow: "hidden", border: "2px solid " + (isHov ? "#cc8800" : "#2a2a2a"), background: "var(--bg-input)", position: "relative" }
+              },
+                React.createElement("div", { onClick: function() { handleApply(t); }, style: { cursor: "pointer" } },
+                  t.bgImageUrl
+                    ? React.createElement("div", { style: { width: "100%", height: 50, overflow: "hidden", background: "#000" } },
+                        React.createElement("img", { src: t.bgImageUrl, alt: "", style: { width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 } }))
+                    : React.createElement(TemplateThumb, { t: tLayout }),
+                  React.createElement("div", { style: { padding: "6px 8px 8px" } },
+                    React.createElement("div", { style: { fontSize: "var(--fs-base)", fontWeight: 700, color: isHov ? "#fff" : "#ccc", marginBottom: 2 } }, t.name),
+                    t.description ? React.createElement("div", { style: { fontSize: "var(--fs-xs)", color: "var(--text-tertiary)", lineHeight: 1.3 } }, t.description) : null
+                  )
+                ),
+                onDeleteCustom ? React.createElement("button", {
+                  onClick: function(ev) { ev.stopPropagation(); onDeleteCustom(t.id); },
+                  style: { position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.7)", border: "none", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)", fontSize: "var(--fs-sm)", cursor: "pointer", padding: "2px 5px", lineHeight: 1 },
+                  title: "Remove"
+                }, "✕") : null
+              )
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Custom Added section ── */}
       <div style={{ marginTop: 18, borderTop: "1px solid #1e1e1e", paddingTop: 14 }}>
