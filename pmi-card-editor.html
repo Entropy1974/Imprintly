@@ -7791,29 +7791,32 @@ const applyTemplate = function(t) {
   // Each stage has sub-tabs; the old tab IDs are preserved as sub-tab IDs
   // so all existing tab === "x" rendering still works unchanged.
   const STAGES = [
-    { id: "start",    step: 1, icon: "✨", label: "Start",    desc: "Templates · Import background · AI search",  tabs: [
-      { id: "templates", label: "Templates",   icon: "✨" },
-      { id: "bg",        label: "Background",  icon: "🌄" },
-    ]},
-    { id: "design",   step: 2, icon: "🎨", label: "Design",   desc: "Colors, typography and layout style",       tabs: [
-      { id: "colors",    label: "Colors",      icon: "🎨" },
-      { id: "typo",      label: "Typography",  icon: "🔤" },
-      { id: "ms",        label: "Modern Split",icon: "🪟" },
-    ]},
-    { id: "elements", step: 3, icon: "🖼", label: "Elements", desc: "Logo, layout and element positions",        tabs: [
-      { id: "logo",      label: "Logo",        icon: "🖼" },
-      { id: "layout",    label: "Layout",      icon: "📐" },
-      { id: "position",  label: "Position",    icon: "📍" },
-    ]},
-    { id: "content",  step: 4, icon: "✏", label: "Content",  desc: "Name, title, contact details and taglines", tabs: [
-      { id: "content",   label: "Content",     icon: "✏" },
-    ]},
-    { id: "ai",       step: 5, icon: "🤖", label: "AI",       desc: "AI design review, scoring and search",      tabs: [
-      { id: "ai",        label: "AI Studio",   icon: "🤖" },
-    ]},
-    { id: "save",     step: 6, icon: "💾", label: "Save",     desc: "Save, manage people and export",            tabs: [
-      { id: "save",      label: "Save & Export", icon: "💾" },
-    ]},
+    { id: "style",  step: 1, icon: "✂️", label: "Style",  desc: "Templates, colors, typography & layout",
+      tabs: [
+        { id: "templates", label: "Templates",    icon: "✨" },
+        { id: "colors",    label: "Colors",        icon: "🎨" },
+        { id: "typo",      label: "Typography",    icon: "🔤" },
+        { id: "layout",    label: "Layout",        icon: "📐" },
+        { id: "ms",        label: "Modern Split",  icon: "🪟" },
+      ]},
+    { id: "media",  step: 2, icon: "🖼️", label: "Media",  desc: "Logo, background images & import",
+      tabs: [
+        { id: "logo", label: "Logo",    icon: "🖼" },
+        { id: "bg",   label: "Import",  icon: "📂" },
+      ]},
+    { id: "text",   step: 3, icon: "✏️", label: "Text",   desc: "Names, contact details & taglines",
+      tabs: [
+        { id: "content", label: "Details", icon: "📝" },
+      ]},
+    { id: "tools",  step: 4, icon: "🔧", label: "Tools",  desc: "Position, cover, color swap & fine-tuning",
+      tabs: [
+        { id: "position", label: "Position", icon: "📍" },
+      ]},
+    { id: "export", step: 5, icon: "💾", label: "Export", desc: "Save designs, manage contacts & export files",
+      tabs: [
+        { id: "save", label: "Save",      icon: "💾" },
+        { id: "ai",   label: "AI Studio", icon: "🤖" },
+      ]},
   ];
 
   // Flat list of all tab IDs in order (for prev/next)
@@ -7852,18 +7855,16 @@ const applyTemplate = function(t) {
               return (
                 <button key={st.id}
                   onClick={function() { setTab(st.tabs[0].id); }}
-                  style={{ flexShrink: 0, padding: "8px 10px 6px", background: isActive ? "#1a1a1a" : "none",
-                    border: "none", borderBottom: isActive ? "2px solid #cc8800" : "2px solid transparent",
-                    cursor: "pointer", textAlign: "center", minWidth: 52 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: "50%", margin: "0 auto 3px",
-                    background: isActive ? "#cc8800" : "#1e1e1e",
-                    border: "1px solid " + (isActive ? "#cc8800" : "#333"),
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 9, fontWeight: 700, color: isActive ? "#fff" : "#555" }}>
-                    {st.step}
-                  </div>
-                  <div style={{ fontSize: 8, color: isActive ? "#fff" : "#444", fontWeight: isActive ? 700 : 400,
-                    whiteSpace: "nowrap", letterSpacing: "0.04em" }}>{st.icon} {st.label}</div>
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                    padding: "8px 14px 6px", border: "none", borderRadius: 0,
+                    background: isActive ? "#1a1200" : "transparent",
+                    borderBottom: isActive ? "2px solid #cc8800" : "2px solid transparent",
+                    color: isActive ? "#ffbb33" : "#666",
+                    cursor: "pointer", fontSize: 9, fontWeight: 700,
+                    flex: 1, minWidth: 0, transition: "all 0.15s ease",
+                    letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: 16 }}>{st.icon}</span>
+                  <span>{st.label}</span>
                 </button>
               );
             })}
@@ -7892,7 +7893,7 @@ const applyTemplate = function(t) {
 
           {tab === "templates" && (
             <div>
-              <TabHeader step={1} title="Start — Choose a Template" subtitle="Pick a built-in or custom template to set your base design" color="#cc8800" />
+              <TabHeader step={1} title="Style — Choose a Template" subtitle="Pick a built-in or custom template to set your base design" color="#cc8800" />
               <div style={{ padding: "12px 14px" }}>
               <div style={{ fontSize: 11, color: "#cc8800", fontWeight: 700, marginBottom: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>Professional Templates</div>
               <TemplatesPanel onApply={applyTemplate} customTemplates={customTemplates} onDeleteCustom={function(id) {
@@ -7959,7 +7960,7 @@ const applyTemplate = function(t) {
 
           {tab === "logo" && (
             <div>
-              <TabHeader step={3} title="Elements — Logo" subtitle="Upload any logo image, or use the Draw tool for custom shapes. Works with any brand." color="#2266cc" />
+              <TabHeader step={2} title="Media — Logo" subtitle="Upload any logo image, or use the Draw tool for custom shapes. Works with any brand." color="#2266cc" />
               <TabResetBar label="Reset Logo Tab" onReset={function() { resetTab("logo"); }} />
               <Sec title="Logo" defaultOpen={true}>
                 {/* ── Mode toggle ── */}
@@ -8158,7 +8159,7 @@ const applyTemplate = function(t) {
 
           {tab === "bg" && (
             <div>
-              <TabHeader step={1} title="Import Card Design" subtitle="Upload any business card image — AI rebuilds it as a fully editable vector template" color="#cc8800" />
+              <TabHeader step={2} title="Media — Import" subtitle="Upload any business card image — AI rebuilds it as a fully editable vector template" color="#cc8800" />
 
               {/* ── Phase: UPLOAD ── */}
               {importPhase === "upload" && (
@@ -8900,7 +8901,7 @@ const applyTemplate = function(t) {
 
           {tab === "content" && (
             <div>
-              <TabHeader step={4} title="Content — Names & Details" subtitle="Enter name, title, company, contact info and taglines" color="#228866" />
+              <TabHeader step={3} title="Text — Names & Details" subtitle="Enter name, title, company, contact info and taglines" color="#228866" />
               <TabResetBar label="Reset All Text" onReset={function() { resetTab("content"); }} />
               <Sec title="Person" defaultOpen={true}>
                 <TF label="Full Name" help="The cardholder's full name as it appears on the front of the card. Typically First Last or First M. Last." value={s.personName} onChange={function(v) { up("personName", v); }} onReset={function() { up("personName", templateDefaults.personName); }} />
@@ -8929,7 +8930,7 @@ const applyTemplate = function(t) {
 
           {tab === "colors" && (
             <div>
-              <TabHeader step={2} title="Design — Colors" subtitle="Set background, accent, icon and divider colors" color="#8844cc" />
+              <TabHeader step={1} title="Style — Colors" subtitle="Set background, accent, icon and divider colors" color="#8844cc" />
               <TabResetBar label="Reset All Colors" onReset={function() { resetTab("colors"); }} />
               <Sec title="Front Card Backgrounds" defaultOpen={true}>
                 <p style={{ fontSize: 11, color: "#777", margin: "0 0 8px", lineHeight: 1.5 }}>
@@ -9015,7 +9016,7 @@ const applyTemplate = function(t) {
 
           {tab === "position" && (
             <div>
-              <TabHeader step={3} title="Elements — Position" subtitle="Fine-tune placement and size of each card element" color="#2266cc" />
+              <TabHeader step={4} title="Tools — Position" subtitle="Fine-tune placement and size of each card element" color="#2266cc" />
               <TabResetBar label="Reset All Positions" onReset={function() { resetTab("position"); }} />
               <Sec title="Logo Position & Size" defaultOpen={true}>
                 <p style={{ fontSize: 11, color: "#555", margin: "0 0 8px", lineHeight: 1.4 }}>Controls the logo on the front card for all templates.</p>
@@ -9053,7 +9054,7 @@ const applyTemplate = function(t) {
 
           {tab === "layout" && (
             <div>
-              <TabHeader step={3} title="Elements — Layout" subtitle="Choose card layout style and panel arrangement" color="#2266cc" />
+              <TabHeader step={1} title="Style — Layout" subtitle="Choose card layout style and panel arrangement" color="#2266cc" />
               <TabResetBar label="Reset Layout" onReset={function() { resetTab("layout"); }} />
               <Sec title="Card Layout" defaultOpen={true}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
@@ -9156,7 +9157,7 @@ const applyTemplate = function(t) {
 
           {tab === "ms" && (
             <div>
-              <TabHeader step={2} title="Design — Modern Split" subtitle="Control the diagonal split and ribbon/swoosh overlay" color="#8844cc" />
+              <TabHeader step={1} title="Style — Modern Split" subtitle="Control the diagonal split and ribbon/swoosh overlay" color="#8844cc" />
               <TabResetBar label="Reset Split Settings" onReset={function() { resetTab("ms"); }} />
               <Sec title="Modern Split Layout" defaultOpen={true}>
                 <p style={{ fontSize: 11, color: "#555", margin: "0 0 6px", lineHeight: 1.5 }}>Customize the Modern Split two-panel grid. Switch layout type in 📐 Layout tab.</p>
@@ -9225,7 +9226,7 @@ const applyTemplate = function(t) {
 
           {tab === "typo" && (
             <div>
-              <TabHeader step={2} title="Design — Typography" subtitle="Font size, weight, color and spacing for each text element" color="#8844cc" />
+              <TabHeader step={1} title="Style — Typography" subtitle="Font size, weight, color and spacing for each text element" color="#8844cc" />
               <TabResetBar label="Reset All Typography" onReset={function() { resetTab("typo"); }} />
               <Sec title="Per-Field Typography" defaultOpen={true}>
                 <p style={{ fontSize: 11, color: "#555", margin: "0 0 8px", lineHeight: 1.4 }}>Montserrat is default. Each field: font, size, bold, italic, underline, color.</p>
@@ -9266,7 +9267,7 @@ const applyTemplate = function(t) {
 
           {tab === "save" && (
             <div>
-              <TabHeader step={6} title="Save & Export" subtitle="Manage contacts, save configurations and export print files" color="#2255aa" />
+              <TabHeader step={5} title="Save & Export" subtitle="Manage contacts, save configurations and export print files" color="#2255aa" />
               <div style={{ padding: "12px 14px" }}>
               <div style={{ fontSize: 11, color: "#5599dd", fontWeight: 700, marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>People / Contacts</div>
               <div style={{ fontSize: 10, color: "#444", marginBottom: 10, lineHeight: 1.5 }}>
