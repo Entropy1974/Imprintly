@@ -3702,7 +3702,7 @@ function SavePanel(props) {
       const a    = document.createElement("a");
       const date = new Date().toISOString().slice(0,10);
       a.href     = url;
-      a.download = "pmi-card-editor-backup-" + date + ".json";
+      a.download = "imprintly-backup-" + date + ".json";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -5514,6 +5514,13 @@ function AIStudioPanel(props) {
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px" }}>
+
+          {/* Free-tier guidance */}
+          <div style={{ background: "rgba(0,120,180,0.08)", border: "1px solid rgba(0,120,180,0.25)", borderRadius: 8, padding: "10px 12px", marginBottom: 14, fontSize: "var(--fs-sm)", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4, color: "var(--text-primary)" }}>AI features are optional</div>
+            <div>Claude Haiku is pre-selected and works with a free API key.</div>
+            <div style={{ marginTop: 4 }}>Get yours at <span style={{ color: "var(--accent)", fontWeight: 600 }}>console.anthropic.com</span> &rarr; API Keys</div>
+          </div>
 
           {/* Service selector */}
           <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>AI Service</div>
@@ -7880,8 +7887,11 @@ const applyTemplate = function(t) {
       ]},
     { id: "export", step: 5, icon: "💾", label: "Export", desc: "Save designs, manage contacts & export files",
       tabs: [
-        { id: "save", label: "Save",      icon: "💾" },
-        { id: "ai",   label: "AI Studio", icon: "🤖" },
+        { id: "save", label: "Save", icon: "💾" },
+      ]},
+    { id: "assist", step: 6, icon: "🤖", label: "AI", desc: "Optional AI-powered design review & search",
+      tabs: [
+        { id: "ai", label: "AI Studio", icon: "🤖" },
       ]},
   ];
 
@@ -9055,7 +9065,7 @@ const applyTemplate = function(t) {
 
           {tab === "ai" && (
             <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-              <TabHeader step={5} title="AI Studio — Validate & Search" subtitle="AI design review, impact scoring and template search" color="#cc4400" />
+              <TabHeader step={6} title="AI Studio — Optional" subtitle="AI-powered design review, scoring, and template search. Free tier available." color="#cc4400" />
               <AIStudioPanel pane="sidebar"
                 provider={aiProvider} setProvider={setAiProvider}
                 claudeKey={aiClaudeKey} setClaudeKey={setAiClaudeKey}
