@@ -376,6 +376,122 @@ const LEGACY_LOGO_WHITE_TEXT = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABf
 // ─────────────────────────────────────────────────────────────────
 // QR CODE COMPONENT (uses qrcode-generator library via CDN)
 // ─────────────────────────────────────────────────────────────────
+function escHTML(str) {
+  return String(str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function generateDigitalCardHTML(s) {
+  var name = escHTML(s.personName || "Your Name");
+  var titleText = escHTML(s.title || "");
+  var company = escHTML(s.companyName || "");
+  var subtitle = escHTML(s.companySubtitle || "");
+  var phone = escHTML(s.phone || "");
+  var email = escHTML(s.email || "");
+  var website = (s.website || "").replace(/^https?:\/\//i, "");
+  var websiteEsc = escHTML(website);
+  var tagBold = escHTML(s.taglineBold || "");
+  var tagLight = escHTML(s.taglineLight || "");
+  var accent = s.accentColor || "#cc8800";
+  var isDark = (s.qrDigitalTheme || "dark") === "dark";
+  var bgColor = isDark ? "#0f0f0f" : "#fafafa";
+  var textColor = isDark ? "#f0f0f0" : "#1a1a1a";
+  var dimColor = isDark ? "#999999" : "#666666";
+  var cardBg = isDark ? "#1a1a1a" : "#ffffff";
+  var borderColor = isDark ? "#2a2a2a" : "#e5e5e5";
+
+  // vCard for Save to Contacts
+  var nameParts = (s.personName || "").trim().split(/[\s]+/);
+  var lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || "");
+  var firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : "";
+  var vcLines = ["BEGIN:VCARD", "VERSION:3.0"];
+  vcLines.push("N:" + lastName + ";" + firstName + ";;;");
+  vcLines.push("FN:" + (s.personName || ""));
+  if (s.title) vcLines.push("TITLE:" + s.title);
+  if (s.phone) vcLines.push("TEL;TYPE=WORK,VOICE:" + s.phone);
+  if (s.email) vcLines.push("EMAIL;TYPE=WORK:" + s.email);
+  if (website) vcLines.push("URL:https://" + website);
+  if (s.companyName || s.companySubtitle) vcLines.push("ORG:" + (s.companyName || "") + (s.companySubtitle ? ";" + s.companySubtitle : ""));
+  vcLines.push("END:VCARD");
+  var vcardStr = vcLines.join("\\r\\n");
+
+  // Logo
+  var logoHTML = "";
+  if (s.qrDigitalShowLogo && s.uploadedLogo) {
+    logoHTML = '<div style="text-align:center;margin-bottom:24px"><img src="' + s.uploadedLogo + '" alt="Logo" style="max-width:120px;max-height:80px;object-fit:contain" /></div>';
+  }
+
+  // Contact rows
+  var contactRows = "";
+  if (phone) {
+    contactRows += '<a href="tel:' + phone + '" style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid ' + borderColor + ';text-decoration:none;color:' + textColor + '">'
+      + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="' + accent + '" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>'
+      + '<span style="font-size:15px">' + phone + '</span></a>';
+  }
+  if (email) {
+    contactRows += '<a href="mailto:' + email + '" style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid ' + borderColor + ';text-decoration:none;color:' + textColor + '">'
+      + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="' + accent + '" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>'
+      + '<span style="font-size:15px">' + email + '</span></a>';
+  }
+  if (website) {
+    contactRows += '<a href="https://' + websiteEsc + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid ' + borderColor + ';text-decoration:none;color:' + textColor + '">'
+      + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="' + accent + '" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>'
+      + '<span style="font-size:15px">' + websiteEsc + '</span></a>';
+  }
+
+  // Taglines
+  var tagHTML = "";
+  if (tagBold || tagLight) {
+    tagHTML = '<div style="margin-top:24px;text-align:center">';
+    if (tagBold) tagHTML += '<div style="font-weight:700;font-size:14px;color:' + textColor + ';margin-bottom:4px">' + tagBold + '</div>';
+    if (tagLight) tagHTML += '<div style="font-size:13px;color:' + dimColor + '">' + tagLight + '</div>';
+    tagHTML += '</div>';
+  }
+
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+    + '<meta charset="UTF-8">\n'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1.0">\n'
+    + '<title>' + name + ' — Digital Business Card</title>\n'
+    + '<meta name="description" content="Digital business card for ' + name + (company ? ' at ' + company : '') + '">\n'
+    + '<meta property="og:title" content="' + name + (titleText ? ' — ' + titleText : '') + '">\n'
+    + '<meta property="og:description" content="' + (company ? company + ' · ' : '') + titleText + '">\n'
+    + '<style>\n'
+    + '*{margin:0;padding:0;box-sizing:border-box}\n'
+    + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:' + bgColor + ';color:' + textColor + ';min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px}\n'
+    + '.card{width:100%;max-width:420px;background:' + cardBg + ';border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,' + (isDark ? '0.4' : '0.08') + ')}\n'
+    + '.accent-bar{height:4px;background:' + accent + '}\n'
+    + '.content{padding:32px 28px}\n'
+    + '.name{font-size:26px;font-weight:800;letter-spacing:-0.02em;margin-bottom:4px}\n'
+    + '.title-text{font-size:15px;color:' + dimColor + ';margin-bottom:2px}\n'
+    + '.company{font-size:14px;color:' + accent + ';font-weight:600;margin-bottom:24px}\n'
+    + '.contacts{margin-bottom:8px}\n'
+    + '.save-btn{display:block;width:100%;margin-top:24px;padding:14px;border:none;border-radius:10px;background:' + accent + ';color:#fff;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:0.02em;transition:opacity 0.2s}\n'
+    + '.save-btn:hover{opacity:0.85}\n'
+    + '.footer{text-align:center;padding:16px;font-size:11px;color:' + dimColor + ';border-top:1px solid ' + borderColor + '}\n'
+    + '.footer a{color:' + accent + ';text-decoration:none}\n'
+    + '@media(max-width:460px){.content{padding:24px 20px}.name{font-size:22px}}\n'
+    + '</style>\n'
+    + '</head>\n<body>\n'
+    + '<div class="card">\n'
+    + '<div class="accent-bar"></div>\n'
+    + '<div class="content">\n'
+    + logoHTML
+    + '<div class="name">' + name + '</div>\n'
+    + (titleText ? '<div class="title-text">' + titleText + '</div>\n' : '')
+    + (company ? '<div class="company">' + company + (subtitle ? ' · ' + subtitle : '') + '</div>\n' : '<div style="margin-bottom:24px"></div>\n')
+    + '<div class="contacts">' + contactRows + '</div>\n'
+    + tagHTML
+    + '<button class="save-btn" onclick="downloadVCard()">Save to Contacts</button>\n'
+    + '</div>\n'
+    + '<div class="footer">Made with <a href="https://imprintly.app">Imprintly</a></div>\n'
+    + '</div>\n'
+    + '<scr' + 'ipt>\n'
+    + 'var _VC="' + vcardStr + '";'
+    + 'var _FN="' + (s.personName || "contact").replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "-") + '";'
+    + 'function downloadVCard(){var b=new Blob([_VC],{type:"text/vcard"});var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download=_FN+".vcf";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}'
+    + '</scr' + 'ipt>\n'
+    + '</body>\n</html>';
+}
+
 function QRCodeSVG(props) {
   var data = props.data, x = props.x, y = props.y, size = props.size;
   var color = props.color || "#fff", bg = props.bg || "rgba(0,0,0,0.2)";
@@ -540,7 +656,7 @@ var DEFAULT_STATE = {
   bgColorSwapsBack: [],
   iconStyle: "circle-filled",
   qrX: 548, qrY: 102, qrSize: 296,
-  qrLabel: "SCAN TO ADD CONTACT", qrMode: "vcard", qrUrl: "",
+  qrLabel: "SCAN TO ADD CONTACT", qrMode: "vcard", qrUrl: "", qrDigitalUrl: "", qrDigitalTheme: "dark", qrDigitalShowLogo: true,
   qrDotStyle: "square", qrCornerStyle: "square", qrLogo: null, qrGradient: null,
   showBleed: false, cropMarks: false, cmykPreview: false,
   backVariants: [], activeBackVariant: -1,
@@ -2422,7 +2538,7 @@ function CardBack(props) {
       <RichTextSVG x={47} y={H / 2 + 110} st={s.styles.taglineBold} spans={s.taglineBold} defaultColor={s.backTaglineBoldColor || s.accentColor} />
       <RichTextSVG x={47} y={H / 2 + 134} st={s.styles.taglineLight} spans={s.taglineLight} defaultColor={s.backTaglineLightColor || s.styles.taglineLight.color} />
       <line x1={s.qrX != null ? s.qrX - 30 : 510} y1="50" x2={s.qrX != null ? s.qrX - 30 : 510} y2={H - 50} stroke={s.dividerColor} strokeWidth="1" opacity="0.3" />
-      <QRCodeSVG x={s.qrX != null ? s.qrX : 548} y={s.qrY != null ? s.qrY : H / 2 - 148} size={s.qrSize != null ? s.qrSize : 296} data={s.qrMode === "url" ? (s.qrUrl || "https://example.com") : vcard} color={s.backQrColor || s.lightBg} bg="rgba(0,0,0,0.25)" dotStyle={s.qrDotStyle} cornerStyle={s.qrCornerStyle} logoUrl={s.qrLogo} gradient={s.qrGradient} />
+      <QRCodeSVG x={s.qrX != null ? s.qrX : 548} y={s.qrY != null ? s.qrY : H / 2 - 148} size={s.qrSize != null ? s.qrSize : 296} data={s.qrMode === "digital" ? (s.qrDigitalUrl || "https://your-card.example.com") : s.qrMode === "url" ? (s.qrUrl || "https://example.com") : vcard} color={s.backQrColor || s.lightBg} bg="rgba(0,0,0,0.25)" dotStyle={s.qrDotStyle} cornerStyle={s.qrCornerStyle} logoUrl={s.qrLogo} gradient={s.qrGradient} />
       <text x={(s.qrX != null ? s.qrX : 548) + (s.qrSize != null ? s.qrSize : 296) / 2} y={(s.qrY != null ? s.qrY : H / 2 - 148) + (s.qrSize != null ? s.qrSize : 296) + 20} fontSize="12" fill={s.backTaglineLightColor || s.styles.taglineLight.color} fontFamily={s.styles.taglineLight.fontFamily} textAnchor="middle" opacity="0.6" letterSpacing="1.5">{s.qrLabel || "SCAN TO ADD CONTACT"}</text>
       {/* Color Swap patches (topmost layer) */}
       {(s.bgColorSwapsBack || []).filter(function(sw) { return sw.active && sw.patchUrl; }).map(function(sw) {
@@ -6362,6 +6478,7 @@ function App() {
   const cardRef = useRef();
   const backRef = useRef();
   const [exporting, setExporting] = useState(null); // null | 'svg'|'png'|'jpg'|'pdf'
+  const [digitalPreviewOpen, setDigitalPreviewOpen] = useState(false);
   const [customCats, setCustomCats] = useState({});  // { catId: { name, templates: [] } }
   const [logoLibrary, setLogoLibrary] = useState([]); // [{ id, name, dataUrl, dateAdded }]
   const [renamingLogoId, setRenamingLogoId] = useState(null); // id of logo being renamed
@@ -9214,13 +9331,65 @@ const applyTemplate = function(t) {
                 <div style={{ marginTop: "var(--sp-4)" }}>
                   <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>QR Data Mode</div>
                   <div style={{ display: "flex", gap: "var(--sp-3)" }}>
-                    {[["vCard", "vcard"], ["URL", "url"]].map(function(pair) {
+                    {[["vCard", "vcard"], ["URL", "url"], ["Digital", "digital"]].map(function(pair) {
                       var lbl = pair[0], val = pair[1], active = (s.qrMode || "vcard") === val;
                       return <button key={val} onClick={function() { up("qrMode", val); }} style={{ flex: 1, padding: "var(--sp-2) 0", borderRadius: "var(--radius-md)", border: "1px solid " + (active ? "var(--accent-primary)" : "var(--border-default)"), background: active ? "var(--accent-primary-bg)" : "var(--bg-input)", color: active ? "var(--accent-primary-light)" : "var(--text-tertiary)", fontSize: "var(--fs-sm)", fontWeight: active ? 700 : 400, cursor: "pointer" }}>{lbl}</button>;
                     })}
                   </div>
                   {(s.qrMode === "url") && (
                     <input value={s.qrUrl || ""} onChange={function(e) { up("qrUrl", e.target.value); }} placeholder="https://your-link.com" style={{ width: "100%", marginTop: "var(--sp-2)", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: "var(--fs-sm)" }} />
+                  )}
+                  {(s.qrMode === "digital") && (
+                    <div style={{ marginTop: "var(--sp-3)" }}>
+                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-dim)", lineHeight: 1.5, marginBottom: "var(--sp-3)", padding: "var(--sp-3)", background: "var(--bg-elevated)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)" }}>
+                        Generate a mobile-friendly landing page with your contact info. Download the HTML, host it anywhere, then paste the URL below.
+                      </div>
+                      {/* Theme toggle */}
+                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>Page Theme</div>
+                      <div style={{ display: "flex", gap: "var(--sp-2)", marginBottom: "var(--sp-3)" }}>
+                        {[["Dark", "dark"], ["Light", "light"]].map(function(pair) {
+                          var lbl = pair[0], val = pair[1], active = (s.qrDigitalTheme || "dark") === val;
+                          return <button key={val} onClick={function() { up("qrDigitalTheme", val); }} style={{ flex: 1, padding: "var(--sp-2) 0", borderRadius: "var(--radius-md)", border: "1px solid " + (active ? "var(--accent-primary)" : "var(--border-default)"), background: active ? "var(--accent-primary-bg)" : "var(--bg-input)", color: active ? "var(--accent-primary-light)" : "var(--text-tertiary)", fontSize: "var(--fs-sm)", fontWeight: active ? 700 : 400, cursor: "pointer" }}>{lbl}</button>;
+                        })}
+                      </div>
+                      {/* Logo toggle */}
+                      {s.uploadedLogo && (
+                        <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", fontSize: "var(--fs-sm)", color: "var(--text-secondary)", cursor: "pointer", marginBottom: "var(--sp-3)" }}>
+                          <input type="checkbox" checked={s.qrDigitalShowLogo !== false} onChange={function(e) { up("qrDigitalShowLogo", e.target.checked); }} />
+                          Include company logo
+                        </label>
+                      )}
+                      {/* Preview */}
+                      <button onClick={function() { setDigitalPreviewOpen(!digitalPreviewOpen); }} style={{ width: "100%", padding: "var(--sp-2)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)", background: "var(--bg-elevated)", color: "var(--text-secondary)", fontSize: "var(--fs-sm)", cursor: "pointer", marginBottom: "var(--sp-2)" }}>
+                        {digitalPreviewOpen ? "▾ Hide Preview" : "▸ Preview Digital Card"}
+                      </button>
+                      {digitalPreviewOpen && (
+                        <div style={{ border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", overflow: "hidden", marginBottom: "var(--sp-3)" }}>
+                          <iframe srcDoc={generateDigitalCardHTML(s)} style={{ width: "100%", height: 480, border: "none" }} sandbox="allow-scripts allow-same-origin" />
+                        </div>
+                      )}
+                      {/* Download */}
+                      <button onClick={function() {
+                        var html = generateDigitalCardHTML(s);
+                        var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement("a");
+                        a.href = url;
+                        a.download = ((s.personName || "digital-card").replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "-").toLowerCase()) + ".html";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      }} style={{ width: "100%", padding: "var(--sp-3)", borderRadius: "var(--radius-md)", background: "var(--accent-green-bg)", border: "1px solid var(--accent-green-border)", color: "var(--accent-green)", fontSize: "var(--fs-sm)", fontWeight: 700, cursor: "pointer", marginBottom: "var(--sp-3)" }}>
+                        ⬇ Download HTML File
+                      </button>
+                      {/* Hosted URL input */}
+                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>Hosted URL (for QR Code)</div>
+                      <input value={s.qrDigitalUrl || ""} onChange={function(e) { up("qrDigitalUrl", e.target.value); }} placeholder="https://yoursite.com/card.html" style={{ width: "100%", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: "var(--fs-sm)" }} />
+                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-dim)", marginTop: "var(--sp-1)", lineHeight: 1.4 }}>
+                        After hosting your HTML file, paste the URL here. The QR code on your card will link to this page.
+                      </div>
+                    </div>
                   )}
                 </div>
                 {/* QR Dot Style */}
