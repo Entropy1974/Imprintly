@@ -15,7 +15,7 @@
 5. [Tab 2: Media](#media)
 6. [Tab 3: Text](#text)
 7. [Tab 4: Tools](#tools)
-8. [Tab 5: Export](#export)
+8. [Tab 5: Save & Export](#export)
 9. [Tab 6: AI Studio](#ai)
 10. [Keyboard Shortcuts](#shortcuts)
 11. [Export & Print Guide](#printing)
@@ -36,7 +36,7 @@ STEP 3: TEXT     → Enter contact details, company info, taglines
     ↓
 STEP 4: TOOLS    → Fine-tune positions, cover/erase, color swap, QR config
     ↓
-STEP 5: EXPORT   → Save configurations, batch export, card back variants
+STEP 5: SAVE & EXPORT   → Save configurations, batch export, card back variants
     ↓
 STEP 6: AI       → AI design review, impact scoring, template search
 ```
@@ -45,7 +45,7 @@ STEP 6: AI       → AI design review, impact scoring, template search
 - All changes preview **live** on the card to the right
 - **Undo/Redo** with Ctrl+Z / Ctrl+Y (10-level history)
 - Your work **auto-saves** to browser storage — return anytime to continue
-- Export is always available at the bottom of the sidebar regardless of which tab you're on
+- On desktop, the Export bar is always visible at the bottom of the sidebar regardless of which tab you're on. On mobile, Export controls appear when you tap the Export icon in the bottom navigation bar
 
 ---
 
@@ -73,17 +73,39 @@ STEP 6: AI       → AI design review, impact scoring, template search
 └──────────────────────────────────────────────────────────┘
 ```
 
-### Mobile / Tablet
-- Cards shown full-width at top
-- Controls in a **bottom sheet** — swipe up to expand, down to collapse
-- Tab bar at the very bottom as navigation icons
-- All touch targets sized at 44px minimum for accessibility
+### Mobile / Tablet (≤1024px)
+```
+┌──────────────────────────┐
+│                          │
+│    FRONT CARD PREVIEW    │
+│    (full-width, ~40vh)   │
+│                          │
+│    BACK CARD PREVIEW     │
+│                          │
+├──────────────────────────┤ ← slide-up panel (60vh)
+│  [Sub-tab pills]         │
+│  CONTROLS (current tab)  │
+│  (scrollable)        [×] │
+│                          │
+├──────────────────────────┤
+│ Style Media Text Tools   │ ← fixed bottom nav (60px)
+│  Export  AI              │
+└──────────────────────────┘
+```
+
+- **Fixed bottom navigation bar** with 6 SVG icon buttons (Style, Media, Text, Tools, Export, AI)
+- Tap an icon to open that tab's controls in a **slide-up panel** (60vh height, animates from bottom)
+- Tap the same icon again or tap × to close the panel
+- Card preview remains visible above the panel (~40vh)
+- Semi-transparent overlay behind panel — tap to dismiss
+- Touch targets sized at 38px minimum for compact but accessible controls
+- Template grid uses 2-column layout on phones, auto-fill on tablets
 
 ---
 
 ## 3. Getting Started — Your First Card in 5 Minutes {#quickstart}
 
-1. **Pick a template** — Tab 1 (Style) > Templates shows 36 professional designs organized by category. Click one to apply instantly.
+1. **Pick a template** — Tab 1 (Style) > Templates shows 92 designs across 10 categories in a browsable grid. Click one to apply instantly.
 2. **Add your logo** — Tab 2 (Media) > Upload a PNG/SVG logo. Choose "Upload Logo" mode and pick your file.
 3. **Enter your details** — Tab 3 (Text) > Fill in your name, title, phone, email, and website.
 4. **Export** — Scroll to the bottom export bar and click "Export PDF — Both Sides" for a print-ready file.
@@ -95,15 +117,19 @@ That's it! The remaining tabs let you fine-tune colors, positions, and advanced 
 ## 4. Tab 1: Style {#style}
 
 ### Templates
-Choose from **36 built-in templates** organized into categories:
-- **Modern Split** — Diagonal two-panel designs
-- **Minimal & Clean** — Simple, elegant layouts
+Browse **92 template variations** across 10 categories in a responsive grid. Use the category filter pills (All, Modern, Minimal, Executive, etc.) to narrow your selection:
+- **Modern** — Diagonal two-panel designs
+- **Minimal** — Simple, elegant layouts
 - **Executive** — Professional, corporate styles
-- **Bold & Creative** — Eye-catching, colorful designs
+- **Bold** — Eye-catching, colorful designs
 - **Gradient** — Smooth color transitions
-- **Dark & Moody** — Deep, dramatic backgrounds
+- **Dark** — Deep, dramatic backgrounds
+- **Elegant** — Refined, sophisticated styles
+- **Creative** — Artistic, unique layouts
+- **Tech** — Technology-themed designs
+- **Ribbon** — Featuring decorative ribbon/swoosh elements
 
-Each template is built from one of 10 base designs with color and font variations. Thumbnails update live to show your current background image and cover rectangles.
+Each template is built from one of 26 base designs with color and font variations. Thumbnails update live to show your current background image and cover rectangles.
 
 **Custom Templates:** Save your current design to a named category with "+ Save Current Design". Custom templates appear alongside built-ins for one-click reuse.
 
@@ -259,7 +285,7 @@ Located within the Position sub-tab, the QR section controls the back card's QR 
 
 ---
 
-## 8. Tab 5: Export {#export}
+## 8. Tab 5: Save & Export {#export}
 
 ### Save (sub-tab)
 **People / Contacts** — Save and load contact profiles (see Text > People Manager above).
