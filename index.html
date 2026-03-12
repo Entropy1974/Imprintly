@@ -6213,7 +6213,8 @@ var HELP_DOCS = {
     title: "Step 2 — Design",
     sections: [
       { heading: "Colors", body: "Set the light panel (left/top) and dark panel (right/bottom) background colors for the card front. The Accent Color drives the ribbon, icons, and highlight elements. Use the color pickers or type hex values directly. The Back Card section controls the reverse side independently." },
-      { heading: "Typography", body: "Every text element on the card (Name, Title, Company, Tagline, etc.) has independent font size, weight, color, letter spacing, and font family controls. Changes preview live. Reset individual fields or all typography at once using the Reset bar at the top." },
+      { heading: "Typography", body: "Every text element has independent font size, weight, color, letter spacing, font family, and text alignment (Left/Center/Right) controls. Changes preview live. Reset individual fields or all typography at once." },
+      { heading: "Undo / Redo", body: "Press Ctrl+Z to undo and Ctrl+Y (or Ctrl+Shift+Z) to redo. Supports 10 levels of history across all design changes: color picks, position moves, text edits, and template switches." },
       { heading: "Modern Split", body: "Controls the diagonal or curved split between the light and dark panel. Adjust split position (0–100%), angle, and the ribbon/swoosh that overlays the split. The ribbon has many styles: arc, wave, diagonal, double, corner, and more. Control thickness and opacity too." },
     ],
   },
@@ -6223,6 +6224,16 @@ var HELP_DOCS = {
       { heading: "Logo", body: "Upload a PNG/SVG logo, or draw a simple logo using the canvas tool. For uploaded logos, color swap lets you replace specific colors in the logo (useful for matching brand colors). Separate front and back logo color settings are available. The Logo Position tab controls where the logo sits and its size." },
       { heading: "Layout", body: "Choose between Classic layout (standard business card) and Modern Split (two-panel diagonal design). Classic gives full control over individual element positions. Modern Split automatically arranges elements across the two panels." },
       { heading: "Position", body: "Fine-tune the exact X/Y position and scale of every element: logo, name, title, company, phone, email, website, tagline, and QR code. Drag sliders or type values. Reset individual elements or all positions at once." },
+    ],
+  },
+  tools: {
+    title: "Step 4 — Tools",
+    sections: [
+      { heading: "Position", body: "Fine-tune X/Y position and size of every element: Logo, Name, Title, Phone, Email, Website, Tagline, and QR code. Toggle the bleed safe zone guide to see the printable area." },
+      { heading: "Cover / Erase", body: "Draw rectangles over the card to cover unwanted content. Options: auto-fill with panel colors, manual color, gradient modes (G2, G4, IMG), feathered edges, front/back toggle. Includes an eyedropper with 8x magnifier zoom." },
+      { heading: "Color Swap", body: "Recolor areas of the card. Magic Wand mode clicks a color region; Rectangle mode drags to select. Adjust with Hue Shift (0-360°), Flat Replace toggle, and Tolerance slider. Works on front or back." },
+      { heading: "QR Code", body: "Customize the QR code: label text, data mode (vCard / URL / Digital Card), dot style (square/rounded/circle/diamond), corner style, gradient fill, and center logo. Digital Card mode generates a downloadable HTML landing page." },
+      { heading: "Digital Card", body: "Generate a mobile-friendly HTML landing page with your contact info, dark/light themes, company logo, clickable links, and a Save to Contacts button. Download the file, host it anywhere, and link via QR." },
     ],
   },
   content: {
@@ -6246,16 +6257,225 @@ var HELP_DOCS = {
     ],
   },
   save: {
-    title: "Step 6 — Save & Export",
+    title: "Step 5 — Export",
     sections: [
       { heading: "People / Contacts", body: "Save multiple contact profiles. Each profile stores content fields (name, title, phone, email, website) independently from the design. Load a profile to populate those fields without changing colors or layout." },
-      { heading: "Saved Configurations", body: "Save complete design snapshots including all colors, typography, ribbon settings, layout, and logo state. Name them and organize by company. Load any saved config to restore the full design state." },
-      { heading: "Export PDF", body: "Generates a print-ready PDF with both card sides at 3.5\" × 2\" (standard business card size) at high resolution. Ready to send to a print shop or print at home." },
-      { heading: "Export PNG/SVG", body: "PNG exports individual card sides as high-resolution images. SVG export preserves vector quality for professional printing or further editing in Illustrator or Inkscape." },
+      { heading: "Batch Export All People", body: "Generate a single multi-page PDF with cards for every saved person. Each person gets a front and back page using your current design. Great for printing an entire team's cards at once." },
+      { heading: "Saved Configurations", body: "Save complete design snapshots including all colors, typography, ribbon settings, layout, and logo state. Name them and organize by company. Load any saved config to restore the full design state. Use Backup & Restore for external JSON backups." },
+      { heading: "Card Back Variants", body: "Create multiple unique back card designs (Printfinity-style). Add variants with different backgrounds, colors, taglines, and QR styling. All variants are included as extra back pages when exporting PDF." },
+      { heading: "Export Formats", body: "PDF (print-ready, 3.5×2\", 300 DPI, both sides), PNG (1050×600px), JPG (compressed), SVG (vector). Crop marks & bleed (3.175mm) available for professional printing. CMYK preview shows approximate print colors." },
       { heading: "Auto-Save", body: "The app auto-saves your last working state to browser storage. When you return, your design is restored exactly as you left it." },
     ],
   },
 };
+
+
+// ══════════════════════════════════════════════════════
+// USER GUIDE — Full documentation overlay
+// ══════════════════════════════════════════════════════
+
+var GUIDE_SECTIONS = [
+  { id: "overview", title: "Overview", icon: "\ud83c\udf1f", content: [
+    { type: "text", value: "Imprintly creates professional double-sided business cards with a guided 6-step workflow. Work through the tabs in order, or jump to any tab at any time. All changes preview live on the card." },
+    { type: "diagram", label: "Workflow", svg: '<svg viewBox="0 0 600 70" xmlns="http://www.w3.org/2000/svg"><style>text{font:bold 11px sans-serif;fill:#f0f0f0}rect{rx:8}</style><rect x="0" y="10" width="85" height="50" fill="#cc8800" stroke="#f0a030" stroke-width="1.5"/><text x="42" y="40" text-anchor="middle">1. Style</text><rect x="100" y="10" width="85" height="50" fill="#2255aa" stroke="#4488dd" stroke-width="1.5"/><text x="142" y="40" text-anchor="middle">2. Media</text><rect x="200" y="10" width="85" height="50" fill="#cc8800" stroke="#f0a030" stroke-width="1.5"/><text x="242" y="40" text-anchor="middle">3. Text</text><rect x="300" y="10" width="85" height="50" fill="#2255aa" stroke="#4488dd" stroke-width="1.5"/><text x="342" y="40" text-anchor="middle">4. Tools</text><rect x="400" y="10" width="85" height="50" fill="#22aa55" stroke="#44dd88" stroke-width="1.5"/><text x="442" y="40" text-anchor="middle">5. Export</text><rect x="500" y="10" width="85" height="50" fill="#8844cc" stroke="#aa66ff" stroke-width="1.5"/><text x="542" y="40" text-anchor="middle">6. AI</text><line x1="88" y1="35" x2="98" y2="35" stroke="#666" stroke-width="2"/><line x1="188" y1="35" x2="198" y2="35" stroke="#666" stroke-width="2"/><line x1="288" y1="35" x2="298" y2="35" stroke="#666" stroke-width="2"/><line x1="388" y1="35" x2="398" y2="35" stroke="#666" stroke-width="2"/><line x1="488" y1="35" x2="498" y2="35" stroke="#666" stroke-width="2"/></svg>' },
+    { type: "text", value: "Key features: Undo/Redo (Ctrl+Z/Y, 10 levels) \u2022 Auto-save to browser \u2022 Export always available at bottom \u2022 Touch & mobile support \u2022 AI-powered design review" },
+  ]},
+  { id: "layout", title: "Screen Layout", icon: "\ud83d\udcbb", content: [
+    { type: "diagram", label: "Desktop Layout", svg: '<svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg"><style>text{font:11px sans-serif;fill:#ccc}.h{font:bold 12px sans-serif;fill:#f0a030}</style><rect x="1" y="1" width="598" height="298" fill="#0f0f0f" stroke="#333" rx="4"/><rect x="1" y="1" width="598" height="28" fill="#1a1a1a" rx="4"/><text x="12" y="20" class="h">Imprintly</text><text x="510" y="20">\ud83d\udcd6 Guide  ? Help</text><rect x="1" y="30" width="180" height="240" fill="#141414" stroke="#333"/><text x="12" y="50" fill="#cc8800" style="font:bold 10px sans-serif">STYLE  MEDIA  TEXT  TOOLS  EXPORT  AI</text><text x="12" y="70" fill="#888" style="font:9px sans-serif">Sub-tabs: Templates \u2022 Colors \u2022 Typography</text><rect x="12" y="80" width="158" height="120" fill="#1e1e1e" rx="4"/><text x="20" y="100" fill="#aaa" style="font:9px sans-serif">Controls for</text><text x="20" y="115" fill="#aaa" style="font:9px sans-serif">current tab</text><text x="12" y="220" fill="#666" style="font:9px sans-serif">\u2190 Prev     Step 1 of 6     Next \u2192</text><rect x="12" y="235" width="158" height="30" fill="#1e1e1e" rx="4"/><text x="20" y="255" fill="#cc8800" style="font:bold 9px sans-serif">\u2193 Export PDF   PNG   JPG   SVG</text><rect x="190" y="40" width="400" height="110" fill="#1e1e1e" rx="8"/><text x="370" y="55" text-anchor="middle" fill="#666" style="font:9px sans-serif">FRONT</text><rect x="220" y="65" width="140" height="75" fill="#e8e0d0" rx="4"/><rect x="365" y="65" width="200" height="75" fill="#2a2a35" rx="4"/><rect x="190" y="160" width="400" height="110" fill="#1e1e1e" rx="8"/><text x="370" y="175" text-anchor="middle" fill="#666" style="font:9px sans-serif">BACK</text><rect x="220" y="185" width="340" height="75" fill="#2a2a35" rx="4"/></svg>' },
+    { type: "text", value: "Desktop: Sidebar on the left with all controls, live card preview on the right. Export bar always visible at the bottom of the sidebar." },
+    { type: "text", value: "Mobile/Tablet: Cards shown full-width at top. Controls in a bottom sheet \u2014 swipe up to expand. Tab bar at the very bottom. All touch targets 44px minimum." },
+  ]},
+  { id: "quickstart", title: "Quick Start", icon: "\ud83d\ude80", content: [
+    { type: "heading", value: "Your First Card in 5 Minutes" },
+    { type: "steps", value: [
+      "Pick a template \u2014 Tab 1 (Style) > Templates shows 36 professional designs. Click one to apply.",
+      "Add your logo \u2014 Tab 2 (Media) > Choose 'Upload Logo' and select your file.",
+      "Enter your details \u2014 Tab 3 (Text) > Fill in name, title, phone, email, website.",
+      "Export \u2014 Click 'Export PDF \u2014 Both Sides' at the bottom for a print-ready file.",
+    ]},
+    { type: "text", value: "That's it! The remaining tabs let you fine-tune colors, positions, QR codes, and get AI design advice." },
+  ]},
+  { id: "style", title: "Tab 1: Style", icon: "\u2702\ufe0f", content: [
+    { type: "heading", value: "Templates" },
+    { type: "text", value: "Choose from 36 built-in templates organized into categories: Modern Split, Minimal & Clean, Executive, Bold & Creative, Gradient, Dark & Moody. Each template is built from 10 base designs with color and font variations." },
+    { type: "text", value: "Custom Templates: Save your current design with '+ Save Current Design' to create reusable templates organized by category." },
+    { type: "text", value: "Layout Toggle: Switch between Classic Split (traditional) and Modern Split (diagonal two-panel) layouts." },
+    { type: "heading", value: "Colors" },
+    { type: "text", value: "Individual color pickers for every card element. Front Card: Light Panel, Dark Panel, Accent Color, Accent End, Icon Color, Divider Color. Back Card: Background, QR Color, Tagline colors. Click any swatch to open the picker or type hex values directly." },
+    { type: "heading", value: "Typography" },
+    { type: "text", value: "Per-field controls for 9 text elements (Person Name, Title, Phone, Email, Website, Tagline Bold/Light, Company Name/Subtitle). Each offers: Font family, Font size, Bold/Italic/Underline, Text alignment (L/C/R), Color, Letter spacing." },
+    { type: "diagram", label: "Typography Controls", svg: '<svg viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg"><style>text{font:10px sans-serif;fill:#ccc}</style><rect x="0" y="0" width="400" height="60" fill="#1a1a1a" rx="4"/><rect x="10" y="8" width="50" height="20" fill="#cc8800" rx="3"/><text x="35" y="22" text-anchor="middle" fill="#fff" style="font:bold 10px sans-serif">B</text><rect x="65" y="8" width="50" height="20" fill="#2a2a2a" rx="3" stroke="#555"/><text x="90" y="22" text-anchor="middle" style="font:italic 10px sans-serif">I</text><rect x="120" y="8" width="50" height="20" fill="#2a2a2a" rx="3" stroke="#555"/><text x="145" y="22" text-anchor="middle" style="text-decoration:underline">U</text><rect x="185" y="8" width="35" height="20" fill="#cc8800" rx="3"/><text x="202" y="22" text-anchor="middle" fill="#fff" style="font:bold 10px sans-serif">\u25c0</text><rect x="225" y="8" width="35" height="20" fill="#2a2a2a" rx="3" stroke="#555"/><text x="242" y="22" text-anchor="middle">\u25a0</text><rect x="265" y="8" width="35" height="20" fill="#2a2a2a" rx="3" stroke="#555"/><text x="282" y="22" text-anchor="middle">\u25b6</text><text x="185" y="48" fill="#888">L / C / R alignment</text><text x="10" y="48" fill="#888">Bold / Italic / Underline</text></svg>' },
+    { type: "heading", value: "Modern Split (Advanced)" },
+    { type: "text", value: "Only visible when Modern Split layout is selected. Controls for: Watermark (color, opacity, size), Logo & Name sizes, Color Tokens (subtle text, accents, panels, divider), Quick Themes (6 one-click presets: Violet, Emerald, Coral, Navy, Rose, Slate)." },
+  ]},
+  { id: "media", title: "Tab 2: Media", icon: "\ud83d\uddbc\ufe0f", content: [
+    { type: "heading", value: "Logo" },
+    { type: "text", value: "Four logo modes: PMI Logo (built-in), Upload Logo (PNG/SVG/JPG with front/back color tinting), Draw Logo (canvas sketch tool), Company Text (uses company name as text logo)." },
+    { type: "text", value: "Logo Library: Upload multiple logos, name them, switch between them. Logos persist in browser storage across sessions." },
+    { type: "heading", value: "Background Import" },
+    { type: "text", value: "Upload a background image (PNG, JPG, SVG) for the front or back card. Adjust with sliders: Opacity (0-100%), Brightness, Contrast, Saturation. The image becomes the card's background layer." },
+  ]},
+  { id: "text", title: "Tab 3: Text", icon: "\u270f\ufe0f", content: [
+    { type: "heading", value: "Person Details" },
+    { type: "text", value: "Full Name \u2014 As it appears on the card front. Title/Role \u2014 Job title or position. Reset Person button clears all person fields." },
+    { type: "heading", value: "Contact Information" },
+    { type: "text", value: "Phone \u2014 Format as you want it printed. Email \u2014 Full email address. Website \u2014 URL (http/https auto-stripped). Address \u2014 Optional, toggle to show/hide." },
+    { type: "heading", value: "Company & Taglines" },
+    { type: "text", value: "Company Name and Subtitle appear in the header area. Two tagline lines on the back card: Bold Tagline (prominent, accent-colored) and Sub Line (lighter weight). Both support rich text editing." },
+    { type: "heading", value: "People Manager" },
+    { type: "text", value: "Save multiple contact profiles by name. Each profile stores content fields (name, title, phone, email, website) but NOT the design. Load a profile to instantly populate content while keeping your current design. Great for creating cards for multiple team members." },
+  ]},
+  { id: "tools", title: "Tab 4: Tools", icon: "\ud83d\udd27", content: [
+    { type: "heading", value: "Position" },
+    { type: "text", value: "Fine-tune the X/Y position and size of every element: Logo, Name, Title, Phone, Email, Website, Tagline positions, QR Code X/Y/Size. Drag sliders or type values. Reset individual elements or all at once." },
+    { type: "text", value: "Bleed Safe Zone: Toggle to show a dashed red guide overlay marking the safe area for print." },
+    { type: "heading", value: "Cover / Erase" },
+    { type: "text", value: "Draw rectangles over the card to cover template-baked content. Features: Auto-fill with panel color, manual color override, gradient modes (G2 linear, G4 four-point, IMG image-based), feathered edges for seamless blending, front/back toggle." },
+    { type: "text", value: "Eyedropper: 120px magnifier with 8x zoom, crosshair, and hex readout for precise color picking." },
+    { type: "heading", value: "Color Swap" },
+    { type: "text", value: "Intelligently recolor areas: Magic Wand mode (click a color region), Rectangle mode (drag to select area), Hue Shift slider (0-360\u00b0), Flat Replace toggle, Tolerance control. Works on front or back card independently." },
+    { type: "heading", value: "QR Code Configuration" },
+    { type: "text", value: "QR Label: Customize the text below the QR code." },
+    { type: "diagram", label: "QR Data Modes", svg: '<svg viewBox="0 0 500 80" xmlns="http://www.w3.org/2000/svg"><style>text{font:10px sans-serif;fill:#ccc}.t{font:bold 11px sans-serif;fill:#fff}</style><rect x="0" y="0" width="150" height="75" fill="#1a1a1a" rx="6" stroke="#cc8800"/><text x="75" y="18" text-anchor="middle" class="t" fill="#cc8800">vCard</text><text x="75" y="35" text-anchor="middle" fill="#888">Encodes contact info</text><text x="75" y="50" text-anchor="middle" fill="#888">Phone saves contact</text><text x="75" y="65" text-anchor="middle" fill="#888">on scan</text><rect x="170" y="0" width="150" height="75" fill="#1a1a1a" rx="6" stroke="#2255aa"/><text x="245" y="18" text-anchor="middle" class="t" fill="#4488dd">URL</text><text x="245" y="35" text-anchor="middle" fill="#888">Encodes any web URL</text><text x="245" y="50" text-anchor="middle" fill="#888">Opens link when</text><text x="245" y="65" text-anchor="middle" fill="#888">scanned</text><rect x="340" y="0" width="155" height="75" fill="#1a1a1a" rx="6" stroke="#22aa55"/><text x="417" y="18" text-anchor="middle" class="t" fill="#44dd88">Digital Card</text><text x="417" y="35" text-anchor="middle" fill="#888">HTML landing page</text><text x="417" y="50" text-anchor="middle" fill="#888">Download, host, link</text><text x="417" y="65" text-anchor="middle" fill="#888">via QR</text></svg>' },
+    { type: "text", value: "Three QR data modes: vCard (default \u2014 encodes full contact for auto-save), URL (any custom web link), Digital Card (generates a standalone HTML landing page with dark/light themes, contact links, and Save to Contacts button)." },
+    { type: "heading", value: "QR Styling" },
+    { type: "text", value: "Dot Styles: Square, Rounded, Circle, Diamond. Corner Styles: Sharp, Rounded. Gradient Fill: Optional two-color gradient across QR dots. Center Logo: Upload a small logo for the QR center (25% exclusion zone maintains scannability)." },
+  ]},
+  { id: "export", title: "Tab 5: Export", icon: "\ud83d\udcbe", content: [
+    { type: "heading", value: "Save & Manage" },
+    { type: "text", value: "People/Contacts: Save and load contact profiles. Batch Export All People: Generate a single multi-page PDF with cards for every saved person \u2014 each person gets front and back pages." },
+    { type: "text", value: "Saved Configurations: Save complete design snapshots (all colors, typography, layout, logos). Organize by company and config name. Backup & Restore: Export all configs as JSON, import to restore." },
+    { type: "heading", value: "Card Back Variants" },
+    { type: "text", value: "Create multiple unique back card designs (Printfinity-style). The Default Back uses your current design. Add variants with '+ Add Back Variant' \u2014 each can have its own background, colors, taglines, and QR styling. All variants are included when exporting PDF." },
+    { type: "heading", value: "Export Formats" },
+    { type: "diagram", label: "Export Options", svg: '<svg viewBox="0 0 500 90" xmlns="http://www.w3.org/2000/svg"><style>text{font:10px sans-serif;fill:#ccc}.t{font:bold 11px sans-serif}</style><rect x="0" y="0" width="110" height="85" fill="#cc8800" rx="6" opacity="0.15" stroke="#cc8800"/><text x="55" y="20" text-anchor="middle" class="t" fill="#cc8800">PDF</text><text x="55" y="38" text-anchor="middle" fill="#888">Print-ready</text><text x="55" y="52" text-anchor="middle" fill="#888">3.5\u00d72\u0022, 300 DPI</text><text x="55" y="66" text-anchor="middle" fill="#888">Both sides</text><rect x="130" y="0" width="110" height="85" fill="#2255aa" rx="6" opacity="0.15" stroke="#2255aa"/><text x="185" y="20" text-anchor="middle" class="t" fill="#4488dd">PNG</text><text x="185" y="38" text-anchor="middle" fill="#888">High-res raster</text><text x="185" y="52" text-anchor="middle" fill="#888">1050\u00d7600 px</text><text x="185" y="66" text-anchor="middle" fill="#888">Front/Back/Both</text><rect x="260" y="0" width="110" height="85" fill="#22aa55" rx="6" opacity="0.15" stroke="#22aa55"/><text x="315" y="20" text-anchor="middle" class="t" fill="#44dd88">JPG</text><text x="315" y="38" text-anchor="middle" fill="#888">Compressed</text><text x="315" y="52" text-anchor="middle" fill="#888">Front or Back</text><text x="315" y="66" text-anchor="middle" fill="#888">0.95 quality</text><rect x="390" y="0" width="110" height="85" fill="#8844cc" rx="6" opacity="0.15" stroke="#8844cc"/><text x="445" y="20" text-anchor="middle" class="t" fill="#aa66ff">SVG</text><text x="445" y="38" text-anchor="middle" fill="#888">Vector format</text><text x="445" y="52" text-anchor="middle" fill="#888">Scalable</text><text x="445" y="66" text-anchor="middle" fill="#888">For Illustrator</text></svg>' },
+    { type: "heading", value: "Print Preparation" },
+    { type: "text", value: "\u2610 Crop marks & bleed area \u2014 Adds 3.175mm bleed and L-shaped crop marks at corners for professional print shops." },
+    { type: "text", value: "\u2610 CMYK color preview \u2014 Shows approximate CMYK values on color pickers with out-of-gamut warnings." },
+  ]},
+  { id: "ai", title: "Tab 6: AI Studio", icon: "\ud83e\udd16", content: [
+    { type: "heading", value: "Providers" },
+    { type: "text", value: "Claude (Anthropic) \u2014 Free tier available, no key needed. ChatGPT (OpenAI) \u2014 Requires API key. Grok (xAI) \u2014 Requires API key." },
+    { type: "heading", value: "AI Modes" },
+    { type: "text", value: "Review \u2014 Structured feedback on color harmony, typography, whitespace, visual hierarchy, and readability." },
+    { type: "text", value: "Impact Score \u2014 Rates your card across 5 dimensions (0-10 each): Visual Impact, Professionalism, Memorability, Color Harmony, Typography." },
+    { type: "text", value: "Template Search \u2014 Suggests external resources from Dribbble, Behance, Canva with direct links." },
+    { type: "text", value: "Logo Concept \u2014 Describes logo ideas. With paid OpenAI key, generates actual logos via DALL-E 3." },
+    { type: "heading", value: "Design Suggestions" },
+    { type: "text", value: "When AI recommends changes, a Suggestion Panel shows before/after previews. Apply one suggestion, Apply All, or Save as New Template to keep both versions." },
+  ]},
+  { id: "shortcuts", title: "Keyboard Shortcuts", icon: "\u2328\ufe0f", content: [
+    { type: "text", value: "Ctrl+Z \u2014 Undo (10 levels of history)" },
+    { type: "text", value: "Ctrl+Y or Ctrl+Shift+Z \u2014 Redo" },
+    { type: "text", value: "Undo/redo tracks all design changes: colors, positions, text edits, template switches, and more." },
+  ]},
+  { id: "printing", title: "Export & Print Guide", icon: "\ud83d\udda8\ufe0f", content: [
+    { type: "heading", value: "Print Tips" },
+    { type: "steps", value: [
+      "Use PDF export with crop marks enabled for professional printing.",
+      "Standard business card size: 3.5\u0022 \u00d7 2\u0022 (88.9 \u00d7 50.8 mm).",
+      "Keep important content away from edges \u2014 enable the bleed guide to check safe zones.",
+      "Screen colors (RGB) may differ from print (CMYK) \u2014 enable CMYK preview to check.",
+      "Use SVG export for maximum flexibility if your print shop needs a specific format.",
+    ]},
+    { type: "heading", value: "Batch Printing" },
+    { type: "text", value: "Use 'Export All People as PDF' (Export > Save tab) to generate one file with all saved contacts on the same design. Each person gets 2 pages (front + back)." },
+  ]},
+  { id: "faq", title: "Troubleshooting & FAQ", icon: "\u2753", content: [
+    { type: "heading", value: "Common Questions" },
+    { type: "text", value: "My design disappeared: Auto-save uses browser localStorage. If you cleared browser data, it's lost. Use Backup & Restore to create external backups." },
+    { type: "text", value: "Colors look different when printed: RGB and CMYK color spaces differ. Enable CMYK preview to check. For critical color matching, request a proof from your print shop." },
+    { type: "text", value: "QR code won't scan: Ensure good contrast between QR dots and background. Avoid very small QR sizes. If using a center logo, the app automatically limits it to 25% of the QR area." },
+    { type: "text", value: "Can I use this on mobile? Yes! Fully responsive with touch support, bottom sheet controls, and pinch-to-zoom on the card preview." },
+    { type: "text", value: "How do I share my Digital Card? In Tools > QR > Digital mode: download the HTML file, host it anywhere (GitHub Pages, Netlify, your website), paste the URL. The QR links to your hosted page." },
+    { type: "heading", value: "Browser Support" },
+    { type: "text", value: "Chrome 90+, Firefox 88+, Safari 14+, Edge 90+. All data stored in browser localStorage with the imprintly_ prefix. No data sent to any server unless using AI features." },
+  ]},
+];
+
+function UserGuide(props) {
+  var onClose = props.onClose;
+  var scrollRef = React.useRef();
+  var activeRef = React.useRef("overview");
+  var _f = React.useState("overview"), activeSection = _f[0], setActiveSection = _f[1];
+
+  function scrollTo(id) {
+    setActiveSection(id);
+    var el = document.getElementById("guide-" + id);
+    if (el && scrollRef.current) {
+      scrollRef.current.scrollTo({ top: el.offsetTop - 20, behavior: "smooth" });
+    }
+  }
+
+  function renderContent(item, idx) {
+    if (item.type === "text") {
+      return React.createElement("p", { key: idx, style: { fontSize: 14, color: "#ccc", lineHeight: 1.7, margin: "0 0 12px" } }, item.value);
+    }
+    if (item.type === "heading") {
+      return React.createElement("h3", { key: idx, style: { fontSize: 16, fontWeight: 700, color: "#f0a030", margin: "20px 0 8px", letterSpacing: "0.02em" } }, item.value);
+    }
+    if (item.type === "steps") {
+      return React.createElement("ol", { key: idx, style: { margin: "0 0 12px", paddingLeft: 20, color: "#ccc", fontSize: 14, lineHeight: 1.8 } },
+        item.value.map(function(step, i) { return React.createElement("li", { key: i, style: { marginBottom: 6 } }, step); })
+      );
+    }
+    if (item.type === "diagram") {
+      return React.createElement("div", { key: idx, style: { margin: "12px 0 16px", padding: "12px", background: "#0f0f0f", borderRadius: 8, border: "1px solid #2a2a2a" } },
+        item.label && React.createElement("div", { style: { fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 } }, item.label),
+        React.createElement("div", { dangerouslySetInnerHTML: { __html: item.svg }, style: { maxWidth: "100%" } })
+      );
+    }
+    return null;
+  }
+
+  return React.createElement("div", {
+    style: { position: "fixed", inset: 0, zIndex: 9995, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center" },
+    onClick: function(e) { if (e.target === e.currentTarget) onClose(); }
+  },
+    React.createElement("div", {
+      style: { width: "90vw", maxWidth: 1000, height: "85vh", background: "#111", borderRadius: 12, display: "flex", overflow: "hidden", border: "1px solid #333", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }
+    },
+      // Left sidebar - Table of Contents
+      React.createElement("div", {
+        style: { width: 220, minWidth: 220, background: "#0a0a0a", borderRight: "1px solid #222", padding: "20px 0", overflowY: "auto", display: "flex", flexDirection: "column" }
+      },
+        React.createElement("div", { style: { padding: "0 16px 16px", fontSize: 18, fontWeight: 800, color: "#f0a030", letterSpacing: "-0.02em" } }, "\ud83d\udcd6 User Guide"),
+        GUIDE_SECTIONS.map(function(sec) {
+          var isActive = activeSection === sec.id;
+          return React.createElement("button", {
+            key: sec.id,
+            onClick: function() { scrollTo(sec.id); },
+            style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", background: isActive ? "rgba(204,136,0,0.15)" : "transparent", border: "none", borderLeft: isActive ? "3px solid #cc8800" : "3px solid transparent", color: isActive ? "#f0a030" : "#888", fontSize: 13, fontWeight: isActive ? 600 : 400, cursor: "pointer", textAlign: "left", width: "100%", transition: "all 0.15s" }
+          }, React.createElement("span", { style: { fontSize: 16 } }, sec.icon), sec.title);
+        })
+      ),
+      // Right content area
+      React.createElement("div", {
+        ref: scrollRef,
+        style: { flex: 1, overflowY: "auto", padding: "24px 32px" }
+      },
+        // Close button
+        React.createElement("button", {
+          onClick: onClose,
+          style: { position: "sticky", top: 0, float: "right", padding: "6px 14px", borderRadius: 6, background: "#1e1e1e", border: "1px solid #333", color: "#888", fontSize: 13, cursor: "pointer", zIndex: 10 }
+        }, "\u2715 Close"),
+        // Sections
+        GUIDE_SECTIONS.map(function(sec) {
+          return React.createElement("div", { key: sec.id, id: "guide-" + sec.id, style: { marginBottom: 40 } },
+            React.createElement("h2", { style: { fontSize: 22, fontWeight: 800, color: "#f0f0f0", margin: "0 0 16px", paddingBottom: 8, borderBottom: "2px solid #cc8800", display: "flex", alignItems: "center", gap: 10 } },
+              React.createElement("span", { style: { fontSize: 24 } }, sec.icon), sec.title
+            ),
+            sec.content.map(renderContent)
+          );
+        }),
+        // Footer
+        React.createElement("div", { style: { textAlign: "center", padding: "20px 0 10px", fontSize: 12, color: "#555", borderTop: "1px solid #222", marginTop: 20 } },
+          "Imprintly v1.1 \u2014 Updated 2026-03-11 \u2014 See DOCUMENTATION.md for the full maintainer reference"
+        )
+      )
+    )
+  );
+}
 
 function HelpDrawer(props) {
   var tab     = props.tab || "start";     // which stage/tab to show docs for
@@ -6531,6 +6751,7 @@ function App() {
   const [aiMode, setAiMode] = useState("review");
   const [showApiKeys, setShowApiKeys] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [helpDocKey, setHelpDocKey] = useState("start");
   const [sidebarWidth, setSidebarWidth] = useState(322);
 
@@ -8415,12 +8636,20 @@ const applyTemplate = function(t) {
           <div style={{ fontSize: "var(--fs-sm)", letterSpacing: "0.18em", color: "var(--accent-primary)", fontWeight: 700, textTransform: "uppercase", marginBottom: 1, display: isDesktop ? "block" : "none" }}>Professional Business Cards</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontSize: "var(--fs-xl)", fontWeight: 700, color: "var(--text-bright)" }}>Imprintly</div>
-            <button onClick={function() { setHelpDocKey(currentStage.id); setHelpOpen(true); }}
-              style={{ padding: "4px 10px", borderRadius: "var(--radius-md)", background: "var(--bg-panel)",
-                border: "1px solid var(--border-subtle)", color: "var(--text-secondary)", fontSize: "var(--fs-xs)",
-                cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ fontSize: "var(--fs-md)" }}>?</span> Help
-            </button>
+            <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+              <button onClick={function() { setShowGuide(true); }}
+                style={{ padding: "4px 10px", borderRadius: "var(--radius-md)", background: "var(--bg-panel)",
+                  border: "1px solid var(--border-subtle)", color: "var(--text-secondary)", fontSize: "var(--fs-xs)",
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ fontSize: "var(--fs-md)" }}>📖</span> Guide
+              </button>
+              <button onClick={function() { setHelpDocKey(currentStage.id); setHelpOpen(true); }}
+                style={{ padding: "4px 10px", borderRadius: "var(--radius-md)", background: "var(--bg-panel)",
+                  border: "1px solid var(--border-subtle)", color: "var(--text-secondary)", fontSize: "var(--fs-xs)",
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ fontSize: "var(--fs-md)" }}>?</span> Help
+              </button>
+            </div>
           </div>
         </div>
         {/* ── STAGE NAVIGATION (row 1: numbered stages) ── */}
@@ -10460,6 +10689,8 @@ const applyTemplate = function(t) {
         }}
       />
     )}
+    {/* ── User Guide ── */}
+    {showGuide && <UserGuide onClose={function() { setShowGuide(false); }} />}
     {/* ── Help Drawer ── */}
     {helpOpen && (
       <HelpDrawer
