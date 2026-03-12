@@ -379,6 +379,10 @@ const LEGACY_LOGO_WHITE_TEXT = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABf
 function QRCodeSVG(props) {
   var data = props.data, x = props.x, y = props.y, size = props.size;
   var color = props.color || "#fff", bg = props.bg || "rgba(0,0,0,0.2)";
+  var dotStyle = props.dotStyle || "square";
+  var cornerStyle = props.cornerStyle || "square";
+  var logoUrl = props.logoUrl || null;
+  var gradient = props.gradient || null;
   var qr;
   try {
     qr = qrcode(0, 'M');
@@ -394,19 +398,101 @@ function QRCodeSVG(props) {
   const N = qr.getModuleCount();
   const cell = size / N;
   const pad = cell * 4;
-  const cells = [];
+  var gradId = gradient ? ("qrGrad_" + Math.random().toString(36).substr(2, 6)) : null;
+
+  // Detect finder pattern regions (3 corners, each 7x7 modules)
+  var isFinderModule = function(r, c) {
+    // Top-left
+    if (r < 7 && c < 7) return true;
+    // Top-right
+    if (r < 7 && c >= N - 7) return true;
+    // Bottom-left
+    if (r >= N - 7 && c < 7) return true;
+    return false;
+  };
+
+  // Logo exclusion zone (center ~25%)
+  var logoZone = logoUrl ? Math.floor(N * 0.25) : 0;
+  var logoStart = Math.floor((N - logoZone) / 2);
+  var logoEnd = logoStart + logoZone;
+  var isLogoZone = function(r, c) {
+    return logoUrl && r >= logoStart && r < logoEnd && c >= logoStart && c < logoEnd;
+  };
+
+  var fillColor = gradient ? ("url(#" + gradId + ")") : color;
+
+  // Render a single dot based on style
+  var renderDot = function(r, c, cx, cy, sz, key) {
+    var half = sz / 2;
+    switch (dotStyle) {
+      case "rounded":
+        return React.createElement("rect", { key: key, x: cx, y: cy, width: sz, height: sz, rx: sz * 0.3, fill: fillColor });
+      case "circle":
+        return React.createElement("circle", { key: key, cx: cx + half, cy: cy + half, r: half * 0.9, fill: fillColor });
+      case "diamond":
+        var mid = cx + half;
+        var midy = cy + half;
+        return React.createElement("polygon", { key: key, points: mid + "," + cy + " " + (cx + sz) + "," + midy + " " + mid + "," + (cy + sz) + " " + cx + "," + midy, fill: fillColor });
+      default: // square
+        return React.createElement("rect", { key: key, x: cx, y: cy, width: sz, height: sz, fill: fillColor });
+    }
+  };
+
+  // Render finder pattern (7x7 group)
+  var renderFinder = function(startR, startC, key) {
+    var fx = x + startC * cell;
+    var fy = y + startR * cell;
+    var fSize = 7 * cell;
+    var innerSize = 5 * cell;
+    var coreSize = 3 * cell;
+    var rnd = cornerStyle === "rounded" ? cell * 1.2 : 0;
+    return React.createElement("g", { key: key },
+      // Outer square
+      React.createElement("rect", { x: fx, y: fy, width: fSize, height: fSize, rx: rnd, fill: fillColor }),
+      // Inner white
+      React.createElement("rect", { x: fx + cell, y: fy + cell, width: innerSize, height: innerSize, rx: rnd * 0.7, fill: bg }),
+      // Core
+      React.createElement("rect", { x: fx + 2 * cell, y: fy + 2 * cell, width: coreSize, height: coreSize, rx: rnd * 0.5, fill: fillColor })
+    );
+  };
+
+  var cells = [];
+
+  // Render finder patterns as groups
+  cells.push(renderFinder(0, 0, "fp_tl"));
+  cells.push(renderFinder(0, N - 7, "fp_tr"));
+  cells.push(renderFinder(N - 7, 0, "fp_bl"));
+
+  // Render data modules (skip finder regions and logo zone)
   for (let r = 0; r < N; r++) {
     for (let c = 0; c < N; c++) {
+      if (isFinderModule(r, c)) continue;
+      if (isLogoZone(r, c)) continue;
       if (qr.isDark(r, c)) {
-        cells.push(<rect key={r + "_" + c} x={x + c * cell} y={y + r * cell} width={cell} height={cell} fill={color} />);
+        cells.push(renderDot(r, c, x + c * cell, y + r * cell, cell, r + "_" + c));
       }
     }
   }
+
   return (
-    <g>
-      <rect x={x - pad} y={y - pad} width={size + pad * 2} height={size + pad * 2} rx={cell} fill={bg} />
-      {cells}
-    </g>
+    React.createElement("g", null,
+      gradient ? React.createElement("defs", null,
+        React.createElement("linearGradient", { id: gradId, x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+          React.createElement("stop", { offset: "0%", stopColor: gradient.color1 }),
+          React.createElement("stop", { offset: "100%", stopColor: gradient.color2 })
+        )
+      ) : null,
+      React.createElement("rect", { x: x - pad, y: y - pad, width: size + pad * 2, height: size + pad * 2, rx: cell, fill: bg }),
+      cells,
+      logoUrl ? React.createElement("image", {
+        href: logoUrl,
+        x: x + logoStart * cell,
+        y: y + logoStart * cell,
+        width: logoZone * cell,
+        height: logoZone * cell,
+        preserveAspectRatio: "xMidYMid meet"
+      }) : null
+    )
   );
 }
 // ─────────────────────────────────────────────────────────────────
@@ -454,6 +540,10 @@ var DEFAULT_STATE = {
   bgColorSwapsBack: [],
   iconStyle: "circle-filled",
   qrX: 548, qrY: 102, qrSize: 296,
+  qrLabel: "SCAN TO ADD CONTACT", qrMode: "vcard", qrUrl: "",
+  qrDotStyle: "square", qrCornerStyle: "square", qrLogo: null, qrGradient: null,
+  showBleed: false, cropMarks: false, cmykPreview: false,
+  backVariants: [], activeBackVariant: -1,
   showDividerLine1: true, showDividerLine2: true,
   dividerLine1Y: null, dividerLine2Y: null,
   dividerLine1X1: null, dividerLine1X2: null,
@@ -463,15 +553,15 @@ var DEFAULT_STATE = {
   msLogoSize: 72, msNameSize: 52, msContactText: "", msSubtleText: "",
   msWatermarkColor: "", msWatermarkOpacity: 12, msWatermarkSize: 260,
   styles: {
-    personName:      { fontSize: 38,  bold: true,  italic: false, underline: false, color: "#ffffff", fontFamily: "'Montserrat', sans-serif" },
-    title:           { fontSize: 22,  bold: false, italic: false, underline: false, color: "#cccccc", fontFamily: "'Montserrat', sans-serif" },
-    phone:           { fontSize: 19,  bold: false, italic: false, underline: false, color: "#dddddd", fontFamily: "'Montserrat', sans-serif" },
-    email:           { fontSize: 19,  bold: false, italic: false, underline: false, color: "#dddddd", fontFamily: "'Montserrat', sans-serif" },
-    website:         { fontSize: 19,  bold: false, italic: false, underline: false, color: "#dddddd", fontFamily: "'Montserrat', sans-serif" },
-    taglineBold:     { fontSize: 18,  bold: false, italic: false, underline: false, color: "#ffffff", fontFamily: "'Montserrat', sans-serif" },
-    taglineLight:    { fontSize: 18,  bold: false, italic: false, underline: false, color: "#aaaaaa", fontFamily: "'Montserrat', sans-serif" },
-    companyName:     { fontSize: 110, bold: true,  italic: false, underline: false, color: "#1a1a1a", fontFamily: "'Montserrat', sans-serif" },
-    companySubtitle: { fontSize: 18,  bold: false, italic: false, underline: false, color: "#444444", fontFamily: "'Montserrat', sans-serif" },
+    personName:      { fontSize: 38,  bold: true,  italic: false, underline: false, color: "#ffffff", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    title:           { fontSize: 22,  bold: false, italic: false, underline: false, color: "#cccccc", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    phone:           { fontSize: 19,  bold: false, italic: false, underline: false, color: "#dddddd", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    email:           { fontSize: 19,  bold: false, italic: false, underline: false, color: "#dddddd", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    website:         { fontSize: 19,  bold: false, italic: false, underline: false, color: "#dddddd", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    taglineBold:     { fontSize: 18,  bold: false, italic: false, underline: false, color: "#ffffff", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    taglineLight:    { fontSize: 18,  bold: false, italic: false, underline: false, color: "#aaaaaa", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    companyName:     { fontSize: 110, bold: true,  italic: false, underline: false, color: "#1a1a1a", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
+    companySubtitle: { fontSize: 18,  bold: false, italic: false, underline: false, color: "#444444", textAlign: "left", fontFamily: "'Montserrat', sans-serif" },
   },
 };
 
@@ -512,15 +602,15 @@ function mkStyles(nc, tc, bc, ac, ff, nSz, tSz, bSz, nBold, tItal) {
   bSz  = bSz  || 19;
   if (nBold === undefined || nBold === null) nBold = true;
   return {
-    personName:      { fontSize: nSz,   bold: nBold,          italic: false,       underline: false, color: nc, fontFamily: ff },
-    title:           { fontSize: tSz,   bold: false,          italic: tItal||false, underline: false, color: tc, fontFamily: ff },
-    phone:           { fontSize: bSz,   bold: false,          italic: false,       underline: false, color: bc, fontFamily: ff },
-    email:           { fontSize: bSz,   bold: false,          italic: false,       underline: false, color: bc, fontFamily: ff },
-    website:         { fontSize: bSz,   bold: false,          italic: false,       underline: false, color: bc, fontFamily: ff },
-    taglineBold:     { fontSize: bSz-1, bold: false,          italic: false,       underline: false, color: tc, fontFamily: ff },
-    taglineLight:    { fontSize: bSz-1, bold: false,          italic: false,       underline: false, color: tc, fontFamily: ff },
-    companyName:     { fontSize: 110,   bold: true,           italic: false,       underline: false, color: nc, fontFamily: ff },
-    companySubtitle: { fontSize: 18,    bold: false,          italic: true,        underline: false, color: ac, fontFamily: ff },
+    personName:      { fontSize: nSz,   bold: nBold,          italic: false,       underline: false, color: nc, fontFamily: ff, textAlign: "left" },
+    title:           { fontSize: tSz,   bold: false,          italic: tItal||false, underline: false, color: tc, fontFamily: ff, textAlign: "left" },
+    phone:           { fontSize: bSz,   bold: false,          italic: false,       underline: false, color: bc, fontFamily: ff, textAlign: "left" },
+    email:           { fontSize: bSz,   bold: false,          italic: false,       underline: false, color: bc, fontFamily: ff, textAlign: "left" },
+    website:         { fontSize: bSz,   bold: false,          italic: false,       underline: false, color: bc, fontFamily: ff, textAlign: "left" },
+    taglineBold:     { fontSize: bSz-1, bold: false,          italic: false,       underline: false, color: tc, fontFamily: ff, textAlign: "left" },
+    taglineLight:    { fontSize: bSz-1, bold: false,          italic: false,       underline: false, color: tc, fontFamily: ff, textAlign: "left" },
+    companyName:     { fontSize: 110,   bold: true,           italic: false,       underline: false, color: nc, fontFamily: ff, textAlign: "left" },
+    companySubtitle: { fontSize: 18,    bold: false,          italic: true,        underline: false, color: ac, fontFamily: ff, textAlign: "left" },
   };
 }
 var GEO  = "'Georgia', serif";
@@ -1592,7 +1682,7 @@ function RichTextSVG(props) {
   var x = props.x, y = props.y, st = props.st, spans = props.spans, defaultColor = props.defaultColor;
   var resolved = toSpans(spans);
   return (
-    <text x={x} y={y} fontSize={st.fontSize} fontFamily={st.fontFamily} fill={defaultColor || st.color}>
+    <text x={x} y={y} textAnchor={st.textAlign === "center" ? "middle" : st.textAlign === "right" ? "end" : "start"} fontSize={st.fontSize} fontFamily={st.fontFamily} fill={defaultColor || st.color}>
       {resolved.map(function(sp, i) {
         return (
           <tspan
@@ -1611,7 +1701,7 @@ function RichTextSVG(props) {
 function T(props) {
   const { x, y, st, children } = props;
   return (
-    <text x={x} y={y} fontSize={st.fontSize} fontWeight={st.bold ? "700" : "400"} fontStyle={st.italic ? "italic" : "normal"} textDecoration={st.underline ? "underline" : "none"} fontFamily={st.fontFamily} fill={st.color}>
+    <text x={x} y={y} textAnchor={st.textAlign === "center" ? "middle" : st.textAlign === "right" ? "end" : "start"} fontSize={st.fontSize} fontWeight={st.bold ? "700" : "400"} fontStyle={st.italic ? "italic" : "normal"} textDecoration={st.underline ? "underline" : "none"} fontFamily={st.fontFamily} fill={st.color}>
       {children}
     </text>
   );
@@ -2255,6 +2345,7 @@ function CardFront(props) {
       {(s.bgColorSwaps || []).filter(function(sw) { return sw.active && sw.patchUrl; }).map(function(sw) {
         return React.createElement("image", { key: "csf_" + sw.id, href: sw.patchUrl, x: sw.patchBounds.x, y: sw.patchBounds.y, width: sw.patchBounds.w, height: sw.patchBounds.h, preserveAspectRatio: "none" });
       })}
+      {s.showBleed && <rect data-guide="bleed" x={32} y={31} width={900-64} height={500-62} fill="none" stroke="#ff4444" strokeWidth="1.5" strokeDasharray="10,5" opacity="0.6" />}
     </svg>
   );
 }
@@ -2331,12 +2422,13 @@ function CardBack(props) {
       <RichTextSVG x={47} y={H / 2 + 110} st={s.styles.taglineBold} spans={s.taglineBold} defaultColor={s.backTaglineBoldColor || s.accentColor} />
       <RichTextSVG x={47} y={H / 2 + 134} st={s.styles.taglineLight} spans={s.taglineLight} defaultColor={s.backTaglineLightColor || s.styles.taglineLight.color} />
       <line x1={s.qrX != null ? s.qrX - 30 : 510} y1="50" x2={s.qrX != null ? s.qrX - 30 : 510} y2={H - 50} stroke={s.dividerColor} strokeWidth="1" opacity="0.3" />
-      <QRCodeSVG x={s.qrX != null ? s.qrX : 548} y={s.qrY != null ? s.qrY : H / 2 - 148} size={s.qrSize != null ? s.qrSize : 296} data={vcard} color={s.backQrColor || s.lightBg} bg="rgba(0,0,0,0.25)" />
-      <text x={(s.qrX != null ? s.qrX : 548) + (s.qrSize != null ? s.qrSize : 296) / 2} y={(s.qrY != null ? s.qrY : H / 2 - 148) + (s.qrSize != null ? s.qrSize : 296) + 20} fontSize="12" fill={s.backTaglineLightColor || s.styles.taglineLight.color} fontFamily={s.styles.taglineLight.fontFamily} textAnchor="middle" opacity="0.6" letterSpacing="1.5">SCAN TO ADD CONTACT</text>
+      <QRCodeSVG x={s.qrX != null ? s.qrX : 548} y={s.qrY != null ? s.qrY : H / 2 - 148} size={s.qrSize != null ? s.qrSize : 296} data={s.qrMode === "url" ? (s.qrUrl || "https://example.com") : vcard} color={s.backQrColor || s.lightBg} bg="rgba(0,0,0,0.25)" dotStyle={s.qrDotStyle} cornerStyle={s.qrCornerStyle} logoUrl={s.qrLogo} gradient={s.qrGradient} />
+      <text x={(s.qrX != null ? s.qrX : 548) + (s.qrSize != null ? s.qrSize : 296) / 2} y={(s.qrY != null ? s.qrY : H / 2 - 148) + (s.qrSize != null ? s.qrSize : 296) + 20} fontSize="12" fill={s.backTaglineLightColor || s.styles.taglineLight.color} fontFamily={s.styles.taglineLight.fontFamily} textAnchor="middle" opacity="0.6" letterSpacing="1.5">{s.qrLabel || "SCAN TO ADD CONTACT"}</text>
       {/* Color Swap patches (topmost layer) */}
       {(s.bgColorSwapsBack || []).filter(function(sw) { return sw.active && sw.patchUrl; }).map(function(sw) {
         return React.createElement("image", { key: "csb_" + sw.id, href: sw.patchUrl, x: sw.patchBounds.x, y: sw.patchBounds.y, width: sw.patchBounds.w, height: sw.patchBounds.h, preserveAspectRatio: "none" });
       })}
+      {s.showBleed && <rect data-guide="bleed" x={32} y={31} width={900-64} height={500-62} fill="none" stroke="#ff4444" strokeWidth="1.5" strokeDasharray="10,5" opacity="0.6" />}
     </svg>
   );
 }
@@ -2458,6 +2550,26 @@ function hexToRgb(hex) {
 }
 function rgbToHex(r, g, b) {
   return "#" + [r,g,b].map(function(v) { var s = Math.max(0,Math.min(255,Math.round(v))).toString(16); return s.length===1?"0"+s:s; }).join("");
+}
+function rgbToCmyk(r, g, b) {
+  var r1 = r/255, g1 = g/255, b1 = b/255;
+  var k = 1 - Math.max(r1, g1, b1);
+  if (k >= 1) return { c: 0, m: 0, y: 0, k: 100 };
+  return {
+    c: Math.round((1-r1-k)/(1-k)*100),
+    m: Math.round((1-g1-k)/(1-k)*100),
+    y: Math.round((1-b1-k)/(1-k)*100),
+    k: Math.round(k*100)
+  };
+}
+function isOutOfGamut(r, g, b) {
+  // Flag highly saturated RGB colors that shift noticeably in CMYK
+  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (max > 240 && min < 30 && (max - min) > 200) return true;
+  // Pure bright blues and greens are problematic
+  if (b > 200 && r < 50 && g < 100) return true;
+  if (g > 220 && r < 50 && b < 50) return true;
+  return false;
 }
 function rgbToHsl(r, g, b) {
   r/=255; g/=255; b/=255;
@@ -3136,13 +3248,25 @@ function CurveEditor(props) {
 // UI HELPERS
 // ─────────────────────────────────────────────────────────────────
 function CF(props) {
-  const { label, value, onChange, compact, onReset } = props;
+  const { label, value, onChange, compact, onReset, cmykPreview } = props;
+  var cmykInfo = null;
+  if (cmykPreview && value && value.length >= 7) {
+    try {
+      var rgb = hexToRgb(value);
+      var cmyk = rgbToCmyk(rgb[0], rgb[1], rgb[2]);
+      var gamut = isOutOfGamut(rgb[0], rgb[1], rgb[2]);
+      cmykInfo = { c: cmyk.c, m: cmyk.m, y: cmyk.y, k: cmyk.k, gamut: gamut };
+    } catch(e) {}
+  }
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginBottom: compact ? 5 : 8 }}>
-      <input type="color" value={value} onChange={function(e) { onChange(e.target.value); }} style={{ width: 30, height: 24, border: "none", borderRadius: "var(--radius-xs)", cursor: "pointer", padding: 1, background: "none", flexShrink: 0 }} />
-      <label style={{ fontSize: compact ? 11 : 12, color: "#ccc", flex: 1 }}>{label}</label>
-      <input type="text" value={value} onChange={function(e) { onChange(e.target.value); }} style={{ width: 72, fontSize: "var(--fs-sm)", background: "var(--bg-panel)", color: "var(--text-soft)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-sm)", padding: "2px 5px", fontFamily: "monospace" }} />
-      {onReset && <button onClick={onReset} title="Reset to template default" style={{ padding: "1px 5px", borderRadius: "var(--radius-xs)", background: "var(--bg-elevated)", border: "1px solid var(--border-default)", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer", flexShrink: 0 }}>↺</button>}
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)", marginBottom: cmykInfo ? 2 : (compact ? 5 : 8) }}>
+        <input type="color" value={value} onChange={function(e) { onChange(e.target.value); }} style={{ width: 30, height: 24, border: "none", borderRadius: "var(--radius-xs)", cursor: "pointer", padding: 1, background: "none", flexShrink: 0 }} />
+        <label style={{ fontSize: compact ? 11 : 12, color: "#ccc", flex: 1 }}>{label}{cmykInfo && cmykInfo.gamut ? " ⚠️" : ""}</label>
+        <input type="text" value={value} onChange={function(e) { onChange(e.target.value); }} style={{ width: 72, fontSize: "var(--fs-sm)", background: "var(--bg-panel)", color: "var(--text-soft)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-sm)", padding: "2px 5px", fontFamily: "monospace" }} />
+        {onReset && <button onClick={onReset} title="Reset to template default" style={{ padding: "1px 5px", borderRadius: "var(--radius-xs)", background: "var(--bg-elevated)", border: "1px solid var(--border-default)", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer", flexShrink: 0 }}>↺</button>}
+      </div>
+      {cmykInfo && <div style={{ fontSize: 9, color: cmykInfo.gamut ? "var(--accent-red)" : "var(--text-dim)", marginBottom: compact ? 5 : 8, paddingLeft: 36, fontFamily: "monospace" }}>C:{cmykInfo.c} M:{cmykInfo.m} Y:{cmykInfo.y} K:{cmykInfo.k}{cmykInfo.gamut ? " — out of CMYK gamut" : ""}</div>}
     </div>
   );
 }
@@ -3209,7 +3333,7 @@ function TSE(props) {
         <div style={{ fontSize: "var(--fs-base)", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</div>
         <button onClick={resetField} title="Reset to template default" style={{ padding: "1px 8px", borderRadius: "var(--radius-sm)", background: "var(--bg-elevated)", border: "1px solid var(--border-default)", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer" }}>↺ Reset</button>
       </div>
-      <CF label="Color" value={st.color} onChange={function(v) { update("color", v); }} onReset={function() { update("color", defSt.color); }} compact={true} />
+      <CF label="Color" value={st.color} onChange={function(v) { update("color", v); }} onReset={function() { update("color", defSt.color); }} compact={true} cmykPreview={props.cmykPreview} />
       <DD label="Font" value={st.fontFamily} onChange={function(v) { update("fontFamily", v); }} options={FONT_OPTIONS} />
       <SL label="Size" value={st.fontSize} onChange={function(v) { update("fontSize", v); }} min={8} max={80} unit="px" onReset={function() { update("fontSize", defSt.fontSize); }} />
       <div style={{ display: "flex", gap: "var(--sp-3)" }}>
@@ -3217,6 +3341,15 @@ function TSE(props) {
           const lbl = pair[0], key = pair[1];
           return (
             <button key={key} onClick={function() { update(key, !st[key]); }} style={{ flex: 1, padding: "5px 0", borderRadius: "var(--radius-md)", border: "1px solid " + (st[key] ? "var(--accent-primary)" : "var(--border-default)"), background: st[key] ? "var(--accent-primary-bg)" : "var(--bg-input)", color: st[key] ? "var(--accent-primary-light)" : "var(--text-tertiary)", fontSize: "var(--fs-lg)", fontWeight: key === "bold" ? 700 : 400, fontStyle: key === "italic" ? "italic" : "normal", textDecoration: key === "underline" ? "underline" : "none", cursor: "pointer" }}>{lbl}</button>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", gap: "var(--sp-3)", marginTop: "var(--sp-3)" }}>
+        {[["⫷", "left"], ["☰", "center"], ["⫸", "right"]].map(function(pair) {
+          const lbl = pair[0], val = pair[1];
+          const active = (st.textAlign || "left") === val;
+          return (
+            <button key={val} onClick={function() { update("textAlign", val); }} style={{ flex: 1, padding: "5px 0", borderRadius: "var(--radius-md)", border: "1px solid " + (active ? "var(--accent-primary)" : "var(--border-default)"), background: active ? "var(--accent-primary-bg)" : "var(--bg-input)", color: active ? "var(--accent-primary-light)" : "var(--text-tertiary)", fontSize: "var(--fs-lg)", cursor: "pointer" }}>{lbl}</button>
           );
         })}
       </div>
@@ -6093,8 +6226,132 @@ function HelpDrawer(props) {
 // ─────────────────────────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// VARIANT MANAGER — Printfinity-style multiple back card designs
+// ─────────────────────────────────────────────────────────────────
+var BACK_VARIANT_KEYS = ["backBg","bgImageBack","bgImageFxBack","coverRectsBack","bgColorSwapsBack","backTaglineBoldColor","backTaglineLightColor","backQrColor","taglineBold","taglineLight"];
+
+function VariantManager(props) {
+  var s = props.s, up = props.up, setS = props.setS;
+  var variants = s.backVariants || [];
+  var activeIdx = s.activeBackVariant != null ? s.activeBackVariant : -1;
+
+  var extractBack = function(state) {
+    var v = {};
+    BACK_VARIANT_KEYS.forEach(function(k) { v[k] = state[k]; });
+    return v;
+  };
+
+  var addVariant = function() {
+    var newVar = Object.assign({ id: "var_" + Date.now(), label: "Variant " + (variants.length + 1) }, extractBack(s));
+    up("backVariants", variants.concat([newVar]));
+  };
+
+  var removeVariant = function(idx) {
+    var updated = variants.filter(function(_, i) { return i !== idx; });
+    up("backVariants", updated);
+    if (activeIdx === idx) up("activeBackVariant", -1);
+    else if (activeIdx > idx) up("activeBackVariant", activeIdx - 1);
+  };
+
+  var switchTo = function(idx) {
+    // Save current back fields to active variant before switching
+    if (activeIdx >= 0 && activeIdx < variants.length) {
+      var saved = variants.map(function(v, i) {
+        return i === activeIdx ? Object.assign({}, v, extractBack(s)) : v;
+      });
+      // Load target variant
+      var target = idx >= 0 ? saved[idx] : null;
+      var patch = { backVariants: saved, activeBackVariant: idx };
+      if (target) {
+        BACK_VARIANT_KEYS.forEach(function(k) { if (target[k] !== undefined) patch[k] = target[k]; });
+      }
+      setS(function(p) { return Object.assign({}, p, patch); });
+    } else {
+      // Currently on default — just load the target variant
+      if (idx >= 0 && idx < variants.length) {
+        var target2 = variants[idx];
+        var patch2 = { activeBackVariant: idx };
+        BACK_VARIANT_KEYS.forEach(function(k) { if (target2[k] !== undefined) patch2[k] = target2[k]; });
+        setS(function(p) { return Object.assign({}, p, patch2); });
+      }
+    }
+  };
+
+  var switchToDefault = function() {
+    // Save current to active variant, then switch to -1 (but keep default back fields as they were)
+    if (activeIdx >= 0 && activeIdx < variants.length) {
+      var saved = variants.map(function(v, i) {
+        return i === activeIdx ? Object.assign({}, v, extractBack(s)) : v;
+      });
+      up("backVariants", saved);
+    }
+    up("activeBackVariant", -1);
+  };
+
+  return React.createElement("div", null,
+    React.createElement("div", { style: { fontSize: "var(--fs-sm)", color: "var(--text-dim)", marginBottom: "var(--sp-4)", lineHeight: 1.5 } },
+      "Create multiple back card designs. Each variant exports as a separate back page in your PDF — perfect for unique cards per pack."),
+    // Default back button
+    React.createElement("button", {
+      onClick: function() { switchToDefault(); },
+      style: { width: "100%", padding: "var(--sp-3)", borderRadius: "var(--radius-default)", border: "1px solid " + (activeIdx === -1 ? "var(--accent-primary)" : "var(--border-default)"), background: activeIdx === -1 ? "var(--accent-primary-bg)" : "var(--bg-input)", color: activeIdx === -1 ? "var(--accent-primary-light)" : "var(--text-secondary)", fontSize: "var(--fs-sm)", fontWeight: activeIdx === -1 ? 700 : 400, cursor: "pointer", marginBottom: "var(--sp-3)" }
+    }, "Default Back" + (activeIdx === -1 ? " (editing)" : "")),
+    // Variant list
+    variants.map(function(v, i) {
+      var isActive = activeIdx === i;
+      return React.createElement("div", { key: v.id, style: { display: "flex", gap: "var(--sp-2)", marginBottom: "var(--sp-2)", alignItems: "center" } },
+        React.createElement("button", {
+          onClick: function() { switchTo(i); },
+          style: { flex: 1, padding: "var(--sp-3)", borderRadius: "var(--radius-default)", border: "1px solid " + (isActive ? "var(--accent-blue)" : "var(--border-default)"), background: isActive ? "var(--accent-blue-bg)" : "var(--bg-input)", color: isActive ? "var(--accent-blue)" : "var(--text-secondary)", fontSize: "var(--fs-sm)", fontWeight: isActive ? 700 : 400, cursor: "pointer", textAlign: "left" }
+        }, v.label + (isActive ? " (editing)" : "")),
+        React.createElement("button", {
+          onClick: function() { removeVariant(i); },
+          style: { padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", background: "var(--accent-red-bg)", border: "1px solid var(--accent-red-border)", color: "var(--accent-red)", fontSize: "var(--fs-sm)", cursor: "pointer" }
+        }, "✕")
+      );
+    }),
+    // Add button
+    React.createElement("button", {
+      onClick: addVariant,
+      style: { width: "100%", marginTop: "var(--sp-3)", padding: "var(--sp-3)", borderRadius: "var(--radius-default)", background: "var(--accent-green-bg)", border: "1px solid var(--accent-green-border)", color: "var(--accent-green)", fontSize: "var(--fs-sm)", fontWeight: 700, cursor: "pointer" }
+    }, "+ Add Back Variant"),
+    variants.length > 0 && React.createElement("div", { style: { fontSize: "var(--fs-xs)", color: "var(--text-dim)", marginTop: "var(--sp-4)" } },
+      "PDF export will include 1 front + " + (variants.length + 1) + " back pages. Switch between variants and use the Style/Media tabs to customize each back."
+    )
+  );
+}
+
 function App() {
   const [s, setS] = useState(DEFAULT_STATE);
+  // ── Undo/Redo system (10-level history) ──
+  const historyRef = useRef([]);
+  const futureRef = useRef([]);
+  const sRef = useRef(s);
+  const historyTimerRef = useRef(null);
+  useEffect(function() { sRef.current = s; }, [s]);
+  const pushHistory = function() {
+    if (historyTimerRef.current) return;
+    historyTimerRef.current = setTimeout(function() { historyTimerRef.current = null; }, 250);
+    var snapshot = Object.assign({}, sRef.current);
+    // Share large data refs instead of deep cloning
+    historyRef.current = historyRef.current.concat([snapshot]).slice(-10);
+    futureRef.current = [];
+  };
+  const undo = function() {
+    if (historyRef.current.length === 0) return;
+    var prev = historyRef.current[historyRef.current.length - 1];
+    historyRef.current = historyRef.current.slice(0, -1);
+    futureRef.current = futureRef.current.concat([Object.assign({}, sRef.current)]);
+    setS(prev);
+  };
+  const redo = function() {
+    if (futureRef.current.length === 0) return;
+    var next = futureRef.current[futureRef.current.length - 1];
+    futureRef.current = futureRef.current.slice(0, -1);
+    historyRef.current = historyRef.current.concat([Object.assign({}, sRef.current)]);
+    setS(next);
+  };
   const [curves, setCurves] = useState(DEFAULT_CURVES);
   const [tab, setTab] = useState("templates");
   const [templateDefaults, setTemplateDefaults] = useState(DEFAULT_STATE);
@@ -6246,9 +6503,25 @@ function App() {
     document.head.appendChild(script);
   }, []);
 
+  // ── Keyboard: Ctrl+Z undo, Ctrl+Y / Ctrl+Shift+Z redo ──
+  useEffect(function() {
+    var handler = function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return function() { document.removeEventListener("keydown", handler); };
+  }, []);
+
   // Auto-load the bundled preset logo on first mount via the same path as a real upload
 
-  const up = function(k, v) { setS(function(p) { const n = Object.assign({}, p); n[k] = v; return n; }); };
+  const up = function(k, v) { pushHistory(); setS(function(p) { const n = Object.assign({}, p); n[k] = v; return n; }); };
   const upFxFront = function(k, v) {
     setS(function(p) {
       var patch = {}; patch[k] = v;
@@ -6279,8 +6552,8 @@ function App() {
       return Object.assign({}, p, { bgImageFxBack: Object.assign({}, p.bgImageFxBack || { brightness: 100, contrast: 100, saturation: 100 }, patch) });
     });
   };
-  const upPos = function(positions) { setS(function(p) { return Object.assign({}, p, { positions: positions }); }); };
-  const upStyles = function(styles) { setS(function(p) { return Object.assign({}, p, { styles: styles }); }); };
+  const upPos = function(positions) { pushHistory(); setS(function(p) { return Object.assign({}, p, { positions: positions }); }); };
+  const upStyles = function(styles) { pushHistory(); setS(function(p) { return Object.assign({}, p, { styles: styles }); }); };
 
   const handleLogoUpload = function(e) {
     const f = e.target.files && e.target.files[0]; if (!f) return;
@@ -7712,6 +7985,9 @@ const applyTemplate = function(t) {
     clone.setAttribute("width", PRINT_W);
     clone.setAttribute("height", PRINT_H);
     clone.setAttribute("viewBox", "0 0 900 500");
+    // Strip bleed/guide overlays from export
+    var guides = clone.querySelectorAll("[data-guide]");
+    for (var gi = 0; gi < guides.length; gi++) guides[gi].remove();
     return new XMLSerializer().serializeToString(clone);
   };
 
@@ -7815,16 +8091,80 @@ const applyTemplate = function(t) {
           setExporting(null);
           return;
         }
-        var doc = new jsPDFLib({ orientation: "landscape", unit: "mm", format: [88.9, 50.8] });
+        var CARD_W = 88.9, CARD_H = 50.8;
+        var BLEED = s.cropMarks ? 3.175 : 0; // 0.125" bleed
+        var MARK_LEN = 3; // crop mark line length in mm
+        var MARK_GAP = 1; // gap from trim edge
+        var pageW = CARD_W + BLEED * 2;
+        var pageH = CARD_H + BLEED * 2;
+        var doc = new jsPDFLib({ orientation: "landscape", unit: "mm", format: [pageW, pageH] });
+        var drawCropMarks = function() {
+          if (!s.cropMarks) return;
+          doc.setDrawColor(0, 0, 0);
+          doc.setLineWidth(0.1);
+          // Top-left
+          doc.line(BLEED - MARK_GAP, 0, BLEED - MARK_GAP, MARK_LEN);
+          doc.line(0, BLEED - MARK_GAP, MARK_LEN, BLEED - MARK_GAP);
+          // Top-right
+          doc.line(pageW - BLEED + MARK_GAP, 0, pageW - BLEED + MARK_GAP, MARK_LEN);
+          doc.line(pageW, BLEED - MARK_GAP, pageW - MARK_LEN, BLEED - MARK_GAP);
+          // Bottom-left
+          doc.line(BLEED - MARK_GAP, pageH, BLEED - MARK_GAP, pageH - MARK_LEN);
+          doc.line(0, pageH - BLEED + MARK_GAP, MARK_LEN, pageH - BLEED + MARK_GAP);
+          // Bottom-right
+          doc.line(pageW - BLEED + MARK_GAP, pageH, pageW - BLEED + MARK_GAP, pageH - MARK_LEN);
+          doc.line(pageW, pageH - BLEED + MARK_GAP, pageW - MARK_LEN, pageH - BLEED + MARK_GAP);
+        };
         // Front on page 1
         var frontData = frontCanvas.toDataURL("image/jpeg", 0.97);
-        doc.addImage(frontData, "JPEG", 0, 0, 88.9, 50.8);
+        doc.addImage(frontData, "JPEG", BLEED, BLEED, CARD_W, CARD_H);
+        drawCropMarks();
         // Back on page 2
-        doc.addPage([88.9, 50.8], "landscape");
+        doc.addPage([pageW, pageH], "landscape");
         var backData = backCanvas.toDataURL("image/jpeg", 0.97);
-        doc.addImage(backData, "JPEG", 0, 0, 88.9, 50.8);
-        doc.save("card-print.pdf");
-        setExporting(null);
+        doc.addImage(backData, "JPEG", BLEED, BLEED, CARD_W, CARD_H);
+        drawCropMarks();
+        // If back variants exist, add extra back pages
+        var backVars = s.backVariants || [];
+        if (backVars.length > 0) {
+          var varIdx = 0;
+          var processVariant = function() {
+            if (varIdx >= backVars.length) {
+              doc.save("card-print.pdf");
+              setExporting(null);
+              return;
+            }
+            var variant = backVars[varIdx];
+            // Temporarily apply variant fields to get variant back SVG
+            var tempS = Object.assign({}, s);
+            BACK_VARIANT_KEYS.forEach(function(k) { if (variant[k] !== undefined) tempS[k] = variant[k]; });
+            // We need to render with variant state — set temporarily
+            setS(tempS);
+            setTimeout(function() {
+              var varBackSvg = getFullResSVG(backRef);
+              // Restore original state
+              setS(s);
+              if (varBackSvg) {
+                svgToCanvas(varBackSvg, function(varBackCanvas) {
+                  if (varBackCanvas) {
+                    doc.addPage([pageW, pageH], "landscape");
+                    doc.addImage(varBackCanvas.toDataURL("image/jpeg", 0.97), "JPEG", BLEED, BLEED, CARD_W, CARD_H);
+                    if (s.cropMarks) drawCropMarks();
+                  }
+                  varIdx++;
+                  processVariant();
+                });
+              } else {
+                varIdx++;
+                processVariant();
+              }
+            }, 200);
+          };
+          processVariant();
+        } else {
+          doc.save("card-print.pdf");
+          setExporting(null);
+        }
       });
     });
   };
@@ -7888,6 +8228,7 @@ const applyTemplate = function(t) {
     { id: "export", step: 5, icon: "💾", label: "Export", desc: "Save designs, manage contacts & export files",
       tabs: [
         { id: "save", label: "Save", icon: "💾" },
+        { id: "variants", label: "Card Backs", icon: "🎴" },
       ]},
     { id: "assist", step: 6, icon: "🤖", label: "AI", desc: "Optional AI-powered design review & search",
       tabs: [
@@ -8842,6 +9183,12 @@ const applyTemplate = function(t) {
             <div>
               <TabHeader step={4} title="Tools — Position" subtitle="Fine-tune placement and size of each card element" color="#2266cc" />
               <TabResetBar label="Reset All Positions" onReset={function() { resetTab("position"); }} />
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-4)", padding: "var(--sp-3) var(--sp-8)", borderBottom: "1px solid #1e1e1e" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", fontSize: "var(--fs-sm)", color: "var(--text-secondary)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={s.showBleed || false} onChange={function(e) { up("showBleed", e.target.checked); }} />
+                  Show bleed safe zone
+                </label>
+              </div>
               <Sec title="Logo Position & Size" defaultOpen={true}>
                 <p style={{ fontSize: "var(--fs-base)", color: "var(--text-muted)", margin: "0 0 8px", lineHeight: 1.4 }}>Controls the logo on the front card for all templates.</p>
                 <SL label="X Position" value={s.logoX} onChange={function(v) { up("logoX", v); }} min={-100} max={600} onReset={function() { up("logoX", templateDefaults.logoX != null ? templateDefaults.logoX : 22); }} />
@@ -8858,6 +9205,74 @@ const applyTemplate = function(t) {
                 <SL label="QR Y Position" value={s.qrY != null ? s.qrY : 102} onChange={function(v) { up("qrY", v); }} min={10} max={400} onReset={function() { up("qrY", 102); }} />
                 <SL label="QR Size" value={s.qrSize != null ? s.qrSize : 296} onChange={function(v) { up("qrSize", v); }} min={80} max={440} onReset={function() { up("qrSize", 296); }} />
                 <SecResetBtn onClick={function() { up("qrX", 548); up("qrY", 102); up("qrSize", 296); }} label="Reset QR Position" />
+                {/* QR Label */}
+                <div style={{ marginTop: "var(--sp-4)" }}>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>QR Label Text</div>
+                  <input value={s.qrLabel || "SCAN TO ADD CONTACT"} onChange={function(e) { up("qrLabel", e.target.value); }} style={{ width: "100%", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: "var(--fs-sm)" }} />
+                </div>
+                {/* QR Mode: vCard / URL */}
+                <div style={{ marginTop: "var(--sp-4)" }}>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>QR Data Mode</div>
+                  <div style={{ display: "flex", gap: "var(--sp-3)" }}>
+                    {[["vCard", "vcard"], ["URL", "url"]].map(function(pair) {
+                      var lbl = pair[0], val = pair[1], active = (s.qrMode || "vcard") === val;
+                      return <button key={val} onClick={function() { up("qrMode", val); }} style={{ flex: 1, padding: "var(--sp-2) 0", borderRadius: "var(--radius-md)", border: "1px solid " + (active ? "var(--accent-primary)" : "var(--border-default)"), background: active ? "var(--accent-primary-bg)" : "var(--bg-input)", color: active ? "var(--accent-primary-light)" : "var(--text-tertiary)", fontSize: "var(--fs-sm)", fontWeight: active ? 700 : 400, cursor: "pointer" }}>{lbl}</button>;
+                    })}
+                  </div>
+                  {(s.qrMode === "url") && (
+                    <input value={s.qrUrl || ""} onChange={function(e) { up("qrUrl", e.target.value); }} placeholder="https://your-link.com" style={{ width: "100%", marginTop: "var(--sp-2)", padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: "var(--fs-sm)" }} />
+                  )}
+                </div>
+                {/* QR Dot Style */}
+                <div style={{ marginTop: "var(--sp-4)" }}>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>QR Dot Style</div>
+                  <div style={{ display: "flex", gap: "var(--sp-1)" }}>
+                    {[["■", "square"], ["▢", "rounded"], ["●", "circle"], ["◆", "diamond"]].map(function(pair) {
+                      var lbl = pair[0], val = pair[1], active = (s.qrDotStyle || "square") === val;
+                      return <button key={val} onClick={function() { up("qrDotStyle", val); }} title={val} style={{ flex: 1, padding: "var(--sp-2) 0", borderRadius: "var(--radius-sm)", border: "1px solid " + (active ? "var(--accent-primary)" : "var(--border-default)"), background: active ? "var(--accent-primary-bg)" : "var(--bg-input)", color: active ? "var(--accent-primary-light)" : "var(--text-tertiary)", fontSize: "var(--fs-lg)", cursor: "pointer" }}>{lbl}</button>;
+                    })}
+                  </div>
+                </div>
+                {/* QR Corner Style */}
+                <div style={{ marginTop: "var(--sp-3)" }}>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>QR Corner Style</div>
+                  <div style={{ display: "flex", gap: "var(--sp-2)" }}>
+                    {[["Sharp", "square"], ["Rounded", "rounded"]].map(function(pair) {
+                      var lbl = pair[0], val = pair[1], active = (s.qrCornerStyle || "square") === val;
+                      return <button key={val} onClick={function() { up("qrCornerStyle", val); }} style={{ flex: 1, padding: "var(--sp-2) 0", borderRadius: "var(--radius-md)", border: "1px solid " + (active ? "var(--accent-primary)" : "var(--border-default)"), background: active ? "var(--accent-primary-bg)" : "var(--bg-input)", color: active ? "var(--accent-primary-light)" : "var(--text-tertiary)", fontSize: "var(--fs-sm)", fontWeight: active ? 700 : 400, cursor: "pointer" }}>{lbl}</button>;
+                    })}
+                  </div>
+                </div>
+                {/* QR Gradient Toggle */}
+                <div style={{ marginTop: "var(--sp-3)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", fontSize: "var(--fs-sm)", color: "var(--text-secondary)", cursor: "pointer" }}>
+                    <input type="checkbox" checked={!!s.qrGradient} onChange={function(e) { up("qrGradient", e.target.checked ? { color1: s.backQrColor || s.lightBg || "#ffffff", color2: s.accentColor || "#cc8800" } : null); }} />
+                    QR gradient fill
+                  </label>
+                  {s.qrGradient && (
+                    <div style={{ display: "flex", gap: "var(--sp-3)", marginTop: "var(--sp-2)" }}>
+                      <CF label="Start" value={s.qrGradient.color1} onChange={function(v) { up("qrGradient", Object.assign({}, s.qrGradient, { color1: v })); }} compact={true} />
+                      <CF label="End" value={s.qrGradient.color2} onChange={function(v) { up("qrGradient", Object.assign({}, s.qrGradient, { color2: v })); }} compact={true} />
+                    </div>
+                  )}
+                </div>
+                {/* QR Center Logo */}
+                <div style={{ marginTop: "var(--sp-3)" }}>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "var(--sp-1)" }}>QR Center Logo</div>
+                  <div style={{ display: "flex", gap: "var(--sp-2)", alignItems: "center" }}>
+                    <label style={{ flex: 1, padding: "var(--sp-2)", borderRadius: "var(--radius-sm)", border: "1px dashed var(--border-default)", background: "var(--bg-input)", color: "var(--text-tertiary)", fontSize: "var(--fs-sm)", cursor: "pointer", textAlign: "center" }}>
+                      {s.qrLogo ? "Change Logo" : "Upload Logo"}
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={function(e) {
+                        var f = e.target.files && e.target.files[0]; if (!f) return;
+                        var reader = new FileReader();
+                        reader.onload = function(ev) { up("qrLogo", ev.target.result); };
+                        reader.readAsDataURL(f);
+                      }} />
+                    </label>
+                    {s.qrLogo && <button onClick={function() { up("qrLogo", null); }} style={{ padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--radius-sm)", background: "var(--accent-red-bg)", border: "1px solid var(--accent-red-border)", color: "var(--accent-red)", fontSize: "var(--fs-sm)", cursor: "pointer" }}>✕</button>}
+                  </div>
+                  {s.qrLogo && <img src={s.qrLogo} style={{ width: 40, height: 40, borderRadius: "var(--radius-sm)", marginTop: "var(--sp-2)", objectFit: "contain", border: "1px solid var(--border-default)" }} />}
+                </div>
               </Sec>
               {(
                 <Sec title="Text Element Positions" defaultOpen={true}>
@@ -9426,10 +9841,66 @@ const applyTemplate = function(t) {
                   setS(function(p) { return Object.assign({}, p, patch); });
                 }}
               />
+              {/* Batch Export All People */}
+              <button
+                onClick={function() {
+                  loadPeopleFromStorage().then(function(people) {
+                    if (!people || Object.keys(people).length === 0) { alert("No saved people to export."); return; }
+                    var entries = Object.entries(people);
+                    var jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+                    if (!jsPDFLib) { alert("PDF library not loaded."); return; }
+                    var CARD_W = 88.9, CARD_H = 50.8;
+                    var bleed = s.cropMarks ? 3.175 : 0;
+                    var pageW = CARD_W + bleed * 2, pageH = CARD_H + bleed * 2;
+                    var doc = new jsPDFLib({ orientation: "landscape", unit: "mm", format: [pageW, pageH] });
+                    var PERSON_KEYS = ["personName","title","phone","email","website","companyName","companySubtitle","taglineBold","taglineLight"];
+                    var idx = 0;
+                    var processNext = function() {
+                      if (idx >= entries.length) {
+                        doc.save("imprintly-all-cards.pdf");
+                        setExporting(null);
+                        return;
+                      }
+                      var person = entries[idx][1];
+                      var tempState = Object.assign({}, s);
+                      PERSON_KEYS.forEach(function(k) { if (person[k] !== undefined) tempState[k] = person[k]; });
+                      // We need to temporarily render this person — update state, wait, capture
+                      setS(tempState);
+                      setTimeout(function() {
+                        var frontSvg = getFullResSVG(cardRef);
+                        var backSvg = getFullResSVG(backRef);
+                        if (!frontSvg || !backSvg) { idx++; processNext(); return; }
+                        svgToCanvas(frontSvg, function(fc) {
+                          svgToCanvas(backSvg, function(bc) {
+                            if (idx > 0) doc.addPage([pageW, pageH], "landscape");
+                            if (fc) doc.addImage(fc.toDataURL("image/jpeg", 0.97), "JPEG", bleed, bleed, CARD_W, CARD_H);
+                            doc.addPage([pageW, pageH], "landscape");
+                            if (bc) doc.addImage(bc.toDataURL("image/jpeg", 0.97), "JPEG", bleed, bleed, CARD_W, CARD_H);
+                            idx++;
+                            processNext();
+                          });
+                        });
+                      }, 300);
+                    };
+                    setExporting("pdf");
+                    processNext();
+                  });
+                }}
+                disabled={!!exporting}
+                style={{ width: "100%", marginTop: "var(--sp-4)", padding: "var(--sp-3)", borderRadius: "var(--radius-default)", background: "var(--accent-blue-bg)", border: "1px solid var(--accent-blue-border)", color: "var(--accent-blue)", fontSize: "var(--fs-sm)", fontWeight: 700, cursor: exporting ? "wait" : "pointer" }}>
+                {exporting === "pdf" ? "⏳ Generating…" : "⬇ Export All People as PDF"}
+              </button>
               <div style={{ borderTop: "1px solid #1e1e1e", margin: "16px 0 12px" }} />
               <div style={{ fontSize: "var(--fs-base)", color: "var(--accent-primary)", fontWeight: 700, marginBottom: "var(--sp-5)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Saved Design Configurations</div>
               <SavePanel currentState={s} currentCurves={curves} onLoad={loadConfig} />
               </div>
+            </div>
+
+          )}
+          {tab === "variants" && (
+            <div style={{ padding: "12px 14px" }}>
+              <TabHeader step={5} title="Export — Card Back Variants" subtitle="Create multiple unique back designs" color="var(--accent-green)" />
+              <VariantManager s={s} up={up} setS={setS} />
             </div>
           )}
         </div>
@@ -9469,6 +9940,17 @@ const applyTemplate = function(t) {
           <div style={{ marginBottom: "var(--sp-4)" }}>
             <div style={{ fontSize: "var(--fs-xs)", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-dim)", fontWeight: 700, marginBottom: "var(--sp-3)" }}>Export</div>
 
+            {/* Crop marks toggle */}
+            <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", fontSize: "var(--fs-sm)", color: "var(--text-secondary)", cursor: "pointer", marginBottom: "var(--sp-3)" }}>
+              <input type="checkbox" checked={s.cropMarks || false} onChange={function(e) { up("cropMarks", e.target.checked); }} />
+              Include crop marks & bleed area (for print shops)
+            </label>
+            {/* CMYK Preview toggle */}
+            <label style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", fontSize: "var(--fs-sm)", color: "var(--text-secondary)", cursor: "pointer", marginBottom: "var(--sp-3)" }}>
+              <input type="checkbox" checked={s.cmykPreview || false} onChange={function(e) { up("cmykPreview", e.target.checked); }} />
+              CMYK color preview (show C/M/Y/K values on color pickers)
+            </label>
+            {s.cmykPreview && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-dim)", marginBottom: "var(--sp-3)", lineHeight: 1.4 }}>Approximate CMYK values shown next to color pickers. ⚠️ = color may shift in print. For exact CMYK, use a professional tool with ICC profiles.</div>}
             {/* PDF — print-ready both sides */}
             <button
               onClick={exportPDF}
