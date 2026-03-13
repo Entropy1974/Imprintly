@@ -91,6 +91,9 @@ var DEFAULT_STATE = {
   showDividerLine1: true, showDividerLine2: true,
   dividerLine1Y: null, dividerLine2Y: null,
   dividerLine1X1: null, dividerLine1X2: null,
+  dividerLine2X1: null, dividerLine2X2: null,
+  backDividerX: null, backDividerY1: null, backDividerY2: null,
+  showBackDivider: true, backDividerColor: "#555555",
   imageFxFront: { brightness: 100, contrast: 100, saturation: 100, colorize: false, colorizeColor: "#d4006e", colorizeOpacity: 40 },
   imageFxBack:  { brightness: 100, contrast: 100, saturation: 100, colorize: false, colorizeColor: "#d4006e", colorizeOpacity: 40 },
   positions: { nameX: null, nameY: null, titleX: null, titleY: null, phoneX: null, phoneY: null, emailX: null, emailY: null, websiteX: null, websiteY: null, addressX: null, addressY: null, taglineBoldX: null, taglineBoldY: null, taglineLightX: null, taglineLightY: null },
@@ -1916,7 +1919,7 @@ function CardFront(props) {
           s.address ? <T key="ad" x={adX} y={adY} st={st.phone}>{s.address}</T> : null
         ];
       })()}
-      {s.showDividerLine2 !== false && <line x1={baseRX} y1={dY2} x2={W - 36} y2={dY2} stroke={s.dividerColor} strokeWidth="1" />}
+      {s.showDividerLine2 !== false && <line x1={s.dividerLine2X1 != null ? s.dividerLine2X1 : baseRX} y1={dY2} x2={s.dividerLine2X2 != null ? s.dividerLine2X2 : W - 36} y2={dY2} stroke={s.dividerColor} strokeWidth="1" />}
       <RichTextSVG x={tbX} y={tbY} st={st.taglineBold} spans={s.taglineBold} />
       <RichTextSVG x={tlX} y={tlY} st={st.taglineLight} spans={s.taglineLight} />
     </svg>
@@ -1969,7 +1972,7 @@ function CardBack(props) {
       <CardCompanyText x={45} y={H / 2 - 120} width={Math.min(s.logoWidth, 300)} styles={backStyles} companyName={s.companyName} companySubtitle={s.companySubtitle} mode={s.logoMode} logoAspect={s.logoAspect || 0.5} show={s.showCompanyText} />
       <RichTextSVG x={47} y={H / 2 + 110} st={s.styles.taglineBold} spans={s.taglineBold} defaultColor={s.backTaglineBoldColor || s.accentColor} />
       <RichTextSVG x={47} y={H / 2 + 134} st={s.styles.taglineLight} spans={s.taglineLight} defaultColor={s.backTaglineLightColor || s.styles.taglineLight.color} />
-      <line x1={s.qrX != null ? s.qrX - 30 : 510} y1="50" x2={s.qrX != null ? s.qrX - 30 : 510} y2={H - 50} stroke={s.dividerColor} strokeWidth="1" opacity="0.3" />
+      {s.showBackDivider !== false && <line x1={s.backDividerX != null ? s.backDividerX : s.qrX != null ? s.qrX - 30 : 510} y1={s.backDividerY1 != null ? s.backDividerY1 : 50} x2={s.backDividerX != null ? s.backDividerX : s.qrX != null ? s.qrX - 30 : 510} y2={s.backDividerY2 != null ? s.backDividerY2 : H - 50} stroke={s.backDividerColor || s.dividerColor} strokeWidth="1" opacity="0.3" />}
       <QRCodeSVG x={s.qrX != null ? s.qrX : 548} y={s.qrY != null ? s.qrY : H / 2 - 148} size={s.qrSize != null ? s.qrSize : 296} data={vcard} color={s.backQrColor || s.lightBg} bg="rgba(0,0,0,0.25)" />
       <text x={(s.qrX != null ? s.qrX : 548) + (s.qrSize != null ? s.qrSize : 296) / 2} y={(s.qrY != null ? s.qrY : H / 2 - 148) + (s.qrSize != null ? s.qrSize : 296) + 20} fontSize="12" fill={s.backTaglineLightColor || s.styles.taglineLight.color} fontFamily={s.styles.taglineLight.fontFamily} textAnchor="middle" opacity="0.6" letterSpacing="1.5">SCAN TO ADD CONTACT</text>
     </svg>
@@ -3029,6 +3032,7 @@ function SavePanel(props) {
   const [showBackup, setShowBackup]         = useState(false);
   const [importText, setImportText]         = useState("");
   const [importStatus, setImportStatus]     = useState(null); // {ok, msg}
+  const [importMode, setImportMode]           = useState("merge");
   const [exportStatus, setExportStatus]     = useState(null);
 
   useEffect(function() {
@@ -3113,24 +3117,78 @@ function SavePanel(props) {
     }
     // Accept either a full backup bundle or a single-card copyCfg snippet
     if (bundle._pmiCardEditorBackup) {
-      // Full backup
-      const jobs = [];
-      if (bundle.configs)         jobs.push(persistConfigs(bundle.configs));
-      if (bundle.people)          jobs.push(window.storage.set("card_people",           JSON.stringify(bundle.people)));
-      if (bundle.customTemplates) jobs.push(window.storage.set("card_custom_templates", JSON.stringify(bundle.customTemplates)));
-      Promise.all(jobs).then(function() {
-        // Reload configs into panel
-        return loadConfigsFromStorage();
-      }).then(function(c) {
-        setConfigs(c);
-        const nCfg = bundle.configs ? Object.values(bundle.configs).reduce(function(a,g){ return a + Object.keys(g).length; }, 0) : 0;
-        const nPpl = bundle.people  ? bundle.people.length : 0;
-        const nTpl = bundle.customTemplates && bundle.customTemplates.templates ? bundle.customTemplates.templates.length : 0;
-        setImportStatus({ ok: true, msg: "✅ Imported " + nCfg + " config(s), " + nPpl + " person profile(s), " + nTpl + " custom template(s)." });
-        setImportText("");
-      }).catch(function(e) {
-        setImportStatus({ ok: false, msg: "❌ Import failed during save: " + e.message });
-      });
+      if (importMode === "replace") {
+        // Full backup - Replace All
+        const jobs = [];
+        if (bundle.configs)         jobs.push(persistConfigs(bundle.configs));
+        if (bundle.people)          jobs.push(window.storage.set("card_people",           JSON.stringify(bundle.people)));
+        if (bundle.customTemplates) jobs.push(window.storage.set("card_custom_templates", JSON.stringify(bundle.customTemplates)));
+        Promise.all(jobs).then(function() {
+          return loadConfigsFromStorage();
+        }).then(function(c) {
+          setConfigs(c);
+          const nCfg = bundle.configs ? Object.values(bundle.configs).reduce(function(a,g){ return a + Object.keys(g).length; }, 0) : 0;
+          const nPpl = bundle.people ? (Array.isArray(bundle.people) ? bundle.people.length : Object.keys(bundle.people).length) : 0;
+          const nTpl = bundle.customTemplates && bundle.customTemplates.templates ? bundle.customTemplates.templates.length : 0;
+          setImportStatus({ ok: true, msg: "✅ Replaced all data: " + nCfg + " config(s), " + nPpl + " person(s), " + nTpl + " template(s)." });
+          setImportText("");
+        }).catch(function(e) {
+          setImportStatus({ ok: false, msg: "❌ Import failed during save: " + e.message });
+        });
+      } else {
+        // Merge mode
+        Promise.all([
+          loadConfigsFromStorage(),
+          window.storage.get("card_people").then(function(r) { try { return r ? JSON.parse(r.value) : {}; } catch(e) { return {}; } }),
+          window.storage.get("card_custom_templates").then(function(r) { try { return r ? JSON.parse(r.value) : { categories: [], templates: [] }; } catch(e) { return { categories: [], templates: [] }; } }),
+        ]).then(function(results) {
+          var existing = results[0] || {};
+          var existPeople = results[1] || {};
+          var existTpl = results[2] || { categories: [], templates: [] };
+          var merged = Object.assign({}, existing);
+          var cfgAdded = 0, cfgRenamed = 0;
+          if (bundle.configs) {
+            Object.keys(bundle.configs).forEach(function(co) {
+              if (!merged[co]) { merged[co] = bundle.configs[co]; cfgAdded += Object.keys(bundle.configs[co]).length; }
+              else {
+                Object.keys(bundle.configs[co]).forEach(function(nm) {
+                  if (!merged[co][nm]) { merged[co] = Object.assign({}, merged[co]); merged[co][nm] = bundle.configs[co][nm]; cfgAdded++; }
+                  else { var newNm = nm + " (imported)"; var i = 2; while(merged[co][newNm]) { newNm = nm + " (imported " + i + ")"; i++; } merged[co] = Object.assign({}, merged[co]); merged[co][newNm] = bundle.configs[co][nm]; cfgAdded++; cfgRenamed++; }
+                });
+              }
+            });
+          }
+          var mergedPeople = Object.assign({}, existPeople);
+          var pplAdded = 0, pplRenamed = 0;
+          var importPeople = bundle.people || {};
+          if (Array.isArray(importPeople)) { var obj = {}; importPeople.forEach(function(p) { if (p && p.personName) obj[p.personName] = p; }); importPeople = obj; }
+          Object.keys(importPeople).forEach(function(nm) {
+            if (!mergedPeople[nm]) { mergedPeople[nm] = importPeople[nm]; pplAdded++; }
+            else { var newNm = nm + " (imported)"; var i = 2; while(mergedPeople[newNm]) { newNm = nm + " (imported " + i + ")"; i++; } mergedPeople[newNm] = importPeople[nm]; pplAdded++; pplRenamed++; }
+          });
+          var mergedTpl = Object.assign({}, existTpl);
+          if (bundle.customTemplates && bundle.customTemplates.templates) {
+            var existNames = new Set((mergedTpl.templates || []).map(function(t) { return t.name || ""; }));
+            bundle.customTemplates.templates.forEach(function(t) { if (!existNames.has(t.name || "")) { mergedTpl.templates = mergedTpl.templates || []; mergedTpl.templates.push(t); } });
+            if (bundle.customTemplates.categories) {
+              var existCats = new Set((mergedTpl.categories || []).map(function(c) { return c.id || ""; }));
+              bundle.customTemplates.categories.forEach(function(c) { if (!existCats.has(c.id || "")) { mergedTpl.categories = mergedTpl.categories || []; mergedTpl.categories.push(c); } });
+            }
+          }
+          var jobs2 = [];
+          jobs2.push(persistConfigs(merged));
+          jobs2.push(window.storage.set("card_people", JSON.stringify(mergedPeople)));
+          jobs2.push(window.storage.set("card_custom_templates", JSON.stringify(mergedTpl)));
+          return Promise.all(jobs2).then(function() { return loadConfigsFromStorage(); }).then(function(c) {
+            setConfigs(c);
+            var msg = "✅ Merged: " + cfgAdded + " config(s) added" + (cfgRenamed ? " (" + cfgRenamed + " renamed)" : "") + ", " + pplAdded + " person(s) added" + (pplRenamed ? " (" + pplRenamed + " renamed)" : "") + ".";
+            setImportStatus({ ok: true, msg: msg });
+            setImportText("");
+          });
+        }).catch(function(e) {
+          setImportStatus({ ok: false, msg: "❌ Merge failed: " + e.message });
+        });
+      }
     } else if (bundle.card && bundle.curves !== undefined) {
       // Single-card copyCfg JSON — load it directly as the active card
       onLoad(bundle.card, bundle.curves);
@@ -3196,6 +3254,11 @@ function SavePanel(props) {
 
             {/* Import: file picker */}
             <div style={{ fontSize: 11, color: "#666", fontWeight: 700, marginBottom: 6 }}>Import from .json file</div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              <button onClick={function() { setImportMode("merge"); }} style={{ flex: 1, padding: "6px 0", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", background: importMode === "merge" ? "#1a3a2a" : "#111", border: "1px solid " + (importMode === "merge" ? "#2a7a4a" : "#333"), color: importMode === "merge" ? "#6fc96f" : "#666" }}>Merge</button>
+              <button onClick={function() { setImportMode("replace"); }} style={{ flex: 1, padding: "6px 0", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", background: importMode === "replace" ? "#3a1a1a" : "#111", border: "1px solid " + (importMode === "replace" ? "#7a2a2a" : "#333"), color: importMode === "replace" ? "#ff6b6b" : "#666" }}>Replace All</button>
+            </div>
+            <div style={{ fontSize: 10, color: "#555", marginBottom: 8, lineHeight: 1.4 }}>{importMode === "merge" ? "Merge adds new items and renames duplicates. Existing data is preserved." : "Replace All overwrites everything with the imported data."}</div>
             <label style={{ display: "block", width: "100%", boxSizing: "border-box" }}>
               <div style={Object.assign({}, btnBase, { background: "#1a1a2a", border: "1px solid #2a2a5a", color: "#7070cf", textAlign: "center", padding: "7px 0", marginBottom: 6 })}>
                 📂 Choose Backup File…
@@ -7639,6 +7702,31 @@ const applyTemplate = function(t) {
                   <SecResetBtn onClick={function() { upPos(Object.assign({}, DEFAULT_POSITIONS)); }} label="Reset All Text Positions" />
                 </Sec>
               )}
+              <Sec title="Dividers" defaultOpen={false}>
+                <p style={{ fontSize: 11, color: "#555", margin: "0 0 8px", lineHeight: 1.4 }}>Show, hide, and reposition divider lines on front and back cards.</p>
+                <div style={{ fontSize: 11, color: "#aaa", fontWeight: 700, marginTop: 8, marginBottom: 4 }}>Front Card — Divider Line 1</div>
+                <label style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 6, marginBottom: 6, cursor: "pointer" }}>
+                  <input type="checkbox" checked={s.showDividerLine1 !== false} onChange={function(e) { up("showDividerLine1", e.target.checked); }} />Show Line 1
+                </label>
+                <SL label="Y Position" value={s.dividerLine1Y != null ? s.dividerLine1Y : 0} onChange={function(v) { up("dividerLine1Y", v); }} min={10} max={480} onReset={function() { up("dividerLine1Y", null); }} />
+                <SL label="Start X" value={s.dividerLine1X1 != null ? s.dividerLine1X1 : 0} onChange={function(v) { up("dividerLine1X1", v); }} min={0} max={850} onReset={function() { up("dividerLine1X1", null); }} />
+                <SL label="End X" value={s.dividerLine1X2 != null ? s.dividerLine1X2 : 864} onChange={function(v) { up("dividerLine1X2", v); }} min={50} max={900} onReset={function() { up("dividerLine1X2", null); }} />
+                <div style={{ fontSize: 11, color: "#aaa", fontWeight: 700, marginTop: 12, marginBottom: 4 }}>Front Card — Divider Line 2</div>
+                <label style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 6, marginBottom: 6, cursor: "pointer" }}>
+                  <input type="checkbox" checked={s.showDividerLine2 !== false} onChange={function(e) { up("showDividerLine2", e.target.checked); }} />Show Line 2
+                </label>
+                <SL label="Y Position" value={s.dividerLine2Y != null ? s.dividerLine2Y : 0} onChange={function(v) { up("dividerLine2Y", v); }} min={10} max={480} onReset={function() { up("dividerLine2Y", null); }} />
+                <SL label="Start X" value={s.dividerLine2X1 != null ? s.dividerLine2X1 : 0} onChange={function(v) { up("dividerLine2X1", v); }} min={0} max={850} onReset={function() { up("dividerLine2X1", null); }} />
+                <SL label="End X" value={s.dividerLine2X2 != null ? s.dividerLine2X2 : 864} onChange={function(v) { up("dividerLine2X2", v); }} min={50} max={900} onReset={function() { up("dividerLine2X2", null); }} />
+                <div style={{ fontSize: 11, color: "#aaa", fontWeight: 700, marginTop: 12, marginBottom: 4 }}>Back Card — Divider</div>
+                <label style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 6, marginBottom: 6, cursor: "pointer" }}>
+                  <input type="checkbox" checked={s.showBackDivider !== false} onChange={function(e) { up("showBackDivider", e.target.checked); }} />Show Back Divider
+                </label>
+                <SL label="X Position" value={s.backDividerX != null ? s.backDividerX : s.qrX != null ? s.qrX - 30 : 510} onChange={function(v) { up("backDividerX", v); }} min={10} max={850} onReset={function() { up("backDividerX", null); }} />
+                <SL label="Top Y" value={s.backDividerY1 != null ? s.backDividerY1 : 50} onChange={function(v) { up("backDividerY1", v); }} min={0} max={480} onReset={function() { up("backDividerY1", null); }} />
+                <SL label="Bottom Y" value={s.backDividerY2 != null ? s.backDividerY2 : 450} onChange={function(v) { up("backDividerY2", v); }} min={20} max={500} onReset={function() { up("backDividerY2", null); }} />
+                <SecResetBtn onClick={function() { up("dividerLine1Y", null); up("dividerLine1X1", null); up("dividerLine1X2", null); up("dividerLine2Y", null); up("dividerLine2X1", null); up("dividerLine2X2", null); up("backDividerX", null); up("backDividerY1", null); up("backDividerY2", null); }} label="Reset All Divider Positions" />
+              </Sec>
             </div>
           )}
 
