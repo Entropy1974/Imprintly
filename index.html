@@ -692,6 +692,196 @@
         }
       };
     })();
+
+// ═══════════════════════════════════════════════════════════════
+// DATA SERVICE — API-ready abstraction over IndexedDB
+// Each collection mirrors a future REST API resource.
+// Methods: list() / get(id) / save(item) / delete(id)
+// All return Promises. Swap implementation to fetch() for cloud.
+// ═══════════════════════════════════════════════════════════════
+window.DataService = (function() {
+  var PREFIX = 'ds_';
+
+  // Generic CRUD for a JSON collection stored under one IDB key
+  function makeCollection(key) {
+    var fullKey = PREFIX + key;
+    var _mem = {};
+
+    function _load() {
+      return window.storage.get(fullKey).then(function(r) {
+        if (r && r.value) {
+          try { var parsed = JSON.parse(r.value); _mem = parsed; return parsed; } catch(e) {}
+        }
+        return _mem;
+      }).catch(function() { return Object.assign({}, _mem); });
+    }
+
+    function _save(data) {
+      _mem = data;
+      return window.storage.set(fullKey, JSON.stringify(data)).then(function() {
+        // Write-back verification
+        return window.storage.get(fullKey);
+      }).then(function(r) {
+        if (!r || !r.value) throw new Error('Write verification failed for ' + fullKey);
+        return data;
+      });
+    }
+
+    return {
+      list: function() {
+        return _load().then(function(data) {
+          if (Array.isArray(data)) return data;
+          return Object.keys(data).map(function(k) { return Object.assign({ id: k }, data[k]); });
+        });
+      },
+      get: function(id) {
+        return _load().then(function(data) {
+          if (Array.isArray(data)) return data.find(function(item) { return item.id === id; }) || null;
+          return data[id] ? Object.assign({ id: id }, data[id]) : null;
+        });
+      },
+      save: function(item) {
+        return _load().then(function(data) {
+          if (!item.id) item.id = 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+          if (!item.createdAt) item.createdAt = new Date().toISOString();
+          item.updatedAt = new Date().toISOString();
+          if (Array.isArray(data)) {
+            var idx = data.findIndex(function(d) { return d.id === item.id; });
+            if (idx >= 0) data[idx] = item; else data.push(item);
+          } else {
+            data[item.id] = item;
+          }
+          return _save(data).then(function() { return item; });
+        });
+      },
+      delete: function(id) {
+        return _load().then(function(data) {
+          if (Array.isArray(data)) {
+            data = data.filter(function(d) { return d.id !== id; });
+          } else {
+            delete data[id];
+          }
+          return _save(data);
+        });
+      },
+      // Bulk replace — used by migration and backward-compat wrappers
+      _replaceAll: function(data) { return _save(data); },
+      _loadRaw: function() { return _load(); },
+      _mem: function() { return _mem; }
+    };
+  }
+
+  // Collection instances
+  var svc = {
+    configs:    makeCollection('configs'),
+    people:     makeCollection('people'),
+    templates:  makeCollection('templates'),
+    assets:     makeCollection('assets'),
+    brandKits:  makeCollection('brandkits'),
+    jobs:       makeCollection('jobs')
+  };
+
+  // Migration from old storage keys to DataService collections
+  svc._migrate = function() {
+    return window.storage.get('_ds_migrated').then(function(flag) {
+      if (flag && flag.value === 'v1') return Promise.resolve();
+      console.log('[DataService] Migrating from legacy storage...');
+
+      var tasks = [];
+
+      // Migrate card_configs
+      tasks.push(
+        window.storage.get('card_configs').then(function(r) {
+          if (r && r.value) {
+            try {
+              var old = JSON.parse(r.value);
+              // old format: { configName: { name, category, card, curves } }
+              var migrated = {};
+              Object.keys(old).forEach(function(k) {
+                var cfg = old[k];
+                migrated[k] = Object.assign({}, cfg, {
+                  id: k,
+                  createdAt: cfg.savedAt || new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
+                });
+              });
+              return svc.configs._replaceAll(migrated);
+            } catch(e) { console.warn('[DataService] configs migration parse error', e); }
+          }
+          return Promise.resolve();
+        })
+      );
+
+      // Migrate card_people
+      tasks.push(
+        window.storage.get('card_people').then(function(r) {
+          if (r && r.value) {
+            try {
+              var old = JSON.parse(r.value);
+              // old format: { personName: { personName, title, ... savedAt } }
+              var migrated = {};
+              Object.keys(old).forEach(function(k) {
+                var p = old[k];
+                migrated[k] = Object.assign({}, p, {
+                  id: k,
+                  createdAt: p.savedAt || new Date().toISOString(),
+                  updatedAt: p.editedAt || new Date().toISOString()
+                });
+              });
+              return svc.people._replaceAll(migrated);
+            } catch(e) { console.warn('[DataService] people migration parse error', e); }
+          }
+          return Promise.resolve();
+        })
+      );
+
+      // Migrate card_custom_templates
+      tasks.push(
+        window.storage.get('card_custom_templates').then(function(r) {
+          if (r && r.value) {
+            try {
+              var old = JSON.parse(r.value);
+              return svc.templates._replaceAll(old);
+            } catch(e) { console.warn('[DataService] templates migration parse error', e); }
+          }
+          return Promise.resolve();
+        })
+      );
+
+      // Migrate logo_library
+      tasks.push(
+        window.storage.get('logo_library').then(function(r) {
+          if (r && r.value) {
+            try {
+              var old = JSON.parse(r.value);
+              // old format: array of { name, dataUrl }
+              var migrated = (old || []).map(function(item, i) {
+                return Object.assign({}, item, {
+                  id: item.id || ('logo_' + i + '_' + Date.now()),
+                  type: 'logo',
+                  createdAt: item.createdAt || new Date().toISOString()
+                });
+              });
+              return svc.assets._replaceAll(migrated);
+            } catch(e) { console.warn('[DataService] assets migration parse error', e); }
+          }
+          return Promise.resolve();
+        })
+      );
+
+      return Promise.all(tasks).then(function() {
+        return window.storage.set('_ds_migrated', 'v1');
+      }).then(function() {
+        console.log('[DataService] Migration complete');
+      });
+    }).catch(function(e) {
+      console.warn('[DataService] Migration check failed, continuing...', e);
+    });
+  };
+
+  return svc;
+})();
+
   </script>
 
   <script>
@@ -948,10 +1138,23 @@ function CF(props){const{label,value,onChange,compact,onReset,cmykPreview}=props
 // SAVE PANEL
 // ─────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────
-// PERSISTENT STORAGE HELPERS  (window.storage artifact API)
-// Falls back to in-memory store when window.storage is unavailable
+// PERSISTENT STORAGE HELPERS — thin wrappers around DataService
+// Backward-compatible function signatures preserved
 // ─────────────────────────────────────────────────────────────────
-function getStorageUsage(){return{usedKB:0,limitKB:0,pct:0,isFull:false,isIDB:true};}var _memStore={};function loadConfigsFromStorage(){return new Promise(function(resolve){if(window.storage){window.storage.get("card_configs").then(function(result){if(result&&result.value){try{resolve(JSON.parse(result.value));return;}catch(e){}}resolve({});}).catch(function(){resolve(Object.assign({},_memStore));});}else{resolve(Object.assign({},_memStore));}});}function persistConfigs(configs){_memStore=configs;return new Promise(function(resolve,reject){if(window.storage){var json=JSON.stringify(configs);window.storage.set("card_configs",json).then(function(){return window.storage.get("card_configs");}).then(function(r){if(!r||!r.value||r.value.length<json.length*0.9){reject(new Error("Write verification failed: data not stored"));}else{resolve();}}).catch(function(e){reject(e||new Error("Storage write failed — browser may be full or in private mode"));});}else{reject(new Error("No storage available"));}});}var _memPeople={};function loadPeopleFromStorage(){return new Promise(function(resolve){if(window.storage){window.storage.get("card_people").then(function(result){if(result&&result.value){try{resolve(JSON.parse(result.value));return;}catch(e){}}resolve({});}).catch(function(){resolve(Object.assign({},_memPeople));});}else{resolve(Object.assign({},_memPeople));}});}function persistPeople(people){_memPeople=people;return new Promise(function(resolve,reject){if(window.storage){window.storage.set("card_people",JSON.stringify(people)).then(function(){resolve();}).catch(function(e){reject(e||new Error("People storage write failed"));});}else{reject(new Error("No storage available"));}});}var _memCustomTemplates={};function loadCustomTemplatesFromStorage(){return new Promise(function(resolve){if(window.storage){window.storage.get("card_custom_templates").then(function(result){if(result&&result.value){try{resolve(JSON.parse(result.value));return;}catch(e){}}resolve({});}).catch(function(){resolve(Object.assign({},_memCustomTemplates));});}else{resolve(Object.assign({},_memCustomTemplates));}});}function persistCustomTemplates(data){_memCustomTemplates=data;return new Promise(function(resolve){if(window.storage){window.storage.set("card_custom_templates",JSON.stringify(data)).then(function(){resolve();}).catch(function(){resolve();});}else{resolve();}});}var _memLogoLibrary=[];function loadLogoLibraryFromStorage(){return new Promise(function(resolve){if(window.storage){window.storage.get("logo_library").then(function(result){if(result&&result.value){try{resolve(JSON.parse(result.value));return;}catch(e){}}resolve([]);}).catch(function(){resolve(_memLogoLibrary.slice());});}else{resolve(_memLogoLibrary.slice());}});}function persistLogoLibrary(arr){_memLogoLibrary=arr;return new Promise(function(resolve){if(window.storage){window.storage.set("logo_library",JSON.stringify(arr)).then(function(){resolve();}).catch(function(){resolve();});}else{resolve();}});}// ─────────────────────────────────────────────────────────────────
+function getStorageUsage(){return{usedKB:0,limitKB:0,pct:0,isFull:false,isIDB:true};}
+var _memStore={};
+function loadConfigsFromStorage(){return window.DataService?window.DataService.configs._loadRaw().then(function(d){_memStore=d;return d;}):Promise.resolve(Object.assign({},_memStore));}
+function persistConfigs(configs){_memStore=configs;if(!window.DataService)return Promise.reject(new Error("No DataService"));return window.DataService.configs._replaceAll(configs);}
+var _memPeople={};
+function loadPeopleFromStorage(){return window.DataService?window.DataService.people._loadRaw().then(function(d){_memPeople=d;return d;}):Promise.resolve(Object.assign({},_memPeople));}
+function persistPeople(people){_memPeople=people;if(!window.DataService)return Promise.reject(new Error("No DataService"));return window.DataService.people._replaceAll(people);}
+var _memCustomTemplates={};
+function loadCustomTemplatesFromStorage(){return window.DataService?window.DataService.templates._loadRaw().then(function(d){_memCustomTemplates=d;return d;}):Promise.resolve(Object.assign({},_memCustomTemplates));}
+function persistCustomTemplates(data){_memCustomTemplates=data;if(!window.DataService)return Promise.resolve();return window.DataService.templates._replaceAll(data).catch(function(){});}
+var _memLogoLibrary=[];
+function loadLogoLibraryFromStorage(){return window.DataService?window.DataService.assets._loadRaw().then(function(d){var arr=Array.isArray(d)?d:[];_memLogoLibrary=arr;return arr;}):Promise.resolve(_memLogoLibrary.slice());}
+function persistLogoLibrary(arr){_memLogoLibrary=arr;if(!window.DataService)return Promise.resolve();return window.DataService.assets._replaceAll(arr).catch(function(){});}
+// ─────────────────────────────────────────────────────────────────
 // PEOPLE PANEL  — save / load per-person content field sets
 // ─────────────────────────────────────────────────────────────────
 function PeoplePanel(props){var currentState=props.currentState;var onLoad=props.onLoad;var[people,setPeople]=React.useState({});var[loading,setLoading]=React.useState(true);var[saving,setSaving]=React.useState(false);var[personKey,setPersonKey]=React.useState("");var[expanded,setExpanded]=React.useState(null);var[confirmDel,setConfirmDel]=React.useState(null);var[editMode,setEditMode]=React.useState(null);// key being edited
@@ -960,10 +1163,10 @@ var PERSON_FIELDS=[{key:"personName",label:"Full Name"},{key:"title",label:"Titl
 if(Array.isArray(val)){d[f.key]=val.map(function(sp){return typeof sp==="string"?sp:sp.text||"";}).join("");}else{d[f.key]=val||"";}});return d;}function displayName(entry){return entry.personName||entry.companyName||"(unnamed)";}function handleSave(){var key=(personKey||currentState.personName||"Person "+Date.now()).trim();if(!key)return;var entry=Object.assign({savedAt:new Date().toLocaleString()},extractPersonData(currentState));var updated=Object.assign({},people);updated[key]=entry;setSaving(true);persistPeople(updated).then(function(){setPeople(updated);setSaving(false);setPersonKey("");});}function handleDelete(key){var updated=Object.assign({},people);delete updated[key];persistPeople(updated).then(function(){setPeople(updated);setConfirmDel(null);if(expanded===key)setExpanded(null);});}function handleLoad(entry){var patch={};PERSON_FIELDS.forEach(function(f){if(entry[f.key]!==undefined)patch[f.key]=entry[f.key];});onLoad(patch);}function startEdit(key){setEditMode(key);setEditData(Object.assign({},people[key]));}function saveEdit(){var updated=Object.assign({},people);updated[editMode]=Object.assign({},editData,{savedAt:people[editMode].savedAt,editedAt:new Date().toLocaleString()});persistPeople(updated).then(function(){setPeople(updated);setEditMode(null);setEditData({});});}var keys=Object.keys(people);return/*#__PURE__*/React.createElement("div",null,/*#__PURE__*/React.createElement("div",{style:{background:"var(--bg-panel)",borderRadius:"var(--radius-lg)",padding:"12px",marginBottom:"var(--sp-7)",border:"1px solid var(--bg-subtle)"}},/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-base)",color:"var(--text-secondary)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:"var(--sp-4)"}},"Save Person Profile"),/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-sm)",color:"var(--text-muted)",marginBottom:"var(--sp-4)",lineHeight:1.5}},"Saves all content fields (name, title, contact, company, taglines) as a reusable profile."),/*#__PURE__*/React.createElement("div",{style:{marginBottom:"var(--sp-4)"}},/*#__PURE__*/React.createElement("label",{style:{fontSize:"var(--fs-base)",color:"var(--text-faint)",display:"block",marginBottom:3}},"Profile Name"),/*#__PURE__*/React.createElement("input",{value:personKey,onChange:function(e){setPersonKey(e.target.value);},placeholder:currentState.personName||"e.g. Your Name",style:{width:"100%",fontSize:"var(--fs-md)",background:"var(--bg-input)",color:"var(--text-primary)",border:"1px solid var(--border-default)",borderRadius:"var(--radius-md)",padding:"5px 8px",boxSizing:"border-box"}})),/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-sm)",color:"var(--text-dim)",marginBottom:"var(--sp-4)",lineHeight:1.4}},"Will save: ",PERSON_FIELDS.map(function(f){return f.label;}).join(", ")),/*#__PURE__*/React.createElement("button",{onClick:handleSave,disabled:saving,style:{width:"100%",padding:"8px",borderRadius:"var(--radius-md)",background:"linear-gradient(135deg,#006eb5,#003e6e)",border:"none",color:"var(--text-bright)",fontWeight:700,fontSize:"var(--fs-md)",cursor:saving?"wait":"pointer",opacity:saving?0.7:1}},saving?"Saving...":"👤 Save Person Profile")),loading&&/*#__PURE__*/React.createElement("div",{style:{textAlign:"center",padding:"16px 0",color:"var(--text-muted)",fontSize:"var(--fs-md)"}},"Loading profiles\u2026"),!loading&&keys.length===0&&/*#__PURE__*/React.createElement("div",{style:{textAlign:"center",padding:"20px 0",color:"var(--text-dim)",fontSize:"var(--fs-md)"}},"No saved person profiles yet."),keys.map(function(key){var entry=people[key];var isExpanded=expanded===key;var isEditing=editMode===key;return/*#__PURE__*/React.createElement("div",{key:key,style:{marginBottom:7,border:"1px solid var(--bg-elevated)",borderRadius:"var(--radius-lg)",overflow:"hidden"}},/*#__PURE__*/React.createElement("div",{style:{display:"flex",alignItems:"center",background:"#161616",padding:"8px 10px",gap:"var(--sp-3)"}},/*#__PURE__*/React.createElement("button",{onClick:function(){setExpanded(isExpanded?null:key);if(editMode===key)setEditMode(null);},style:{flex:1,background:"none",border:"none",cursor:"pointer",textAlign:"left",padding:0}},/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-md)",fontWeight:700,color:"#ccc"}},"\uD83D\uDC64 ",key),/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-sm)",color:"var(--text-muted)",marginTop:"var(--sp-1)"}},entry.title||"",entry.title&&entry.companyName?" · ":"",entry.companyName||"")),/*#__PURE__*/React.createElement("button",{onClick:function(){handleLoad(entry);},style:{padding:"4px 10px",borderRadius:"var(--radius-md)",background:"var(--accent-green-bg)",border:"1px solid var(--accent-green-border)",color:"var(--accent-green)",fontSize:"var(--fs-sm)",cursor:"pointer",whiteSpace:"nowrap"}},"Load"),/*#__PURE__*/React.createElement("button",{onClick:function(){if(isEditing){setEditMode(null);}else{startEdit(key);setExpanded(key);}},style:{padding:"4px 8px",borderRadius:"var(--radius-md)",background:isEditing?"#1a1a3a":"#1c1c1c",border:"1px solid "+(isEditing?"#3a3a7a":"var(--border-default)"),color:isEditing?"#8888ff":"var(--text-tertiary)",fontSize:"var(--fs-sm)",cursor:"pointer"}},isEditing?"Cancel":"Edit"),confirmDel===key?/*#__PURE__*/React.createElement("button",{onClick:function(){handleDelete(key);},style:{padding:"4px 8px",borderRadius:"var(--radius-md)",background:"var(--accent-red-bg)",border:"1px solid #8a2525",color:"var(--accent-red)",fontSize:"var(--fs-sm)",cursor:"pointer"}},"Confirm"):/*#__PURE__*/React.createElement("button",{onClick:function(){setConfirmDel(key);},style:{padding:"4px 8px",borderRadius:"var(--radius-md)",background:"#1e1010",border:"1px solid var(--accent-red-bg)",color:"#884444",fontSize:"var(--fs-sm)",cursor:"pointer"}},"\u2715")),isExpanded&&/*#__PURE__*/React.createElement("div",{style:{background:"var(--bg-input)",padding:"10px 12px",borderTop:"1px solid #1e1e1e"}},isEditing?/*#__PURE__*/React.createElement("div",null,PERSON_FIELDS.map(function(f){return/*#__PURE__*/React.createElement("div",{key:f.key,style:{marginBottom:7}},/*#__PURE__*/React.createElement("label",{style:{fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",display:"block",marginBottom:"var(--sp-1)"}},f.label),/*#__PURE__*/React.createElement("input",{value:editData[f.key]||"",onChange:function(e){var val=e.target.value;setEditData(function(prev){var n=Object.assign({},prev);n[f.key]=val;return n;});},style:{width:"100%",fontSize:"var(--fs-base)",background:"var(--bg-deep)",color:"var(--text-primary)",border:"1px solid var(--border-subtle)",borderRadius:"var(--radius-md)",padding:"5px 7px",boxSizing:"border-box"}}));}),/*#__PURE__*/React.createElement("button",{onClick:saveEdit,style:{width:"100%",padding:"7px",borderRadius:"var(--radius-md)",background:"#006eb5",border:"none",color:"var(--text-bright)",fontWeight:700,fontSize:"var(--fs-base)",cursor:"pointer"}},"Save Changes")):/*#__PURE__*/React.createElement("div",null,PERSON_FIELDS.map(function(f){var val=entry[f.key];if(!val)return null;return/*#__PURE__*/React.createElement("div",{key:f.key,style:{display:"flex",gap:"var(--sp-3)",marginBottom:5,alignItems:"baseline"}},/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-xs)",color:"var(--text-dim)",width:80,flexShrink:0,textTransform:"uppercase",letterSpacing:"0.05em"}},f.label),/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-base)",color:"#999",wordBreak:"break-all"}},val));}),/*#__PURE__*/React.createElement("div",{style:{fontSize:"var(--fs-xs)",color:"var(--border-default)",marginTop:"var(--sp-3)"}},"Saved ",entry.savedAt,entry.editedAt?" · Edited "+entry.editedAt:""))));}));}function SavePanel(props){const{currentState,currentCurves,onLoad}=props;const[configs,setConfigs]=useState({});const[loading,setLoading]=useState(true);const[saving,setSaving]=useState(false);const[company,setCompany]=useState("");const[cfgName,setCfgName]=useState("");const[expandedCo,setExpandedCo]=useState(null);const[confirmDel,setConfirmDel]=useState(null);// Backup / Restore UI state
 const[showBackup,setShowBackup]=useState(false);const[importText,setImportText]=useState("");const[importStatus,setImportStatus]=useState(null);const[importMode,setImportMode]=useState("merge");// {ok, msg}
 const[exportStatus,setExportStatus]=useState(null);useEffect(function(){loadConfigsFromStorage().then(function(c){setConfigs(c);setLoading(false);});},[]);const cos=Object.keys(configs);const doSave=function(co,nm){const entry={state:currentState,curves:currentCurves,savedAt:new Date().toLocaleString()};const coGroup=Object.assign({},configs[co]||{});coGroup[nm]=entry;const updated=Object.assign({},configs);updated[co]=coGroup;setSaving(true);persistConfigs(updated).then(function(){setConfigs(updated);setSaving(false);setCfgName("");if(props.onSaveComplete)props.onSaveComplete();}).catch(function(e){setSaving(false);window.alert("❌ SAVE FAILED!\n\n"+"Your config is visible on screen but was NOT saved to browser storage.\n\n"+"Error: "+(e&&e.message?e.message:"Unknown storage error")+"\n\n"+"Please use Export Backup immediately to save your work to a file.");});};const handleSave=function(){const co=(company||"Default").trim();const nm=(cfgName||"Config "+Date.now()).trim();if(configs[co]&&configs[co][nm]){var choice=window.prompt("\u201c"+nm+"\u201d already exists under "+co+".\n\n"+"Type UPDATE to overwrite, or enter a new name to save as copy.\n"+"Press Cancel to abort.");if(choice===null)return;var trimmed=choice.trim();if(trimmed===""||trimmed.toUpperCase()==="UPDATE"){doSave(co,nm);}else{doSave(co,trimmed);}}else{doSave(co,nm);}};const handleDel=function(co,nm){const coGroup=Object.assign({},configs[co]);delete coGroup[nm];const updated=Object.assign({},configs);if(Object.keys(coGroup).length===0)delete updated[co];else updated[co]=coGroup;persistConfigs(updated).then(function(){setConfigs(updated);setConfirmDel(null);});};// ── EXPORT: read all 3 storage keys and bundle into a .json file ──
-const handleExport=function(){if(props.isDirty&&!window.confirm("Your current design has unsaved changes.\n\nThe backup WILL include your working state, but saving to a named config first is safer.\n\nExport anyway?"))return;Promise.all([loadConfigsFromStorage().then(function(stored){var memKeys=Object.keys(_memStore||{});var storedKeys=Object.keys(stored||{});if(memKeys.length>storedKeys.length){console.warn("Export: using in-memory configs ("+memKeys.length+" companies) — localStorage had fewer ("+storedKeys.length+")");return _memStore;}return stored;}),window.storage.get("card_people").then(function(r){try{return r?JSON.parse(r.value):[];}catch(e){return[];}}),window.storage.get("card_custom_templates").then(function(r){try{return r?JSON.parse(r.value):{categories:[],templates:[]};}catch(e){return{categories:[],templates:[]};}})]).then(function(results){var cfgs=results[0];var ppl=results[1];var ct=results[2];var cfgCount=0;var cfgNames=[];for(var co in cfgs){var names=Object.keys(cfgs[co]);cfgCount+=names.length;cfgNames.push(co+": "+names.join(", "));}var pplCount=Array.isArray(ppl)?ppl.length:Object.keys(ppl).length;var pplNames=Array.isArray(ppl)?ppl.map(function(p){return p.personName||"(unnamed)";}):Object.keys(ppl);var hasCurrentCard=!!(currentState&&currentState.personName!==undefined);if(cfgCount===0&&pplCount===0&&!hasCurrentCard){if(!window.confirm("⚠️ WARNING: This backup appears EMPTY.\n\n"+"No saved configs, no people profiles, no current card detected.\n\n"+"This could mean your data was not saved to browser storage.\n"+"Export empty backup anyway?"))return;}const bundle={_pmiCardEditorBackup:true,_version:1,_exportedAt:new Date().toISOString(),configs:cfgs,people:ppl,customTemplates:ct,currentCard:{card:currentState,curves:currentCurves}};const json=JSON.stringify(bundle,null,2);var verify;try{verify=JSON.parse(json);}catch(e){setExportStatus("❌ Export FAILED: generated file is corrupt!");return;}var vCfgCount=0;for(var vco in verify.configs){vCfgCount+=Object.keys(verify.configs[vco]).length;}var vPplCount=Array.isArray(verify.people)?verify.people.length:Object.keys(verify.people).length;var vHasCard=!!(verify.currentCard&&verify.currentCard.card);const blob=new Blob([json],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");const date=new Date().toISOString().slice(0,10);a.href=url;a.download="imprintly-backup-"+date+".json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);var summary="✅ Backup verified & downloaded!\n\n"+"📁 "+vCfgCount+" design config"+(vCfgCount!==1?"s":"");if(cfgNames.length>0)summary+="\n   "+cfgNames.join("\n   ");summary+="\n👤 "+vPplCount+" person profile"+(vPplCount!==1?"s":"");if(pplNames.length>0)summary+="\n   "+pplNames.join(", ");summary+="\n🎨 Current card: "+(vHasCard?"included":"not included");summary+="\n📆 Exported: "+new Date(verify._exportedAt).toLocaleString();summary+="\n💾 File size: "+(json.length/1024).toFixed(1)+" KB";setExportStatus(summary);setTimeout(function(){setExportStatus(null);},15000);}).catch(function(e){setExportStatus("❌ Export failed: "+e.message);});};// ── IMPORT: parse JSON, validate, write all 3 storage keys ──
+const handleExport=function(){if(props.isDirty&&!window.confirm("Your current design has unsaved changes.\n\nThe backup WILL include your working state, but saving to a named config first is safer.\n\nExport anyway?"))return;Promise.all([loadConfigsFromStorage().then(function(stored){var memKeys=Object.keys(_memStore||{});var storedKeys=Object.keys(stored||{});if(memKeys.length>storedKeys.length){console.warn("Export: using in-memory configs ("+memKeys.length+" companies) — localStorage had fewer ("+storedKeys.length+")");return _memStore;}return stored;}),loadPeopleFromStorage().then(function(d){return d||{}}),loadCustomTemplatesFromStorage().then(function(d){return d||{};})]).then(function(results){var cfgs=results[0];var ppl=results[1];var ct=results[2];var cfgCount=0;var cfgNames=[];for(var co in cfgs){var names=Object.keys(cfgs[co]);cfgCount+=names.length;cfgNames.push(co+": "+names.join(", "));}var pplCount=Array.isArray(ppl)?ppl.length:Object.keys(ppl).length;var pplNames=Array.isArray(ppl)?ppl.map(function(p){return p.personName||"(unnamed)";}):Object.keys(ppl);var hasCurrentCard=!!(currentState&&currentState.personName!==undefined);if(cfgCount===0&&pplCount===0&&!hasCurrentCard){if(!window.confirm("⚠️ WARNING: This backup appears EMPTY.\n\n"+"No saved configs, no people profiles, no current card detected.\n\n"+"This could mean your data was not saved to browser storage.\n"+"Export empty backup anyway?"))return;}const bundle={_pmiCardEditorBackup:true,_version:1,_exportedAt:new Date().toISOString(),configs:cfgs,people:ppl,customTemplates:ct,currentCard:{card:currentState,curves:currentCurves}};const json=JSON.stringify(bundle,null,2);var verify;try{verify=JSON.parse(json);}catch(e){setExportStatus("❌ Export FAILED: generated file is corrupt!");return;}var vCfgCount=0;for(var vco in verify.configs){vCfgCount+=Object.keys(verify.configs[vco]).length;}var vPplCount=Array.isArray(verify.people)?verify.people.length:Object.keys(verify.people).length;var vHasCard=!!(verify.currentCard&&verify.currentCard.card);const blob=new Blob([json],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");const date=new Date().toISOString().slice(0,10);a.href=url;a.download="imprintly-backup-"+date+".json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);var summary="✅ Backup verified & downloaded!\n\n"+"📁 "+vCfgCount+" design config"+(vCfgCount!==1?"s":"");if(cfgNames.length>0)summary+="\n   "+cfgNames.join("\n   ");summary+="\n👤 "+vPplCount+" person profile"+(vPplCount!==1?"s":"");if(pplNames.length>0)summary+="\n   "+pplNames.join(", ");summary+="\n🎨 Current card: "+(vHasCard?"included":"not included");summary+="\n📆 Exported: "+new Date(verify._exportedAt).toLocaleString();summary+="\n💾 File size: "+(json.length/1024).toFixed(1)+" KB";setExportStatus(summary);setTimeout(function(){setExportStatus(null);},15000);}).catch(function(e){setExportStatus("❌ Export failed: "+e.message);});};// ── IMPORT: parse JSON, validate, write all 3 storage keys ──
 const handleImport=function(jsonStr){var bundle;try{bundle=JSON.parse(jsonStr.trim());}catch(e){setImportStatus({ok:false,msg:"❌ Invalid JSON — could not parse file."});return;}// Accept either a full backup bundle or a single-card copyCfg snippet
 if(bundle._pmiCardEditorBackup){if(importMode==="replace"){// Full backup — Replace All
-const jobs=[];if(bundle.configs)jobs.push(persistConfigs(bundle.configs));if(bundle.people)jobs.push(window.storage.set("card_people",JSON.stringify(bundle.people)));if(bundle.customTemplates)jobs.push(window.storage.set("card_custom_templates",JSON.stringify(bundle.customTemplates)));Promise.all(jobs).then(function(){// Reload configs into panel
+const jobs=[];if(bundle.configs)jobs.push(persistConfigs(bundle.configs));if(bundle.people)jobs.push(persistPeople(bundle.people));if(bundle.customTemplates)jobs.push(persistCustomTemplates(bundle.customTemplates));Promise.all(jobs).then(function(){// Reload configs into panel
 return loadConfigsFromStorage();}).then(function(c){setConfigs(c);const nCfg=bundle.configs?Object.values(bundle.configs).reduce(function(a,g){return a+Object.keys(g).length;},0):0;const nPpl=bundle.people?(Array.isArray(bundle.people)?bundle.people.length:Object.keys(bundle.people).length):0;const nTpl=bundle.customTemplates&&bundle.customTemplates.templates?bundle.customTemplates.templates.length:0;if(bundle.currentCard){onLoad(bundle.currentCard.card,bundle.currentCard.curves);}setImportStatus({ok:true,msg:"✅ Imported "+nCfg+" config(s), "+nPpl+" person profile(s), "+nTpl+" custom template(s)."+(bundle.currentCard?" Active card restored.":"")});setImportText("");}).catch(function(e){setImportStatus({ok:false,msg:"❌ Import failed during save: "+e.message});});}else{// Merge mode
 Promise.all([loadConfigsFromStorage(),window.storage.get("card_people").then(function(r){try{return r?JSON.parse(r.value):{}}catch(e){return{}}}),window.storage.get("card_custom_templates").then(function(r){try{return r?JSON.parse(r.value):{categories:[],templates:[]}}catch(e){return{categories:[],templates:[]}}})]).then(function(results){var existing=results[0]||{};var existPeople=results[1]||{};var existTpl=results[2]||{categories:[],templates:[]};var merged=Object.assign({},existing);var cfgAdded=0,cfgRenamed=0,cfgSkipped=0;if(bundle.configs){Object.keys(bundle.configs).forEach(function(co){if(!merged[co]){merged[co]=bundle.configs[co];cfgAdded+=Object.keys(bundle.configs[co]).length;}else{Object.keys(bundle.configs[co]).forEach(function(nm){if(!merged[co][nm]){merged[co]=Object.assign({},merged[co]);merged[co][nm]=bundle.configs[co][nm];cfgAdded++;}else{var existState=JSON.stringify(merged[co][nm].state||{});var importState=JSON.stringify(bundle.configs[co][nm].state||{});if(existState===importState){cfgSkipped++;}else{var newNm=nm+" (imported)";var i=2;while(merged[co][newNm]){newNm=nm+" (imported "+i+")";i++;}merged[co]=Object.assign({},merged[co]);merged[co][newNm]=bundle.configs[co][nm];cfgAdded++;cfgRenamed++;}}});}});}var mergedPeople=Object.assign({},existPeople);var pplAdded=0,pplRenamed=0,pplSkipped=0;var importPeople=bundle.people||{};if(Array.isArray(importPeople)){var obj={};importPeople.forEach(function(p){if(p&&p.personName)obj[p.personName]=p;});importPeople=obj;}Object.keys(importPeople).forEach(function(nm){if(!mergedPeople[nm]){mergedPeople[nm]=importPeople[nm];pplAdded++;}else{var existStr=JSON.stringify(mergedPeople[nm]);var importStr=JSON.stringify(importPeople[nm]);if(existStr===importStr){pplSkipped++;}else{var newNm=nm+" (imported)";var i=2;while(mergedPeople[newNm]){newNm=nm+" (imported "+i+")";i++;}mergedPeople[newNm]=importPeople[nm];pplAdded++;pplRenamed++;}}});var mergedTpl=Object.assign({},existTpl);if(!Array.isArray(mergedTpl.categories))mergedTpl.categories=[];if(!Array.isArray(mergedTpl.templates))mergedTpl.templates=[];if(bundle.customTemplates&&Array.isArray(bundle.customTemplates.templates)){var existNames=new Set(mergedTpl.templates.map(function(t){return t.name||"";}));bundle.customTemplates.templates.forEach(function(t){if(!existNames.has(t.name||"")){mergedTpl.templates=mergedTpl.templates||[];mergedTpl.templates.push(t);}});if(bundle.customTemplates.categories&&Array.isArray(bundle.customTemplates.categories)){var existCats=new Set(mergedTpl.categories.map(function(c){return c.id||"";}));bundle.customTemplates.categories.forEach(function(c){if(!existCats.has(c.id||"")){mergedTpl.categories=mergedTpl.categories||[];mergedTpl.categories.push(c);}});}}var jobs2=[];jobs2.push(persistConfigs(merged));jobs2.push(window.storage.set("card_people",JSON.stringify(mergedPeople)));jobs2.push(window.storage.set("card_custom_templates",JSON.stringify(mergedTpl)));return Promise.all(jobs2).then(function(){return loadConfigsFromStorage();}).then(function(c){setConfigs(c);var msg="✅ Merged: "+cfgAdded+" config(s) added"+(cfgRenamed?" ("+cfgRenamed+" renamed)":"")+(cfgSkipped?" ("+cfgSkipped+" unchanged, skipped)":"")+", "+pplAdded+" person(s) added"+(pplRenamed?" ("+pplRenamed+" renamed)":"")+(pplSkipped?" ("+pplSkipped+" unchanged, skipped)":"")+".";
 setImportStatus({ok:true,msg:msg});setImportText("");});}).catch(function(e){setImportStatus({ok:false,msg:"❌ Merge failed: "+e.message});});}}else if(bundle.card&&bundle.curves!==undefined){// Single-card copyCfg JSON — load it directly as the active card
@@ -1241,7 +1444,7 @@ setRevertSnapshot({state:Object.assign({},s),label:"Before applying: "+(t.name||
 if(cfg.backTaglineBoldColor===undefined&&(!p.backTaglineBoldColor||p.backTaglineBoldColor===p.accentColor)){next.backTaglineBoldColor=cfg.accentColor||p.accentColor;}if(cfg.backTaglineLightColor===undefined&&(!p.backTaglineLightColor||p.backTaglineLightColor===p.styles.taglineLight.color)){next.backTaglineLightColor=tst&&tst.taglineLight?tst.taglineLight.color:p.styles.taglineLight.color;}if(!p.backBg)next.backBg="";if(!p.backQrColor)next.backQrColor="";// Built-in templates: clear imported image + cover rects for a clean preview
 // Custom templates: Object.assign above already restored these from saved config
 if(t.category!=="custom"){next.bgImage={url:null,x:0,y:0,width:900,height:500,opacity:0.3};next.bgImageBack={url:null,x:0,y:0,width:900,height:500,opacity:0.3};next.bgImageFx={brightness:100,contrast:100,saturation:100};next.bgImageFxBack={brightness:100,contrast:100,saturation:100};next.coverRects=[];next.coverRectsBack=[];}return next;});// Snapshot the full resolved template for per-field resets
-setTemplateDefaults(function(prev){var snap=Object.assign({},DEFAULT_STATE,cfg);snap.styles=Object.assign({},DEFAULT_STATE.styles,tst||{});snap.cardLayout=t.isModernSplit?"modern_split":"classic";snap.backTaglineBoldColor=cfg.accentColor||DEFAULT_STATE.accentColor;snap.backTaglineLightColor=tst&&tst.taglineLight?tst.taglineLight.color:DEFAULT_STATE.styles.taglineLight.color;return snap;});};useEffect(function(){var h=function(e){if(isDirty){e.preventDefault();e.returnValue="";}};window.addEventListener("beforeunload",h);return function(){window.removeEventListener("beforeunload",h);};},[isDirty]);useEffect(function(){window.storage.get("autosave_working").then(function(r){if(!r||!r.value)return;try{var d=JSON.parse(r.value);if(!d.s||!d.savedAt)return;var has=d.s.personName||d.s.companyName||d.s.lightBg!==DEFAULT_STATE.lightBg||d.s.uploadedLogo;if(has){var age=Date.now()-d.savedAt;if(age<7*24*60*60*1000){setRecoveryOffer({state:d.s,curves:d.curves||[],savedAt:new Date(d.savedAt).toLocaleString()});}}}catch(e){}}).catch(function(){});},[]);const loadConfig=function(state,lc){isInitialRenderRef.current=true;setS(state);setCurves(lc);setTemplateDefaults(state);setIsDirty(false);try{window.storage.set("autosave_working","");}catch(e){}};// ── Per-tab reset: restores only the keys owned by that tab to templateDefaults ──
+setTemplateDefaults(function(prev){var snap=Object.assign({},DEFAULT_STATE,cfg);snap.styles=Object.assign({},DEFAULT_STATE.styles,tst||{});snap.cardLayout=t.isModernSplit?"modern_split":"classic";snap.backTaglineBoldColor=cfg.accentColor||DEFAULT_STATE.accentColor;snap.backTaglineLightColor=tst&&tst.taglineLight?tst.taglineLight.color:DEFAULT_STATE.styles.taglineLight.color;return snap;});};useEffect(function(){var h=function(e){if(isDirty){e.preventDefault();e.returnValue="";}};window.addEventListener("beforeunload",h);return function(){window.removeEventListener("beforeunload",h);};},[isDirty]);useEffect(function(){if(window.DataService&&window.DataService._migrate){window.DataService._migrate().catch(function(e){console.warn("[DataService] migration error:",e);});}},[]);useEffect(function(){window.storage.get("autosave_working").then(function(r){if(!r||!r.value)return;try{var d=JSON.parse(r.value);if(!d.s||!d.savedAt)return;var has=d.s.personName||d.s.companyName||d.s.lightBg!==DEFAULT_STATE.lightBg||d.s.uploadedLogo;if(has){var age=Date.now()-d.savedAt;if(age<7*24*60*60*1000){setRecoveryOffer({state:d.s,curves:d.curves||[],savedAt:new Date(d.savedAt).toLocaleString()});}}}catch(e){}}).catch(function(){});},[]);const loadConfig=function(state,lc){isInitialRenderRef.current=true;setS(state);setCurves(lc);setTemplateDefaults(state);setIsDirty(false);try{window.storage.set("autosave_working","");}catch(e){}};// ── Per-tab reset: restores only the keys owned by that tab to templateDefaults ──
 const resetTab=function(tabId){setS(function(p){var td=templateDefaults;if(tabId==="logo"){return Object.assign({},p,{logoX:td.logoX,logoY:td.logoY,logoWidth:td.logoWidth,uploadedLogo:null,logoMode:"none",imageFxFront:Object.assign({},DEFAULT_IMAGE_FX),imageFxBack:Object.assign({},DEFAULT_IMAGE_FX),processedLogoFront:null,processedLogoBack:null,logoColorSwapsFront:[],logoColorSwapsBack:[],bgColorSwaps:[],bgColorSwapsBack:[]});}if(tabId==="bg"){return Object.assign({},p,{bgImage:Object.assign({},DEFAULT_BG_IMAGE),bgImageBack:{url:null,x:0,y:0,width:900,height:500,opacity:30}});}if(tabId==="content"){return Object.assign({},p,{personName:td.personName,title:td.title,phone:td.phone,email:td.email,website:td.website,taglineBold:td.taglineBold,taglineLight:td.taglineLight,companyName:td.companyName,companySubtitle:td.companySubtitle});}if(tabId==="colors"){return Object.assign({},p,{lightBg:td.lightBg,darkBg:td.darkBg,accentColor:td.accentColor,accentColorEnd:td.accentColorEnd,iconColor:td.iconColor,dividerColor:td.dividerColor,backBg:td.backBg||"",backTaglineBoldColor:td.backTaglineBoldColor||td.accentColor,backTaglineLightColor:td.backTaglineLightColor||td.styles.taglineLight.color,backQrColor:td.backQrColor||"",styles:Object.assign({},p.styles,function(){var sc={};var sk=["personName","title","phone","email","website","taglineBold","taglineLight","companyName","companySubtitle"];sk.forEach(function(k){sc[k]=Object.assign({},p.styles[k],{color:td.styles[k].color});});return sc;}())});}if(tabId==="position"){return Object.assign({},p,{logoX:td.logoX,logoY:td.logoY,logoWidth:td.logoWidth,msLogoSize:td.msLogoSize,positions:Object.assign({},DEFAULT_POSITIONS)});}if(tabId==="layout"){return Object.assign({},p,{splitPosition:td.splitPosition,splitAngle:td.splitAngle,swooshVisible:td.swooshVisible,swooshFade:td.swooshFade,swooshFadeStart:td.swooshFadeStart,swooshFadeEnd:td.swooshFadeEnd,swooshThickness:td.swooshThickness,swooshOpacity:td.swooshOpacity,accentColorEnd:td.accentColorEnd});}if(tabId==="ms"){return Object.assign({},p,{cardLayout:td.cardLayout,msWatermarkColor:td.msWatermarkColor,msWatermarkOpacity:td.msWatermarkOpacity,msWatermarkSize:td.msWatermarkSize,msLogoSize:td.msLogoSize,msNameSize:td.msNameSize,msSubtleText:td.msSubtleText,msContactText:td.msContactText,accentColor:td.accentColor,lightBg:td.lightBg,darkBg:td.darkBg,dividerColor:td.dividerColor,iconColor:td.iconColor});}if(tabId==="typo"){return Object.assign({},p,{styles:Object.assign({},td.styles)});}return p;});};// ── Print resolution: 3.5" x 2" @ 300 dpi = 1050 x 600 px ──────────────
 var PRINT_W=1050,PRINT_H=600;// Get clean full-res SVG string from a card ref (forces scale=1 at print size)
 var getFullResSVG=function(ref,cornerRadius,cardSize){var _dims=CARD_SIZES[cardSize||"us"]||CARD_SIZES.us;var el=ref.current&&ref.current.querySelector("svg");if(!el)return null;var clone=el.cloneNode(true);clone.setAttribute("width",_dims.printW);clone.setAttribute("height",_dims.printH);clone.setAttribute("viewBox","0 0 "+_dims.w+" "+_dims.h);clone.setAttribute("preserveAspectRatio","none");clone.removeAttribute("style");clone.setAttribute("style","display:block");// Strip bleed/guide overlays from export
