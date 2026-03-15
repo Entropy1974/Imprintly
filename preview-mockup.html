@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Imprintly UI/UX Redesign — Layout Preview</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-elevated: #161b22;
+    --bg-surface: #1c2128;
+    --bg-input: #21262d;
+    --border: #30363d;
+    --border-subtle: #21262d;
+    --text: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent: #d4a017;
+    --accent-light: #e8b930;
+    --accent-dim: rgba(212,160,23,0.15);
+    --blue: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #080a0e; color: var(--text); }
+
+  .mockup-header {
+    text-align: center; padding: 40px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .mockup-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .mockup-header p { color: var(--text-secondary); font-size: 14px; max-width: 600px; margin: 0 auto; }
+
+  .viewport-section {
+    max-width: 1400px; margin: 40px auto; padding: 0 20px;
+  }
+  .viewport-label {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .viewport-label h2 { font-size: 20px; font-weight: 700; }
+  .viewport-label .chip {
+    background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(212,160,23,0.3);
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .viewport-label .desc { color: var(--text-secondary); font-size: 13px; margin-left: auto; }
+
+  /* ═══ DESKTOP MOCKUP ═══ */
+  .desktop-frame {
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  /* Top toolbar */
+  .top-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+  }
+  .top-toolbar .brand { display: flex; align-items: center; gap: 10px; }
+  .top-toolbar .brand-name { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .top-toolbar .brand-tag { font-size: 10px; color: var(--text-muted); }
+  .top-toolbar .actions { display: flex; gap: 6px; }
+  .top-toolbar .actions .btn {
+    padding: 5px 12px; border-radius: var(--radius); font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer;
+  }
+  .top-toolbar .actions .btn-primary {
+    background: var(--accent); color: #000; border-color: var(--accent);
+  }
+
+  /* Main 4-zone layout */
+  .desktop-body { display: flex; min-height: 580px; }
+
+  /* Nav rail */
+  .nav-rail {
+    width: 60px; background: var(--bg-elevated); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 2px;
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    width: 44px; height: 44px; border-radius: var(--radius); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer; border: none; background: transparent;
+    color: var(--text-muted); font-size: 9px; gap: 2px; transition: all 0.15s;
+  }
+  .nav-btn svg { width: 18px; height: 18px; }
+  .nav-btn:hover { background: var(--bg-surface); color: var(--text-secondary); }
+  .nav-btn.active { background: var(--accent-dim); color: var(--accent); }
+  .nav-spacer { flex: 1; }
+  .nav-btn-fb {
+    width: 36px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; border: 1px solid var(--border); background: var(--bg-surface);
+    color: var(--text-secondary); cursor: pointer; margin: 2px 0;
+  }
+  .nav-btn-fb.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  /* Left tool panel */
+  .tool-panel {
+    width: 280px; background: var(--bg); border-right: 1px solid var(--border);
+    overflow-y: auto; flex-shrink: 0;
+  }
+  .tool-panel-header {
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .tool-panel-header h3 { font-size: 13px; font-weight: 700; }
+  .tool-panel-header .step { font-size: 10px; color: var(--text-muted); }
+  .tab-bar {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1; padding: 8px 0; text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); border: none; background: transparent; cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tool-section { padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); }
+  .tool-section-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text-muted); margin-bottom: 10px;
+  }
+  .tool-item {
+    padding: 8px 10px; background: var(--bg-input); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius); margin-bottom: 6px; font-size: 12px; color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .tool-item .value { color: var(--text-muted); font-size: 11px; }
+  .color-swatch {
+    width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--border);
+    display: inline-block; vertical-align: middle;
+  }
+  .slider-mock {
+    width: 100%; height: 4px; background: var(--bg-input); border-radius: 2px; position: relative;
+    margin: 8px 0;
+  }
+  .slider-mock::after {
+    content: ''; position: absolute; left: 0; top: 0; width: 60%; height: 100%;
+    background: var(--accent); border-radius: 2px;
+  }
+  .btn-row { display: flex; gap: 4px; margin-bottom: 8px; }
+  .mode-btn {
+    flex: 1; padding: 6px 0; text-align: center; font-size: 10px; font-weight: 600;
+    border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-input);
+    color: var(--text-secondary); cursor: pointer;
+  }
+  .mode-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .thumb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .thumb {
+    aspect-ratio: 1.75; background: var(--bg-surface); border: 1px solid var(--border-subtle);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--text-muted); cursor: pointer;
+  }
+  .thumb:first-child { border-color: var(--accent); }
+
+  /* Center canvas */
+  .canvas-area {
+    flex: 1; display: flex; flex-direction: column; background: var(--bg-surface);
+    min-width: 0;
+  }
+  .canvas-toolbar {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .canvas-toolbar .chip {
+    padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600;
+    background: var(--bg-input); border: 1px solid var(--border-subtle); color: var(--text-muted);
+  }
+  .canvas-toolbar .chip.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(212,160,23,0.3); }
+  .canvas-toolbar .spacer { flex: 1; }
+  .canvas-viewport {
+    flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px;
+    position: relative;
+  }
+
+  /* Card preview mock */
+  .card-mock {
+    width: 420px; height: 240px; border-radius: 10px; overflow: hidden; position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05);
+  }
+  .card-mock .left-panel {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 38%;
+    background: linear-gradient(135deg, #f5f0eb, #ede5db);
+  }
+  .card-mock .right-panel {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 62%;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+  }
+  .card-mock .ribbon {
+    position: absolute; left: 30%; top: 0; bottom: 0; width: 120px;
+    background: linear-gradient(180deg, #c62828, #e53935);
+    transform: skewX(-12deg); opacity: 0.9;
+  }
+  .card-mock .logo-area {
+    position: absolute; left: 20px; top: 20px; width: 100px; height: 50px;
+    background: var(--accent-dim); border: 1px dashed var(--accent);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--accent); font-weight: 600;
+  }
+  .card-mock .name-area {
+    position: absolute; right: 20px; top: 24px; text-align: right; color: #fff;
+  }
+  .card-mock .name-area .name { font-size: 16px; font-weight: 700; }
+  .card-mock .name-area .title { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .card-mock .contact-area {
+    position: absolute; right: 20px; bottom: 20px; text-align: right; color: rgba(255,255,255,0.8);
+    font-size: 9px; line-height: 1.8;
+  }
+  .card-mock .tagline {
+    position: absolute; bottom: 6px; left: 0; right: 0; text-align: center;
+    font-size: 7px; color: rgba(255,255,255,0.4); letter-spacing: 0.5px;
+  }
+  .card-label {
+    position: absolute; top: -22px; left: 0; font-size: 10px; color: var(--text-muted);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  /* Right inspector */
+  .right-inspector {
+    width: 240px; background: var(--bg); border-left: 1px solid var(--border);
+    overflow-y: auto; flex-shrink: 0;
+  }
+  .inspector-section { padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); }
+  .inspector-section-title {
+    font-size: 11px; font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .inspector-section-title .badge {
+    font-size: 9px; padding: 2px 6px; border-radius: 10px;
+    background: var(--accent-dim); color: var(--accent);
+  }
+  .prop-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px 0; font-size: 11px; color: var(--text-secondary);
+  }
+  .prop-row .label { color: var(--text-muted); }
+  .layer-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    background: var(--bg-input); border: 1px solid var(--border-subtle);
+    border-radius: 6px; margin-bottom: 4px; font-size: 11px; color: var(--text-secondary);
+  }
+  .layer-item .eye { color: var(--text-muted); font-size: 12px; margin-left: auto; cursor: pointer; }
+  .layer-item.selected { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+
+  /* Bottom tray */
+  .bottom-tray {
+    display: flex; gap: 0; border-top: 1px solid var(--border); background: var(--bg-elevated);
+  }
+  .tray-section {
+    flex: 1; padding: 10px 14px; border-right: 1px solid var(--border-subtle);
+  }
+  .tray-section:last-child { border-right: none; }
+  .tray-section-title { font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+  .tray-item {
+    font-size: 10px; color: var(--text-secondary); padding: 3px 0;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tray-item .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .tray-item .dot.green { background: var(--green); }
+  .tray-item .dot.yellow { background: var(--accent); }
+  .tray-item .dot.red { background: var(--red); }
+
+  /* ═══ TABLET MOCKUP ═══ */
+  .tablet-frame {
+    max-width: 900px; margin: 0 auto;
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .tablet-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+  }
+  .tablet-body { display: flex; min-height: 420px; }
+  .tablet-rail {
+    width: 52px; background: var(--bg-elevated); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; padding: 6px 0; gap: 4px;
+  }
+  .tablet-nav-btn {
+    width: 38px; height: 38px; border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 8px; color: var(--text-muted); background: transparent;
+    border: none; cursor: pointer; text-align: center; line-height: 1.1;
+  }
+  .tablet-nav-btn.active { background: var(--accent-dim); color: var(--accent); }
+  .tablet-canvas {
+    flex: 1; display: flex; flex-direction: column;
+  }
+  .tablet-canvas-area {
+    flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px;
+    background: var(--bg-surface);
+  }
+  .tablet-card-mock {
+    width: 340px; height: 194px; border-radius: 8px; overflow: hidden; position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .tablet-bottom { display: flex; gap: 12px; padding: 12px; border-top: 1px solid var(--border); }
+  .tablet-panel {
+    flex: 1; background: var(--bg-input); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius); padding: 10px;
+  }
+  .tablet-panel-title { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+
+  /* ═══ MOBILE MOCKUP ═══ */
+  .mobile-wrapper { display: flex; justify-content: center; }
+  .mobile-frame {
+    width: 375px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 28px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .mobile-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+  }
+  .mobile-header .title { font-size: 13px; font-weight: 700; }
+  .mobile-header .subtitle { font-size: 10px; color: var(--text-muted); }
+  .mobile-header .actions { display: flex; gap: 6px; }
+  .mobile-fb {
+    display: flex; gap: 6px; padding: 8px 16px;
+  }
+  .mobile-fb .btn {
+    padding: 5px 16px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--bg-input); color: var(--text-secondary);
+  }
+  .mobile-fb .btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .mobile-canvas {
+    padding: 12px 16px; display: flex; justify-content: center;
+  }
+  .mobile-card-mock {
+    width: 100%; max-width: 340px; height: 180px; border-radius: 8px; overflow: hidden;
+    position: relative; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .mobile-quick-fields { padding: 12px 16px; }
+  .mobile-quick-fields h4 { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .mobile-field {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; background: var(--bg-input); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius); margin-bottom: 6px; font-size: 12px;
+  }
+  .mobile-field .label { color: var(--text-secondary); }
+  .mobile-field .edit { color: var(--accent); font-size: 10px; font-weight: 600; }
+  .mobile-sheet {
+    padding: 12px 16px; border-top: 1px solid var(--border);
+  }
+  .mobile-sheet h4 { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .mobile-sheet-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  }
+  .mobile-sheet-btn {
+    padding: 10px 0; text-align: center; font-size: 10px; font-weight: 600;
+    background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius);
+    color: var(--text-secondary);
+  }
+  .mobile-bottom-nav {
+    display: flex; border-top: 1px solid var(--border); background: var(--bg-elevated);
+    padding: 8px 0 12px;
+  }
+  .mobile-nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 9px; color: var(--text-muted);
+  }
+  .mobile-nav-item.active { color: var(--accent); }
+  .mobile-nav-icon { width: 20px; height: 20px; border-radius: 4px; background: var(--bg-surface); }
+  .mobile-nav-item.active .mobile-nav-icon { background: var(--accent-dim); }
+
+  /* ═══ NAV STAGES SECTION ═══ */
+  .stages-section { padding: 0 20px; max-width: 1400px; margin: 40px auto; }
+  .stages-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
+  }
+  .stage-card {
+    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 16px; position: relative;
+  }
+  .stage-card .step-num {
+    position: absolute; top: 12px; right: 12px; width: 24px; height: 24px;
+    border-radius: 50%; background: var(--accent); color: #000; font-size: 11px;
+    font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .stage-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .stage-card .desc { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+  .stage-card .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .stage-card .tab-chip {
+    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+    background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-secondary);
+  }
+  .stage-card .controls { margin-top: 8px; font-size: 10px; color: var(--text-muted); line-height: 1.6; }
+
+  hr.section-divider {
+    border: none; border-top: 1px solid var(--border); margin: 40px 20px;
+    max-width: 1400px; margin-left: auto; margin-right: auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-header">
+  <h1>Imprintly UI/UX Redesign Preview</h1>
+  <p>Proposed layout matching the reference vision. Tool panel moves to LEFT, inspector + layers on RIGHT. 7-stage workflow order.</p>
+</div>
+
+<!-- ═══════════════ DESKTOP ═══════════════ -->
+<div class="viewport-section">
+  <div class="viewport-label">
+    <h2>Desktop Editor</h2>
+    <span class="chip">1280px+</span>
+    <span class="desc">Full 3-column production environment</span>
+  </div>
+  <div class="desktop-frame">
+    <!-- Top Toolbar -->
+    <div class="top-toolbar">
+      <div class="brand">
+        <span class="brand-name">Imprintly</span>
+        <span class="brand-tag">Design the impression you leave.</span>
+      </div>
+      <div class="actions">
+        <button class="btn">Undo</button>
+        <button class="btn">Redo</button>
+        <button class="btn">Preview</button>
+        <button class="btn">Save</button>
+        <button class="btn btn-primary">Export</button>
+      </div>
+    </div>
+
+    <!-- Main body -->
+    <div class="desktop-body">
+      <!-- Nav Rail (60px) -->
+      <div class="nav-rail">
+        <button class="nav-btn" title="Templates">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Templ</span>
+        </button>
+        <button class="nav-btn" title="Content">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+          <span>Content</span>
+        </button>
+        <button class="nav-btn active" title="Media">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>Media</span>
+        </button>
+        <button class="nav-btn" title="Design">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M17.5 10.5a2.5 2.5 0 100 5"/><circle cx="8.5" cy="8.5" r="2.5"/><circle cx="6.5" cy="13.5" r="2.5"/><circle cx="12" cy="18" r="2.5"/></svg>
+          <span>Design</span>
+        </button>
+        <button class="nav-btn" title="QR Code">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>
+          <span>QR</span>
+        </button>
+        <button class="nav-btn" title="Bulk Generate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>Bulk</span>
+        </button>
+        <button class="nav-btn" title="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Export</span>
+        </button>
+        <div class="nav-spacer"></div>
+        <button class="nav-btn-fb active">F</button>
+        <button class="nav-btn-fb">B</button>
+        <div style="height:8px"></div>
+        <button class="nav-btn" title="Theme" style="font-size:14px">&#9788;</button>
+      </div>
+
+      <!-- Left Tool Panel -->
+      <div class="tool-panel">
+        <div class="tool-panel-header">
+          <h3>Media &mdash; Logo</h3>
+          <span class="step">Step 3 of 7</span>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active">Logo</button>
+          <button class="tab-btn">Background</button>
+        </div>
+
+        <div class="tool-section">
+          <div class="tool-section-title">Logo Mode</div>
+          <div class="btn-row">
+            <button class="mode-btn">No Logo</button>
+            <button class="mode-btn active">Image</button>
+            <button class="mode-btn">Draw</button>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <div class="tool-section-title">Logo Library</div>
+          <div class="thumb-grid">
+            <div class="thumb" style="background:#c2185b;color:#fff;font-size:8px;font-weight:700">FRONT</div>
+            <div class="thumb" style="background:#2196f3;color:#fff;font-size:8px;font-weight:700">BACK</div>
+            <div class="thumb">+ Upload</div>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <div class="tool-section-title">Back Logo Source</div>
+          <div class="btn-row">
+            <button class="mode-btn active">Same as Front</button>
+            <button class="mode-btn">Different</button>
+            <button class="mode-btn">None</button>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <div class="tool-section-title">Logo Position &amp; Size</div>
+          <div class="tool-item"><span>X Position</span><span class="value">45</span></div>
+          <div class="tool-item"><span>Y Position</span><span class="value">120</span></div>
+          <div class="tool-item"><span>Width</span><span class="value">180</span></div>
+        </div>
+
+        <div class="tool-section">
+          <div class="tool-section-title">Front Image Adjustments</div>
+          <div class="tool-item"><span>Brightness</span><span class="value">100%</span></div>
+          <div class="slider-mock"></div>
+          <div class="tool-item"><span>Contrast</span><span class="value">100%</span></div>
+          <div class="slider-mock"></div>
+          <div class="tool-item"><span>Saturation</span><span class="value">100%</span></div>
+          <div class="slider-mock"></div>
+        </div>
+
+        <div class="tool-section">
+          <div class="tool-section-title">Front Color Replacement</div>
+          <div class="tool-item">
+            <span>Sample colors from logo to swap</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Canvas -->
+      <div class="canvas-area">
+        <div class="canvas-toolbar">
+          <span class="chip active">Front</span>
+          <span class="chip">Back</span>
+          <span class="chip">Digital</span>
+          <span class="spacer"></span>
+          <span class="chip">Align</span>
+          <span class="chip">Snap</span>
+          <span class="chip">Grid</span>
+          <span class="chip">Bleed</span>
+          <span class="spacer"></span>
+          <span class="chip">Zoom: 88%</span>
+        </div>
+        <div class="canvas-viewport">
+          <div style="position:relative">
+            <span class="card-label">FRONT</span>
+            <div class="card-mock">
+              <div class="left-panel"></div>
+              <div class="right-panel"></div>
+              <div class="ribbon"></div>
+              <div class="logo-area">LOGO</div>
+              <div class="name-area">
+                <div class="name">Employee Name</div>
+                <div class="title">Job Title</div>
+              </div>
+              <div class="contact-area">
+                (555) 555-5555<br>
+                name@company.com<br>
+                www.company.com
+              </div>
+              <div class="tagline">Helping the Petroleum Marketing Industry Solve Complex Operational Problems</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Inspector -->
+      <div class="right-inspector">
+        <div class="inspector-section">
+          <div class="inspector-section-title">
+            Properties
+            <span class="badge">Logo</span>
+          </div>
+          <div class="prop-row"><span class="label">Selected</span><span>Logo Layer</span></div>
+          <div class="prop-row"><span class="label">Scale</span><span>100%</span></div>
+          <div class="prop-row"><span class="label">Position X</span><span>45</span></div>
+          <div class="prop-row"><span class="label">Position Y</span><span>120</span></div>
+          <div class="prop-row"><span class="label">Width</span><span>180</span></div>
+          <div class="prop-row"><span class="label">Lock Aspect</span><span>On</span></div>
+          <div class="prop-row"><span class="label">Visibility</span><span>Visible</span></div>
+        </div>
+
+        <div class="inspector-section">
+          <div class="inspector-section-title">
+            Brand Kit
+          </div>
+          <div class="prop-row"><span class="label">Kit</span><span>PMI Corporate</span></div>
+          <div class="prop-row">
+            <span class="label">Colors</span>
+            <span>
+              <span class="color-swatch" style="background:#c62828"></span>
+              <span class="color-swatch" style="background:#1a1a2e;margin-left:2px"></span>
+              <span class="color-swatch" style="background:#f5f0eb;margin-left:2px"></span>
+            </span>
+          </div>
+          <div class="prop-row"><span class="label">Font</span><span>Montserrat</span></div>
+        </div>
+
+        <div class="inspector-section">
+          <div class="inspector-section-title">Layers</div>
+          <div class="layer-item">&#9726; Tagline <span class="eye">&#128065;</span></div>
+          <div class="layer-item">&#9726; Contact Icons <span class="eye">&#128065;</span></div>
+          <div class="layer-item">&#9726; Contact Text <span class="eye">&#128065;</span></div>
+          <div class="layer-item">&#9726; Employee Name <span class="eye">&#128065;</span></div>
+          <div class="layer-item selected">&#9726; Logo <span class="eye">&#128065;</span></div>
+          <div class="layer-item">&#9726; Ribbon <span class="eye">&#128065;</span></div>
+          <div class="layer-item">&#9726; Dividers <span class="eye">&#128065;</span></div>
+          <div class="layer-item">&#9726; Background <span class="eye">&#128065;</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Tray -->
+    <div class="bottom-tray">
+      <div class="tray-section">
+        <div class="tray-section-title">Template Strip</div>
+        <div style="display:flex;gap:4px">
+          <div class="thumb" style="width:56px;height:32px;font-size:7px;flex-shrink:0;border-color:var(--accent)">Active</div>
+          <div class="thumb" style="width:56px;height:32px;font-size:7px;flex-shrink:0">Corp</div>
+          <div class="thumb" style="width:56px;height:32px;font-size:7px;flex-shrink:0">Bold</div>
+          <div class="thumb" style="width:56px;height:32px;font-size:7px;flex-shrink:0">Dark</div>
+          <div class="thumb" style="width:56px;height:32px;font-size:7px;flex-shrink:0">Luxe</div>
+        </div>
+      </div>
+      <div class="tray-section">
+        <div class="tray-section-title">Quick Actions</div>
+        <div class="tray-item">Swap palette</div>
+        <div class="tray-item">Replace logo</div>
+        <div class="tray-item">Auto-align</div>
+      </div>
+      <div class="tray-section">
+        <div class="tray-section-title">Preflight</div>
+        <div class="tray-item"><span class="dot green"></span> Bleed ready</div>
+        <div class="tray-item"><span class="dot green"></span> 0 low-res assets</div>
+        <div class="tray-item"><span class="dot green"></span> Front/back linked</div>
+        <div class="tray-item"><span class="dot yellow"></span> CMYK check pending</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════ NAV STAGES ═══════════════ -->
+<div class="stages-section">
+  <div class="viewport-label">
+    <h2>Navigation Stages (Workflow Order)</h2>
+    <span class="desc">7 stages following: Template &rarr; Content &rarr; Media &rarr; Design &rarr; QR &rarr; Bulk &rarr; Export</span>
+  </div>
+  <div class="stages-grid">
+    <div class="stage-card">
+      <span class="step-num">1</span>
+      <h3>Templates</h3>
+      <p class="desc">Browse, apply &amp; create card templates</p>
+      <div class="tabs"><span class="tab-chip">Gallery</span> <span class="tab-chip">Builder</span></div>
+      <div class="controls">Gallery: 92 templates, 10 categories, front/back preview thumbnails, detail drawer. Builder: save current design as template, create from scratch, set name/category/base layout/colors/fonts/ribbon, My Templates category</div>
+    </div>
+    <div class="stage-card">
+      <span class="step-num">2</span>
+      <h3>Content</h3>
+      <p class="desc">Names, contact details &amp; taglines</p>
+      <div class="tabs"><span class="tab-chip">Details</span></div>
+      <div class="controls">Person name, title, phone, email, website, address, taglines, company, social handles</div>
+    </div>
+    <div class="stage-card">
+      <span class="step-num">3</span>
+      <h3>Media</h3>
+      <p class="desc">Logo &amp; background images</p>
+      <div class="tabs"><span class="tab-chip">Logo</span> <span class="tab-chip">Background</span></div>
+      <div class="controls">Logo upload/library/mode, position, effects (brightness/contrast/saturation), color replacement, back logo source, background upload/library</div>
+    </div>
+    <div class="stage-card">
+      <span class="step-num">4</span>
+      <h3>Design</h3>
+      <p class="desc">Colors, typography, layout &amp; effects</p>
+      <div class="tabs">
+        <span class="tab-chip">Colors</span>
+        <span class="tab-chip">Typography</span>
+        <span class="tab-chip">Layout</span>
+        <span class="tab-chip">Effects</span>
+      </div>
+      <div class="controls">Brand kits, card colors (incl. gradients), accent/icon colors, text colors, per-field typography, card layout, ribbon, split, dividers, text positions, Modern Split, cover/erase, color swap</div>
+    </div>
+    <div class="stage-card">
+      <span class="step-num">5</span>
+      <h3>QR Code</h3>
+      <p class="desc">QR code style &amp; position</p>
+      <div class="tabs"><span class="tab-chip">QR Style</span></div>
+      <div class="controls">QR position, size, colors, dot style, data mode, label, center logo</div>
+    </div>
+    <div class="stage-card">
+      <span class="step-num">6</span>
+      <h3>Bulk</h3>
+      <p class="desc">People, CSV import &amp; batch export</p>
+      <div class="tabs"><span class="tab-chip">People</span></div>
+      <div class="controls">PeoplePanel, CSV import/export, batch card generation with progress</div>
+    </div>
+    <div class="stage-card">
+      <span class="step-num">7</span>
+      <h3>Export</h3>
+      <p class="desc">Save configs, export &amp; variants</p>
+      <div class="tabs">
+        <span class="tab-chip">Saved</span>
+        <span class="tab-chip">Export</span>
+        <span class="tab-chip">Variants</span>
+      </div>
+      <div class="controls">Save/load/backup/restore configs (prominent), PDF/PNG/JPG/SVG export, crop marks, CMYK, card back variants</div>
+    </div>
+  </div>
+
+  <!-- Template Builder Detail -->
+  <div style="margin-top:32px;">
+    <div class="viewport-label">
+      <h2>Template Builder Panel</h2>
+      <span class="desc">What the tool panel shows when Templates &rarr; Builder is selected</span>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <!-- Builder tool panel mockup -->
+      <div style="width:280px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0;overflow:hidden;flex-shrink:0;">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="font-size:13px;font-weight:700;">Templates &mdash; Builder</h3>
+          <span style="font-size:10px;color:var(--text-muted);">Step 1 of 7</span>
+        </div>
+        <div style="display:flex;border-bottom:1px solid var(--border);">
+          <button style="flex:1;padding:8px;font-size:11px;background:transparent;border:none;color:var(--text-secondary);cursor:pointer;">Gallery</button>
+          <button style="flex:1;padding:8px;font-size:11px;background:var(--accent-dim);border:none;border-bottom:2px solid var(--accent);color:var(--accent);cursor:pointer;font-weight:600;">Builder</button>
+        </div>
+        <div style="padding:16px;">
+          <!-- Source -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Source</div>
+            <div style="display:flex;gap:6px;">
+              <button style="flex:1;padding:6px 10px;border-radius:var(--radius);font-size:11px;font-weight:600;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);cursor:pointer;">Current Design</button>
+              <button style="flex:1;padding:6px 10px;border-radius:var(--radius);font-size:11px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-secondary);cursor:pointer;">From Scratch</button>
+            </div>
+          </div>
+          <!-- Name & Category -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Template Info</div>
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12px;color:var(--text-muted);margin-bottom:6px;">Template Name...</div>
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;">
+              <span>Category</span><span style="color:var(--text-secondary);">Corporate ▾</span>
+            </div>
+          </div>
+          <!-- Base Layout -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Base Layout</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+              <div style="aspect-ratio:1.6;background:var(--bg-surface);border:2px solid var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);">Split</div>
+              <div style="aspect-ratio:1.6;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);">Center</div>
+              <div style="aspect-ratio:1.6;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);">Minimal</div>
+              <div style="aspect-ratio:1.6;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);">Bold</div>
+              <div style="aspect-ratio:1.6;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);">Modern</div>
+              <div style="aspect-ratio:1.6;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);">Luxury</div>
+            </div>
+          </div>
+          <!-- Default Colors -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Default Colors</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#1a237e;border:2px solid var(--border);cursor:pointer;" title="Primary"></div>
+              <div style="width:28px;height:28px;border-radius:6px;background:#c62828;border:2px solid var(--border);cursor:pointer;" title="Secondary"></div>
+              <div style="width:28px;height:28px;border-radius:6px;background:#d4a017;border:2px solid var(--border);cursor:pointer;" title="Accent"></div>
+              <div style="width:28px;height:28px;border-radius:6px;background:#f5f0e6;border:2px solid var(--border);cursor:pointer;" title="Background"></div>
+              <span style="font-size:10px;color:var(--text-muted);margin-left:4px;">from design</span>
+            </div>
+          </div>
+          <!-- Font Pairing -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Font Pairing</div>
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12px;display:flex;justify-content:space-between;">
+              <span style="color:var(--text);">Montserrat / Open Sans</span><span style="color:var(--text-muted);">▾</span>
+            </div>
+          </div>
+          <!-- Ribbon Style -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Ribbon Style</div>
+            <div style="display:flex;gap:6px;">
+              <div style="width:48px;height:30px;background:var(--bg-surface);border:2px solid var(--accent);border-radius:4px;"></div>
+              <div style="width:48px;height:30px;background:var(--bg-surface);border:1px solid var(--border);border-radius:4px;"></div>
+              <div style="width:48px;height:30px;background:var(--bg-surface);border:1px solid var(--border);border-radius:4px;"></div>
+              <div style="width:48px;height:30px;background:var(--bg-surface);border:1px solid var(--border);border-radius:4px;"></div>
+            </div>
+          </div>
+          <!-- Elements Toggle -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Include Elements</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+                <span style="font-size:11px;color:var(--text);">Logo</span>
+                <span style="font-size:11px;color:var(--green);">&#x2713;</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+                <span style="font-size:11px;color:var(--text);">Tagline</span>
+                <span style="font-size:11px;color:var(--green);">&#x2713;</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+                <span style="font-size:11px;color:var(--text);">Ribbon / Swoosh</span>
+                <span style="font-size:11px;color:var(--green);">&#x2713;</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+                <span style="font-size:11px;color:var(--text);">Dividers</span>
+                <span style="font-size:11px;color:var(--text-muted);">&mdash;</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+                <span style="font-size:11px;color:var(--text);">QR Code</span>
+                <span style="font-size:11px;color:var(--green);">&#x2713;</span>
+              </div>
+            </div>
+          </div>
+          <!-- Preview -->
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.5px;margin-bottom:8px;">Preview</div>
+            <div style="display:flex;gap:8px;">
+              <div style="flex:1;aspect-ratio:1.6;background:linear-gradient(135deg,#1a237e 50%,#c62828 50%);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600;">Front</div>
+              <div style="flex:1;aspect-ratio:1.6;background:#1a237e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600;">Back</div>
+            </div>
+          </div>
+          <!-- Save Button -->
+          <button style="width:100%;padding:10px;border-radius:var(--radius);font-size:12px;font-weight:700;border:none;background:var(--accent);color:#000;cursor:pointer;margin-top:4px;">Save as Template</button>
+        </div>
+      </div>
+      <!-- Description -->
+      <div style="flex:1;min-width:280px;">
+        <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Builder Tab — How It Works</h3>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.8;">
+            <p style="margin-bottom:12px;"><strong style="color:var(--accent);">Entry Point 1 — "Current Design":</strong> User has customized a card through stages 2-4 (Content, Media, Design) and wants to save their current design as a reusable template. Colors, fonts, ribbon, and element toggles are pre-filled from the active card.</p>
+            <p style="margin-bottom:12px;"><strong style="color:var(--accent);">Entry Point 2 — "From Scratch":</strong> Start fresh. Pick a base layout, set default colors/fonts/ribbon, choose which elements to include. Great for building a template library before filling in contact details.</p>
+            <p style="margin-bottom:12px;"><strong style="color:var(--accent);">Base Layout:</strong> Maps to existing BASE_TEMPLATES (Split, Centered, Minimal, Bold, Modern, Luxury). Determines overall card structure — where the logo, text, and ribbon go.</p>
+            <p style="margin-bottom:12px;"><strong style="color:var(--accent);">Default Colors:</strong> Primary, secondary, accent, and background. When "Current Design" is selected, these pull from the active card state. Colors include gradient options.</p>
+            <p style="margin-bottom:12px;"><strong style="color:var(--accent);">Preview:</strong> Live front + back thumbnails rendered using the same card pipeline — templates look like real cards, not generic placeholders.</p>
+            <p><strong style="color:var(--accent);">Saved templates</strong> appear in the Gallery tab under a "My Templates" category. They can be applied, edited, or deleted.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════ TABLET ═══════════════ -->
+<div class="viewport-section">
+  <div class="viewport-label">
+    <h2>Tablet Editor</h2>
+    <span class="chip">768&ndash;1024px</span>
+    <span class="desc">Compact rail + center canvas + slide-over inspector</span>
+  </div>
+  <div class="tablet-frame">
+    <div class="tablet-toolbar">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:700;color:var(--accent)">Imprintly</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <span class="chip" style="padding:4px 10px;border-radius:20px;font-size:10px;background:var(--accent);color:#000;border:none;font-weight:600">Front</span>
+        <span class="chip" style="padding:4px 10px;border-radius:20px;font-size:10px;background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border)">Back</span>
+        <span class="chip" style="padding:4px 10px;border-radius:20px;font-size:10px;background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border)">Preview</span>
+      </div>
+    </div>
+    <div class="tablet-body">
+      <div class="tablet-rail">
+        <button class="tablet-nav-btn">Templ</button>
+        <button class="tablet-nav-btn">Cont</button>
+        <button class="tablet-nav-btn active">Media</button>
+        <button class="tablet-nav-btn">Design</button>
+        <button class="tablet-nav-btn">QR</button>
+        <button class="tablet-nav-btn">Bulk</button>
+        <button class="tablet-nav-btn">Export</button>
+      </div>
+      <div class="tablet-canvas">
+        <div class="tablet-canvas-area">
+          <div class="tablet-card-mock">
+            <div class="left-panel" style="position:absolute;left:0;top:0;bottom:0;width:38%;background:linear-gradient(135deg,#f5f0eb,#ede5db)"></div>
+            <div style="position:absolute;right:0;top:0;bottom:0;width:62%;background:linear-gradient(135deg,#1a1a2e,#16213e)"></div>
+            <div style="position:absolute;left:30%;top:0;bottom:0;width:80px;background:linear-gradient(180deg,#c62828,#e53935);transform:skewX(-12deg);opacity:0.9"></div>
+            <div style="position:absolute;left:14px;top:14px;font-size:14px;font-weight:800;color:#333">PMI</div>
+            <div style="position:absolute;right:14px;top:16px;text-align:right;color:#fff"><div style="font-size:13px;font-weight:700">Employee Name</div><div style="font-size:9px;opacity:0.7">Job Title</div></div>
+            <div style="position:absolute;right:14px;bottom:14px;text-align:right;color:rgba(255,255,255,0.8);font-size:8px;line-height:1.8">(555) 555-5555<br>name@company.com</div>
+          </div>
+        </div>
+        <div class="tablet-bottom">
+          <div class="tablet-panel">
+            <div class="tablet-panel-title">Template Variations</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px">
+              <div class="thumb" style="height:36px;font-size:8px">Corporate</div>
+              <div class="thumb" style="height:36px;font-size:8px">Minimal</div>
+              <div class="thumb" style="height:36px;font-size:8px">Bold</div>
+              <div class="thumb" style="height:36px;font-size:8px">Luxury</div>
+            </div>
+          </div>
+          <div class="tablet-panel">
+            <div class="tablet-panel-title">Slide-over Properties</div>
+            <div style="font-size:10px;color:var(--text-secondary);line-height:1.8">
+              Typography<br>Colors<br>Spacing<br>Position<br>Icon Style
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════ MOBILE ═══════════════ -->
+<div class="viewport-section">
+  <div class="viewport-label">
+    <h2>Mobile Editor</h2>
+    <span class="chip">&lt;768px</span>
+    <span class="desc">Quick-edit flow with bottom nav + sheet tools</span>
+  </div>
+  <div class="mobile-wrapper">
+    <div class="mobile-frame">
+      <div class="mobile-header">
+        <div>
+          <div class="title">PMI Corporate</div>
+          <div class="subtitle">Quick Edit Mode</div>
+        </div>
+        <div class="actions">
+          <button class="btn" style="padding:4px 10px;border-radius:6px;font-size:10px;border:1px solid var(--border);background:var(--bg-surface);color:var(--text-secondary)">Undo</button>
+          <button class="btn" style="padding:4px 10px;border-radius:6px;font-size:10px;background:var(--accent);color:#000;border:none;font-weight:600">Export</button>
+        </div>
+      </div>
+      <div class="mobile-fb">
+        <span class="btn active">Front</span>
+        <span class="btn">Back</span>
+      </div>
+      <div class="mobile-canvas">
+        <div class="mobile-card-mock">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:38%;background:linear-gradient(135deg,#f5f0eb,#ede5db)"></div>
+          <div style="position:absolute;right:0;top:0;bottom:0;width:62%;background:linear-gradient(135deg,#1a1a2e,#16213e)"></div>
+          <div style="position:absolute;left:30%;top:0;bottom:0;width:70px;background:linear-gradient(180deg,#c62828,#e53935);transform:skewX(-12deg);opacity:0.9"></div>
+          <div style="position:absolute;left:12px;top:12px;font-size:12px;font-weight:800;color:#333">PMI</div>
+          <div style="position:absolute;right:12px;top:14px;text-align:right;color:#fff"><div style="font-size:12px;font-weight:700">Employee Name</div><div style="font-size:8px;opacity:0.7">Job Title</div></div>
+          <div style="position:absolute;right:12px;bottom:12px;text-align:right;color:rgba(255,255,255,0.8);font-size:7px;line-height:1.8">(555) 555-5555<br>name@company.com</div>
+        </div>
+      </div>
+      <div class="mobile-quick-fields">
+        <h4>Quick Fields</h4>
+        <div class="mobile-field"><span class="label">Name</span><span class="edit">Edit</span></div>
+        <div class="mobile-field"><span class="label">Title</span><span class="edit">Edit</span></div>
+        <div class="mobile-field"><span class="label">Phone</span><span class="edit">Edit</span></div>
+        <div class="mobile-field"><span class="label">Email</span><span class="edit">Edit</span></div>
+        <div class="mobile-field"><span class="label">Website</span><span class="edit">Edit</span></div>
+      </div>
+      <div class="mobile-sheet">
+        <h4>Bottom Sheet Tools</h4>
+        <div class="mobile-sheet-grid">
+          <div class="mobile-sheet-btn">Template</div>
+          <div class="mobile-sheet-btn">Text</div>
+          <div class="mobile-sheet-btn">Brand</div>
+          <div class="mobile-sheet-btn">Elements</div>
+          <div class="mobile-sheet-btn">Logo</div>
+          <div class="mobile-sheet-btn">Colors</div>
+        </div>
+      </div>
+      <div class="mobile-bottom-nav">
+        <div class="mobile-nav-item active"><div class="mobile-nav-icon"></div>Templ</div>
+        <div class="mobile-nav-item"><div class="mobile-nav-icon"></div>Content</div>
+        <div class="mobile-nav-item"><div class="mobile-nav-icon"></div>Media</div>
+        <div class="mobile-nav-item"><div class="mobile-nav-icon"></div>Design</div>
+        <div class="mobile-nav-item"><div class="mobile-nav-icon"></div>More</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:60px"></div>
+
+</body>
+</html>
