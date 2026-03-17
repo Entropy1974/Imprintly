@@ -2672,6 +2672,210 @@ function WizardStepStartingPoint(props){
   );
 }
 
+
+function WizardStepColors(props){
+  var ws=props.ws;var setWs=props.setWs;
+  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+
+  var PRESETS=[
+    {name:"Dark Charcoal",light:"#1F2933",dark:"#1F2933",accent:"#2F6BFF",accentEnd:"#0F4C9B",icon:"#2F6BFF",divider:"#2F6BFF"},
+    {name:"Classic White",light:"#ffffff",dark:"#1a1a2a",accent:"#d4006e",accentEnd:"#9a0050",icon:"#d4006e",divider:"#d4006e"},
+    {name:"Navy Gold",light:"#f5f0e8",dark:"#0d1b2a",accent:"#c8a55a",accentEnd:"#a08030",icon:"#c8a55a",divider:"#c8a55a"},
+    {name:"Midnight Teal",light:"#e8f4f0",dark:"#0a192f",accent:"#00b4d8",accentEnd:"#0077b6",icon:"#00b4d8",divider:"#00b4d8"},
+    {name:"Warm Coral",light:"#fff5f0",dark:"#2d1b14",accent:"#e8614d",accentEnd:"#c0392b",icon:"#e8614d",divider:"#e8614d"},
+    {name:"Forest Green",light:"#f0f5e8",dark:"#1a2e1a",accent:"#2d8f4e",accentEnd:"#1a6b34",icon:"#2d8f4e",divider:"#2d8f4e"}
+  ];
+
+  return React.createElement("div",null,
+    React.createElement("h2",{className:"imp-wizard-step-title"},"Colors & Background"),
+    React.createElement("p",{className:"imp-wizard-step-subtitle"},"Set your card's color palette. You can fine-tune later."),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Quick Presets"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px",marginBottom:"20px"}},
+      PRESETS.map(function(p){
+        var isActive=ws.lightBg===p.light&&ws.accentColor===p.accent;
+        return React.createElement("button",{key:p.name,onClick:function(){
+          setWs(Object.assign({},ws,{lightBg:p.light,darkBg:p.dark,accentColor:p.accent,accentColorEnd:p.accentEnd,iconColor:p.icon,dividerColor:p.divider}));
+        },style:{padding:"10px 8px",borderRadius:"8px",border:"2px solid "+(isActive?"var(--accent-primary)":"var(--border-default)"),
+          background:isActive?"rgba(204,136,0,0.08)":"var(--bg-card)",cursor:"pointer",textAlign:"center"}},
+          React.createElement("div",{style:{display:"flex",gap:"3px",justifyContent:"center",marginBottom:"6px"}},
+            React.createElement("div",{style:{width:16,height:16,borderRadius:3,background:p.light,border:"1px solid #333"}}),
+            React.createElement("div",{style:{width:16,height:16,borderRadius:3,background:p.dark}}),
+            React.createElement("div",{style:{width:16,height:16,borderRadius:3,background:p.accent}})),
+          React.createElement("div",{style:{fontSize:"10px",fontWeight:600,color:"var(--text-primary)"}},p.name));
+      })),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Custom Colors"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Left / Light BG",value:ws.lightBg,onChange:function(v){up("lightBg",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Right / Dark BG",value:ws.darkBg,onChange:function(v){up("darkBg",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Accent Color",value:ws.accentColor,onChange:function(v){up("accentColor",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Accent End",value:ws.accentColorEnd,onChange:function(v){up("accentColorEnd",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Icon Color",value:ws.iconColor,onChange:function(v){up("iconColor",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Divider Color",value:ws.dividerColor,onChange:function(v){up("dividerColor",v);}})),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Back Card Colors"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Light BG",value:ws.backLightBg||ws.lightBg,onChange:function(v){up("backLightBg",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Dark BG",value:ws.backDarkBg||ws.darkBg,onChange:function(v){up("backDarkBg",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Tagline",value:ws.backTaglineBoldColor||ws.accentColor,onChange:function(v){up("backTaglineBoldColor",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Divider",value:ws.backDividerColor||ws.dividerColor,onChange:function(v){up("backDividerColor",v);}})),
+
+    React.createElement("div",{style:{marginTop:"16px"}},
+      React.createElement("button",{onClick:function(){
+        setWs(Object.assign({},ws,{backLightBg:ws.lightBg,backDarkBg:ws.darkBg,backTaglineBoldColor:ws.accentColor,backTaglineLightColor:ws.accentColorEnd||"#aaaaaa",backDividerColor:ws.dividerColor}));
+      },style:{padding:"6px 14px",borderRadius:"6px",border:"1px solid var(--border-default)",background:"var(--bg-input)",color:"var(--text-secondary)",fontSize:"11px",cursor:"pointer"}},
+        "\u21BB Match Back to Front Colors")));
+}
+
+function WizardStepBranding(props){
+  var ws=props.ws;var setWs=props.setWs;var setWStyles=props.setWStyles;var wStyles=props.wStyles;
+
+  var _logoTab=useState("upload");var logoTab=_logoTab[0];var setLogoTab=_logoTab[1];
+  var _bkTab=useState("select");var bkTab=_bkTab[0];var setBkTab=_bkTab[1];
+  var logoRef=React.useRef(null);
+
+  // Brand kit state
+  var _bkList=useState([]);var bkList=_bkList[0];var setBkList=_bkList[1];
+  var _bkName=useState("");var bkName=_bkName[0];var setBkName=_bkName[1];
+  var _bkColors=useState({});var bkColors=_bkColors[0];var setBkColors=_bkColors[1];
+  var _bkFont=useState("'Poppins', sans-serif");var bkFont=_bkFont[0];var setBkFont=_bkFont[1];
+  var _selectedKit=useState(null);var selectedKit=_selectedKit[0];var setSelectedKit=_selectedKit[1];
+
+  // Load brand kits on mount
+  React.useEffect(function(){
+    if(window.DataService&&window.DataService.brandKits){
+      window.DataService.brandKits.list().then(function(kits){setBkList(kits||[]);});
+    }
+  },[]);
+
+  var handleLogoFile=function(e){
+    var f=e.target.files&&e.target.files[0];if(!f)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var dataUrl=ev.target.result;
+      var img=new Image();
+      img.onload=function(){
+        var aspect=img.naturalHeight>0?img.naturalHeight/img.naturalWidth:0.5;
+        setWs(Object.assign({},ws,{uploadedLogo:dataUrl,logoMode:"upload",processedLogoFront:null,processedLogoBack:null,logoColorSwapsFront:[],logoColorSwapsBack:[],logoAspect:aspect}));
+      };
+      img.src=dataUrl;
+    };
+    reader.readAsDataURL(f);
+  };
+
+  var applyKit=function(kit){
+    setSelectedKit(kit.id);
+    var patch={};
+    if(kit.colors){
+      BK_COLOR_KEYS.forEach(function(k){if(kit.colors[k]!==undefined)patch[k]=kit.colors[k];});
+    }
+    var newStyles=Object.assign({},wStyles||ws.styles||DEFAULT_STATE.styles);
+    if(kit.fonts){
+      Object.keys(kit.fonts).forEach(function(k){
+        if(newStyles[k]){newStyles[k]=Object.assign({},newStyles[k],kit.fonts[k]);}
+      });
+    }
+    if(kit.font){
+      Object.keys(newStyles).forEach(function(k){
+        newStyles[k]=Object.assign({},newStyles[k],{fontFamily:kit.font});
+      });
+    }
+    setWs(Object.assign({},ws,patch,{styles:newStyles}));
+    if(setWStyles)setWStyles(newStyles);
+  };
+
+  var saveNewKit=function(){
+    if(!bkName.trim()){alert("Please enter a kit name.");return;}
+    var colors={};
+    BK_COLOR_KEYS.forEach(function(k){colors[k]=ws[k];});
+    var kit={id:"bk_"+Date.now()+"_"+Math.random().toString(36).substr(2,6),name:bkName.trim(),colors:colors,font:bkFont,createdAt:new Date().toISOString()};
+    window.DataService.brandKits.save(kit).then(function(){
+      return window.DataService.brandKits.list();
+    }).then(function(kits){
+      setBkList(kits||[]);setBkName("");setSelectedKit(kit.id);
+    });
+  };
+
+  return React.createElement("div",null,
+    React.createElement("h2",{className:"imp-wizard-step-title"},"Logo & Branding"),
+    React.createElement("p",{className:"imp-wizard-step-subtitle"},"Upload your logo and optionally apply a brand kit."),
+
+    // Logo section
+    React.createElement("div",{className:"imp-wizard-section-label"},"Logo"),
+    ws.uploadedLogo&&ws.logoMode==="upload"?
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"12px",padding:"12px",borderRadius:"8px",background:"var(--bg-input)",marginBottom:"12px"}},
+        React.createElement("img",{src:ws.uploadedLogo,style:{width:60,height:60,objectFit:"contain",borderRadius:4,background:"#222"}}),
+        React.createElement("div",{style:{flex:1}},
+          React.createElement("div",{style:{fontSize:"12px",fontWeight:600,color:"var(--text-primary)"}},"Logo uploaded"),
+          React.createElement("button",{onClick:function(){if(logoRef.current)logoRef.current.click();},
+            style:{fontSize:"11px",color:"var(--accent-primary)",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:4}},"Change logo")),
+        React.createElement("button",{onClick:function(){setWs(Object.assign({},ws,{uploadedLogo:null,logoMode:"none"}));},
+          style:{fontSize:"11px",color:"var(--text-muted)",background:"none",border:"none",cursor:"pointer"}},"\u2715 Remove")):
+      React.createElement("button",{onClick:function(){if(logoRef.current)logoRef.current.click();},
+        style:{width:"100%",padding:"20px",borderRadius:"8px",border:"2px dashed var(--border-default)",
+          background:"var(--bg-card)",color:"var(--text-secondary)",fontSize:"13px",cursor:"pointer",marginBottom:"12px"}},
+        "\uD83D\uDDBC\uFE0F  Click to upload logo"),
+    React.createElement("input",{ref:logoRef,type:"file",accept:"image/*",style:{display:"none"},onChange:handleLogoFile}),
+
+    // Brand Kit section
+    React.createElement("div",{className:"imp-wizard-section-label"},"Brand Kit"),
+    React.createElement("div",{style:{display:"flex",gap:"4px",marginBottom:"12px"}},
+      React.createElement("button",{onClick:function(){setBkTab("select");},
+        style:{flex:1,padding:"6px",borderRadius:"6px",border:"1px solid "+(bkTab==="select"?"var(--accent-primary)":"var(--border-default)"),
+          background:bkTab==="select"?"var(--accent-primary)":"var(--bg-input)",
+          color:bkTab==="select"?"#000":"var(--text-secondary)",fontSize:"11px",fontWeight:600,cursor:"pointer"}},
+        "Select Existing"),
+      React.createElement("button",{onClick:function(){setBkTab("create");},
+        style:{flex:1,padding:"6px",borderRadius:"6px",border:"1px solid "+(bkTab==="create"?"var(--accent-primary)":"var(--border-default)"),
+          background:bkTab==="create"?"var(--accent-primary)":"var(--bg-input)",
+          color:bkTab==="create"?"#000":"var(--text-secondary)",fontSize:"11px",fontWeight:600,cursor:"pointer"}},
+        "+ Create New")),
+
+    bkTab==="select"&&React.createElement("div",null,
+      bkList.length===0?
+        React.createElement("div",{style:{padding:"16px",textAlign:"center",fontSize:"12px",color:"var(--text-muted)",background:"var(--bg-input)",borderRadius:"8px"}},
+          "No brand kits saved yet. Create one to get started."):
+        React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:"6px"}},
+          bkList.map(function(kit){
+            var isActive=selectedKit===kit.id;
+            return React.createElement("button",{key:kit.id,onClick:function(){applyKit(kit);},
+              style:{display:"flex",alignItems:"center",gap:"10px",padding:"10px 12px",borderRadius:"8px",
+                border:"2px solid "+(isActive?"var(--accent-primary)":"var(--border-default)"),
+                background:isActive?"rgba(204,136,0,0.08)":"var(--bg-card)",cursor:"pointer",textAlign:"left"}},
+              React.createElement("div",{style:{display:"flex",gap:"3px"}},
+                Object.values(kit.colors||{}).slice(0,4).map(function(c,i){
+                  return React.createElement("div",{key:i,style:{width:14,height:14,borderRadius:3,background:c||"#333",border:"1px solid #444"}});
+                })),
+              React.createElement("div",{style:{flex:1}},
+                React.createElement("div",{style:{fontSize:"12px",fontWeight:600,color:"var(--text-primary)"}},kit.name),
+                React.createElement("div",{style:{fontSize:"10px",color:"var(--text-muted)"}},kit.font||"Default font")),
+              isActive?React.createElement("span",{style:{fontSize:"11px",color:"var(--accent-primary)",fontWeight:600}},"\u2713 Applied"):null);
+          }))),
+
+    bkTab==="create"&&React.createElement("div",{style:{padding:"12px",borderRadius:"8px",background:"var(--bg-input)",border:"1px solid var(--border-default)"}},
+      React.createElement("div",{style:{marginBottom:"10px"}},
+        React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:3}},"Kit Name"),
+        React.createElement("input",{type:"text",value:bkName,onChange:function(e){setBkName(e.target.value);},
+          placeholder:"e.g. My Company Brand",
+          style:{width:"100%",padding:"8px",borderRadius:"6px",border:"1px solid var(--border-default)",
+            background:"var(--bg-deep)",color:"var(--text-primary)",fontSize:"12px",boxSizing:"border-box"}})),
+
+      React.createElement("div",{style:{marginBottom:"10px"}},
+        React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:3}},"Primary Font"),
+        React.createElement("select",{value:bkFont,onChange:function(e){setBkFont(e.target.value);},
+          style:{width:"100%",padding:"8px",borderRadius:"6px",border:"1px solid var(--border-default)",
+            background:"var(--bg-deep)",color:"var(--text-primary)",fontSize:"12px"}},
+          FONT_OPTIONS.map(function(f){return React.createElement("option",{key:f.value,value:f.value},f.label);}))),
+
+      React.createElement("div",{style:{fontSize:"11px",color:"var(--text-muted)",marginBottom:"6px"}},"Colors will be captured from current wizard palette"),
+
+      React.createElement("button",{onClick:saveNewKit,
+        style:{width:"100%",padding:"8px",borderRadius:"6px",background:"var(--accent-primary)",color:"#000",
+          border:"none",fontSize:"12px",fontWeight:600,cursor:"pointer",marginTop:"6px"}},
+        "\uD83D\uDCBE Save Brand Kit")));
+}
+
 function WizardCardPreview(props){
   var ws=props.ws;var showBack=props.showBack;var setShowBack=props.setShowBack;
   var dims=getCardDims(ws);
@@ -2755,14 +2959,17 @@ function TemplateWizard(props){
       source:source,setSource:setSource,
       selectedTpl:selectedTpl,setSelectedTpl:setSelectedTpl,
       catFilter:catFilter,setCatFilter:setCatFilter});
+  }else if(currentStepId==="colors"){
+    stepContent=React.createElement(WizardStepColors,{ws:ws,setWs:setWs});
+  }else if(currentStepId==="branding"){
+    stepContent=React.createElement(WizardStepBranding,{ws:ws,setWs:setWs,wStyles:wStyles,setWStyles:setWStyles});
   }else{
     stepContent=React.createElement("div",null,
       React.createElement("h2",{className:"imp-wizard-step-title"},currentStep?currentStep.label:""),
       React.createElement("p",{className:"imp-wizard-step-subtitle"},"Coming in next sprint..."),
       React.createElement("div",{style:{padding:"40px",textAlign:"center",color:"var(--text-muted)",fontSize:"13px"}},
         React.createElement("span",{style:{fontSize:"48px",display:"block",marginBottom:"12px"}},currentStep?currentStep.icon:""),
-        "This step will be implemented in Sprint W"+(currentStepId==="colors"||currentStepId==="branding"?"2":
-          currentStepId==="layout"||currentStepId==="content"||currentStepId==="qrback"?"3":"4")+"."));
+        "This step will be implemented in Sprint W"+(currentStepId==="layout"||currentStepId==="content"||currentStepId==="qrback"?"3":"4")+"."));
   }
 
   return React.createElement("div",{className:"imp-wizard-overlay"},
