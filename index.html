@@ -2493,6 +2493,7 @@ var WIZARD_STEPS_ALL=[
   {id:"layout",label:"Layout",icon:"\u25A7",alwaysShow:true},
   {id:"content",label:"Content",icon:"\u270F\uFE0F",alwaysShow:true},
   {id:"qrback",label:"QR & Back",icon:"\uD83D\uDD32",alwaysShow:true},
+  {id:"finetune",label:"Fine-Tune",icon:"\u2699\uFE0F",alwaysShow:true},
   {id:"printverify",label:"Print",icon:"\uD83D\uDDA8\uFE0F",showIf:function(m){return m==="physical"||m==="both";}},
   {id:"save",label:"Save",icon:"\uD83D\uDCBE",alwaysShow:true}
 ];
@@ -2695,7 +2696,7 @@ function WizardStepColors(props){
       PRESETS.map(function(p){
         var isActive=ws.lightBg===p.light&&ws.accentColor===p.accent;
         return React.createElement("button",{key:p.name,onClick:function(){
-          setWs(Object.assign({},ws,{lightBg:p.light,darkBg:p.dark,accentColor:p.accent,accentColorEnd:p.accentEnd,iconColor:p.icon,dividerColor:p.divider}));
+          setWs(Object.assign({},ws,{lightBg:p.light,darkBg:p.dark,accentColor:p.accent,accentColorEnd:p.accentEnd,iconColor:p.icon,dividerColor:p.divider,bgGradient:false}));
         },style:{padding:"10px 8px",borderRadius:"8px",border:"2px solid "+(isActive?"var(--accent-primary)":"var(--border-default)"),
           background:isActive?"rgba(204,136,0,0.08)":"var(--bg-card)",cursor:"pointer",textAlign:"center"}},
           React.createElement("div",{style:{display:"flex",gap:"3px",justifyContent:"center",marginBottom:"6px"}},
@@ -2722,8 +2723,8 @@ function WizardStepColors(props){
       React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Divider",value:ws.backDividerColor||ws.dividerColor,onChange:function(v){up("backDividerColor",v);}})),
 
     React.createElement("div",{style:{marginTop:"16px"}},
-      React.createElement("button",{onClick:function(){
-        setWs(Object.assign({},ws,{backLightBg:ws.lightBg,backDarkBg:ws.darkBg,backTaglineBoldColor:ws.accentColor,backTaglineLightColor:ws.accentColorEnd||"#aaaaaa",backDividerColor:ws.dividerColor}));
+      React.createElement("div",{style:{marginTop:"16px",marginBottom:"12px",padding:"12px 16px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",border:"1px solid var(--border-subtle)"}},React.createElement("label",{style:{display:"flex",alignItems:"center",gap:"10px",cursor:"pointer",fontSize:"var(--fs-base)",color:"var(--text-primary)",fontWeight:600}},React.createElement("input",{type:"checkbox",checked:!!ws.bgGradient,onChange:function(){up("bgGradient",!ws.bgGradient);},style:{width:"18px",height:"18px",accentColor:"var(--accent-primary)"}}),"Use Gradient Backgrounds"),React.createElement("div",{style:{fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",marginTop:"6px",paddingLeft:"28px"}},"Add color transitions to your card backgrounds")),ws.bgGradient?React.createElement("div",{style:{marginTop:"8px",padding:"12px 16px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",border:"1px solid var(--border-subtle)"}},React.createElement("div",{style:{fontSize:"var(--fs-sm)",fontWeight:700,color:"var(--text-secondary)",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"0.5px"}},"Front Gradient"),React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}},React.createElement(CF,{label:"Light End",value:ws.lightBgEnd||ws.lightBg,onChange:function(v){up("lightBgEnd",v);},cmykPreview:false}),React.createElement(CF,{label:"Dark End",value:ws.darkBgEnd||ws.darkBg,onChange:function(v){up("darkBgEnd",v);},cmykPreview:false})),React.createElement("div",{style:{marginTop:"4px"}},React.createElement(SL,{label:"Gradient Angle",value:ws.bgGradientAngle||135,min:0,max:360,step:5,onChange:function(v){up("bgGradientAngle",v);}}))):null,ws.bgGradient?React.createElement("div",{style:{marginTop:"8px",padding:"12px 16px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",border:"1px solid var(--border-subtle)"}},React.createElement("div",{style:{fontSize:"var(--fs-sm)",fontWeight:700,color:"var(--text-secondary)",marginBottom:"10px",textTransform:"uppercase",letterSpacing:"0.5px"}},"Back Gradient"),React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}},React.createElement(CF,{label:"Back Light End",value:ws.backLightBgEnd||ws.backLightBg,onChange:function(v){up("backLightBgEnd",v);},cmykPreview:false}),React.createElement(CF,{label:"Back Dark End",value:ws.backDarkBgEnd||ws.backDarkBg,onChange:function(v){up("backDarkBgEnd",v);},cmykPreview:false})),React.createElement("div",{style:{marginTop:"4px"}},React.createElement(SL,{label:"Back Gradient Angle",value:ws.backGradientAngle||135,min:0,max:360,step:5,onChange:function(v){up("backGradientAngle",v);}}))):null,React.createElement("button",{onClick:function(){
+        setWs(Object.assign({},ws,{backLightBg:ws.lightBg,backDarkBg:ws.darkBg,backTaglineBoldColor:ws.accentColor,backTaglineLightColor:ws.accentColorEnd||"#aaaaaa",backDividerColor:ws.dividerColor,backGradient:ws.bgGradient,backLightBgEnd:ws.lightBgEnd,backDarkBgEnd:ws.darkBgEnd,backGradientAngle:ws.bgGradientAngle}));
       },style:{padding:"6px 14px",borderRadius:"6px",border:"1px solid var(--border-default)",background:"var(--bg-input)",color:"var(--text-secondary)",fontSize:"11px",cursor:"pointer"}},
         "\u21BB Match Back to Front Colors")));
 }
@@ -2950,7 +2951,7 @@ function WizardStepLayout(props){
           style:{padding:"8px 4px",borderRadius:6,border:"1px solid "+(active?"var(--accent-primary)":"var(--border-default)"),
             background:active?"rgba(204,136,0,0.1)":"var(--bg-input)",color:active?"var(--accent-primary)":"var(--text-muted)",
             fontSize:9,cursor:"pointer",textAlign:"center",fontWeight:active?600:400}},rs.label.split(" ")[0]);
-      })));
+      })),React.createElement("p",{style:{fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",fontStyle:"italic",margin:"16px 0 0",padding:"10px 14px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",borderLeft:"3px solid var(--accent-primary)"}},"\uD83D\uDCA1 You\u2019ll be able to fine-tune exact positions of all elements in the Fine-Tune step before saving."));
 }
 
 function WizardStepContent(props){
@@ -3002,7 +3003,7 @@ function WizardStepContent(props){
 
     React.createElement("div",{className:"imp-wizard-section-label"},"Taglines"),
     React.createElement(TF_,{label:"Primary Tagline",value:ws.taglineBold,placeholder:"Design the Impression you Leave.",onChange:function(v){up("taglineBold",v);}}),
-    React.createElement(TF_,{label:"Secondary Tagline (optional)",value:ws.taglineLight,placeholder:"",onChange:function(v){up("taglineLight",v);}}));
+    React.createElement(TF_,{label:"Secondary Tagline (optional)",value:ws.taglineLight,placeholder:"",onChange:function(v){up("taglineLight",v);}}),React.createElement("p",{style:{fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",fontStyle:"italic",margin:"16px 0 0",padding:"10px 14px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",borderLeft:"3px solid var(--accent-primary)"}},"\uD83D\uDCA1 Element positions can be adjusted precisely in the upcoming Fine-Tune step."));
 }
 
 function WizardStepQRBack(props){
@@ -3107,6 +3108,56 @@ function WizardCardPreview(props){
           React.createElement(CardBack,{s:ws,W:W,H:H})):null));
 }
 
+
+function WizardStepFineTune(props){
+  var ws=props.ws;var setWs=props.setWs;
+  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+  var positions=ws.positions||{};
+  var upPos=function(newPositions){setWs(Object.assign({},ws,{positions:newPositions}));};
+  var hasContent=function(key){return ws[key]&&ws[key].trim&&ws[key].trim().length>0;};
+
+  var resetAll=function(){
+    var empty={};
+    Object.keys(positions).forEach(function(k){empty[k]=null;});
+    setWs(Object.assign({},ws,{positions:empty,logoX:45,logoY:40,logoWidth:180}));
+  };
+
+  var tipStyle={fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",fontStyle:"italic",margin:"0 0 16px",padding:"10px 14px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",borderLeft:"3px solid var(--accent-primary)"};
+
+  return React.createElement("div",null,
+    React.createElement("h2",{className:"imp-wizard-step-title"},"Fine-Tune Positions"),
+    React.createElement("p",{className:"imp-wizard-step-subtitle"},"Adjust element positions with precision sliders. The preview updates live."),
+    React.createElement("p",{style:tipStyle},"\u2728 All positions are optional. Leave them at defaults for auto-layout, or adjust to get pixel-perfect placement."),
+    React.createElement("div",{style:{display:"flex",justifyContent:"flex-end",marginBottom:"12px"}},
+      React.createElement("button",{onClick:resetAll,style:{padding:"6px 14px",borderRadius:"var(--radius-sm)",background:"var(--bg-elevated)",border:"1px solid var(--border-default)",color:"var(--text-secondary)",fontSize:"var(--fs-sm)",cursor:"pointer",fontWeight:600}},"\u21BA Reset All Positions")),
+
+    React.createElement(Sec,{title:"Logo Position",startOpen:true},
+      React.createElement(SL,{label:"Logo X",value:ws.logoX!=null?ws.logoX:45,min:0,max:800,onChange:function(v){up("logoX",v);}}),
+      React.createElement(SL,{label:"Logo Y",value:ws.logoY!=null?ws.logoY:40,min:0,max:450,onChange:function(v){up("logoY",v);}}),
+      React.createElement(SL,{label:"Logo Width",value:ws.logoWidth!=null?ws.logoWidth:180,min:50,max:400,onChange:function(v){up("logoWidth",v);}})),
+
+    React.createElement(Sec,{title:"Name & Title"},
+      React.createElement(PosControl,{label:"Name",xKey:"nameX",yKey:"nameY",positions:positions,onChange:upPos,defaultX:440,defaultY:120}),
+      React.createElement(PosControl,{label:"Title",xKey:"titleX",yKey:"titleY",positions:positions,onChange:upPos,defaultX:440,defaultY:155})),
+
+    (hasContent("phone")||hasContent("email")||hasContent("website")||hasContent("address"))?
+    React.createElement(Sec,{title:"Contact Info"},
+      hasContent("phone")?React.createElement(PosControl,{label:"Phone",xKey:"phoneX",yKey:"phoneY",positions:positions,onChange:upPos,defaultX:440,defaultY:200}):null,
+      hasContent("email")?React.createElement(PosControl,{label:"Email",xKey:"emailX",yKey:"emailY",positions:positions,onChange:upPos,defaultX:440,defaultY:225}):null,
+      hasContent("website")?React.createElement(PosControl,{label:"Website",xKey:"websiteX",yKey:"websiteY",positions:positions,onChange:upPos,defaultX:440,defaultY:250}):null,
+      hasContent("address")?React.createElement(PosControl,{label:"Address",xKey:"addressX",yKey:"addressY",positions:positions,onChange:upPos,defaultX:440,defaultY:275}):null):null,
+
+    (hasContent("linkedin")||hasContent("twitter")||hasContent("instagram"))?
+    React.createElement(Sec,{title:"Social Media"},
+      hasContent("linkedin")?React.createElement(PosControl,{label:"LinkedIn",xKey:"linkedinX",yKey:"linkedinY",positions:positions,onChange:upPos,defaultX:440,defaultY:310}):null,
+      hasContent("twitter")?React.createElement(PosControl,{label:"Twitter/X",xKey:"twitterX",yKey:"twitterY",positions:positions,onChange:upPos,defaultX:440,defaultY:335}):null,
+      hasContent("instagram")?React.createElement(PosControl,{label:"Instagram",xKey:"instagramX",yKey:"instagramY",positions:positions,onChange:upPos,defaultX:440,defaultY:360}):null):null,
+
+    (hasContent("taglineBold")||hasContent("taglineLight"))?
+    React.createElement(Sec,{title:"Taglines (Back Card)"},
+      hasContent("taglineBold")?React.createElement(PosControl,{label:"Primary Tagline",xKey:"taglineBoldX",yKey:"taglineBoldY",positions:positions,onChange:upPos,defaultX:250,defaultY:200}):null,
+      hasContent("taglineLight")?React.createElement(PosControl,{label:"Secondary Tagline",xKey:"taglineLightX",yKey:"taglineLightY",positions:positions,onChange:upPos,defaultX:250,defaultY:240}):null):null);
+}
 
 function WizardStepPrintVerify(props){
   var ws=props.ws;var setWs=props.setWs;
@@ -3413,6 +3464,8 @@ function TemplateWizard(props){
     stepContent=React.createElement(WizardStepContent,{ws:ws,setWs:setWs});
   }else if(currentStepId==="qrback"){
     stepContent=React.createElement(WizardStepQRBack,{ws:ws,setWs:setWs,setShowBack:setShowBack});
+  }else if(currentStepId==="finetune"){
+    stepContent=React.createElement(WizardStepFineTune,{ws:ws,setWs:setWs});
   }else if(currentStepId==="printverify"){
     stepContent=React.createElement(WizardStepPrintVerify,{ws:ws,setWs:setWs});
   }else if(currentStepId==="save"){
