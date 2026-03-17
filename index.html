@@ -2876,6 +2876,212 @@ function WizardStepBranding(props){
         "\uD83D\uDCBE Save Brand Kit")));
 }
 
+
+function WizardStepLayout(props){
+  var ws=props.ws;var setWs=props.setWs;
+  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+
+  var layouts=[
+    {id:"classic",label:"Classic Split",desc:"Diagonal split with two background zones"},
+    {id:"no_split",label:"No Split",desc:"Single background color across entire card"},
+    {id:"modern_split",label:"Modern Split",desc:"Deep 6-panel modern layout"}
+  ];
+
+  var handleLayoutChange=function(val){
+    if(val==="no_split"){
+      setWs(Object.assign({},ws,{cardLayout:"no_split",splitPosition:100}));
+    }else if(val==="modern_split"){
+      setWs(Object.assign({},ws,{cardLayout:"modern_split",splitPosition:ws.splitPosition>=98?42:ws.splitPosition}));
+    }else{
+      setWs(Object.assign({},ws,{cardLayout:"classic",splitPosition:ws.splitPosition>=98?42:ws.splitPosition}));
+    }
+  };
+
+  var presetKeys=typeof CONTENT_LAYOUTS!=="undefined"?Object.keys(CONTENT_LAYOUTS):[];
+
+  return React.createElement("div",null,
+    React.createElement("h2",{className:"imp-wizard-step-title"},"Layout & Structure"),
+    React.createElement("p",{className:"imp-wizard-step-subtitle"},"Choose card layout, content zones, and decorative elements."),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Card Layout"),
+    React.createElement("div",{className:"imp-wizard-choice-grid cols-3"},
+      layouts.map(function(l){
+        var active=(ws.cardLayout||"classic")===l.id;
+        return React.createElement("div",{key:l.id,className:"imp-wizard-choice"+(active?" selected":""),
+          onClick:function(){handleLayoutChange(l.id);},style:{padding:"14px 10px"}},
+          React.createElement("div",{className:"imp-wizard-choice-label"},l.label),
+          React.createElement("div",{className:"imp-wizard-choice-desc"},l.desc));
+      })),
+
+    (ws.cardLayout||"classic")!=="no_split"&&React.createElement("div",{style:{marginTop:"12px"}},
+      React.createElement(SL,{label:"Split Position",value:ws.splitPosition||42,onChange:function(v){up("splitPosition",v);},min:10,max:90,unit:"%"}),
+      React.createElement(SL,{label:"Split Angle",value:ws.splitAngle||84,onChange:function(v){up("splitAngle",v);},min:60,max:120,unit:"\u00B0"})),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Content Zones"),
+    React.createElement("p",{style:{fontSize:"11px",color:"var(--text-muted)",margin:"0 0 8px"}},"Choose where content appears on the card."),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}},
+      presetKeys.map(function(k){
+        var p=CONTENT_LAYOUTS[k];
+        var active=(ws.contentLayout||"classic")===k;
+        return React.createElement("button",{key:k,onClick:function(){
+          setWs(Object.assign({},ws,{contentLayout:k,
+            zoneContactsFront:p.zoneContactsFront,zoneContactsBack:p.zoneContactsBack,
+            zoneQrFront:p.zoneQrFront,zoneQrBack:p.zoneQrBack,
+            zoneTaglinesFront:p.zoneTaglinesFront,zoneTaglinesBack:p.zoneTaglinesBack,
+            zoneCompanyFront:p.zoneCompanyFront,zoneCompanyBack:p.zoneCompanyBack}));
+        },style:{padding:"10px 8px",borderRadius:"8px",border:"2px solid "+(active?"var(--accent-primary)":"var(--border-default)"),
+          background:active?"rgba(204,136,0,0.08)":"var(--bg-card)",cursor:"pointer",textAlign:"left"}},
+          React.createElement("div",{style:{fontSize:"12px",fontWeight:600,color:"var(--text-primary)"}},p.label),
+          React.createElement("div",{style:{fontSize:"10px",color:"var(--text-muted)",marginTop:2}},p.desc));
+      })),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Ribbon / Swoosh"),
+    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"12px",marginBottom:"8px"}},
+      React.createElement("span",{style:{fontSize:"12px",color:"var(--text-secondary)"}},"Show ribbon"),
+      React.createElement("button",{onClick:function(){up("swooshVisible",!ws.swooshVisible);},
+        style:{padding:"4px 14px",borderRadius:14,border:"none",
+          background:ws.swooshVisible?"var(--accent-primary)":"#333",
+          color:ws.swooshVisible?"#000":"#999",fontSize:11,fontWeight:600,cursor:"pointer"}},
+        ws.swooshVisible?"On":"Off")),
+    ws.swooshVisible&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"4px"}},
+      (typeof RIBBON_STYLES!=="undefined"?RIBBON_STYLES:[]).slice(0,12).map(function(rs){
+        var active=(ws.swooshStyle||"arc")===rs.id;
+        return React.createElement("button",{key:rs.id,onClick:function(){up("swooshStyle",rs.id);},title:rs.label,
+          style:{padding:"8px 4px",borderRadius:6,border:"1px solid "+(active?"var(--accent-primary)":"var(--border-default)"),
+            background:active?"rgba(204,136,0,0.1)":"var(--bg-input)",color:active?"var(--accent-primary)":"var(--text-muted)",
+            fontSize:9,cursor:"pointer",textAlign:"center",fontWeight:active?600:400}},rs.label.split(" ")[0]);
+      })));
+}
+
+function WizardStepContent(props){
+  var ws=props.ws;var setWs=props.setWs;
+  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+
+  var fields=[
+    {key:"companyName",label:"Company Name",placeholder:"Acme Corp"},
+    {key:"personName",label:"Full Name",placeholder:"Jane Smith"},
+    {key:"title",label:"Job Title",placeholder:"Creative Director"},
+    {key:"phone",label:"Phone",placeholder:"(555) 123-4567"},
+    {key:"email",label:"Email",placeholder:"jane@acme.com"},
+    {key:"website",label:"Website",placeholder:"www.acme.com"},
+    {key:"address",label:"Address",placeholder:"123 Main St, Suite 100"}
+  ];
+  var socialFields=[
+    {key:"linkedin",label:"LinkedIn",placeholder:"janedoe"},
+    {key:"twitter",label:"Twitter / X",placeholder:"@janedoe"},
+    {key:"instagram",label:"Instagram",placeholder:"@janedoe"}
+  ];
+
+  var TF_=function(p){
+    return React.createElement("div",{style:{marginBottom:"8px"}},
+      React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:2}},p.label),
+      React.createElement("input",{type:"text",value:p.value||"",onChange:function(e){p.onChange(e.target.value);},
+        placeholder:p.placeholder||"",
+        style:{width:"100%",padding:"8px 10px",borderRadius:6,border:"1px solid var(--border-default)",
+          background:"var(--bg-deep)",color:"var(--text-primary)",fontSize:12,boxSizing:"border-box"}}));
+  };
+
+  return React.createElement("div",null,
+    React.createElement("h2",{className:"imp-wizard-step-title"},"Content & Details"),
+    React.createElement("p",{className:"imp-wizard-step-subtitle"},"Enter the information that appears on your card."),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Company & Person"),
+    fields.slice(0,3).map(function(f){
+      return React.createElement(TF_,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
+    }),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Contact Details"),
+    fields.slice(3).map(function(f){
+      return React.createElement(TF_,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
+    }),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Social Media"),
+    socialFields.map(function(f){
+      return React.createElement(TF_,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
+    }),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Taglines"),
+    React.createElement(TF_,{label:"Primary Tagline",value:ws.taglineBold,placeholder:"Design the Impression you Leave.",onChange:function(v){up("taglineBold",v);}}),
+    React.createElement(TF_,{label:"Secondary Tagline (optional)",value:ws.taglineLight,placeholder:"",onChange:function(v){up("taglineLight",v);}}));
+}
+
+function WizardStepQRBack(props){
+  var ws=props.ws;var setWs=props.setWs;var setShowBack=props.setShowBack;
+  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+
+  // Auto-switch to back card view
+  React.useEffect(function(){if(setShowBack)setShowBack(true);return function(){if(setShowBack)setShowBack(false);};},[]);
+
+  var qrModes=[
+    {id:"vcard",label:"vCard",desc:"Contact info embedded"},
+    {id:"url",label:"URL",desc:"Link to any webpage"},
+    {id:"digital",label:"Digital Card",desc:"Interactive web card"}
+  ];
+
+  var qrDotStyles=["square","rounded","dots","classy","classy-rounded"];
+  var qrCornerStyles=["square","dot","extra-rounded"];
+
+  return React.createElement("div",null,
+    React.createElement("h2",{className:"imp-wizard-step-title"},"QR Code & Back Card"),
+    React.createElement("p",{className:"imp-wizard-step-subtitle"},"Configure the QR code and back card appearance."),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"QR Code Content"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"6px",marginBottom:"12px"}},
+      qrModes.map(function(m){
+        var active=(ws.qrMode||"vcard")===m.id;
+        return React.createElement("button",{key:m.id,onClick:function(){up("qrMode",m.id);},
+          style:{padding:"10px 6px",borderRadius:8,border:"2px solid "+(active?"var(--accent-primary)":"var(--border-default)"),
+            background:active?"rgba(204,136,0,0.08)":"var(--bg-card)",cursor:"pointer",textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:"12px",fontWeight:600,color:"var(--text-primary)"}},m.label),
+          React.createElement("div",{style:{fontSize:"10px",color:"var(--text-muted)"}},m.desc));
+      })),
+
+    ws.qrMode==="url"&&React.createElement("div",{style:{marginBottom:"12px"}},
+      React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:2}},"URL"),
+      React.createElement("input",{type:"text",value:ws.qrUrl||"",onChange:function(e){up("qrUrl",e.target.value);},
+        placeholder:"https://example.com",
+        style:{width:"100%",padding:"8px",borderRadius:6,border:"1px solid var(--border-default)",
+          background:"var(--bg-deep)",color:"var(--text-primary)",fontSize:12,boxSizing:"border-box"}})),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"QR Style"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"12px"}},
+      React.createElement("div",null,
+        React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:3}},"Dot Style"),
+        React.createElement("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}},
+          qrDotStyles.map(function(ds){
+            var active=(ws.qrDotStyle||"square")===ds;
+            return React.createElement("button",{key:ds,onClick:function(){up("qrDotStyle",ds);},
+              style:{padding:"4px 8px",borderRadius:4,border:"1px solid "+(active?"var(--accent-primary)":"var(--border-default)"),
+                background:active?"rgba(204,136,0,0.1)":"var(--bg-input)",color:active?"var(--accent-primary)":"var(--text-muted)",
+                fontSize:9,cursor:"pointer",fontWeight:active?600:400}},ds);
+          }))),
+      React.createElement("div",null,
+        React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:3}},"Corner Style"),
+        React.createElement("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}},
+          qrCornerStyles.map(function(cs){
+            var active=(ws.qrCornerStyle||"square")===cs;
+            return React.createElement("button",{key:cs,onClick:function(){up("qrCornerStyle",cs);},
+              style:{padding:"4px 8px",borderRadius:4,border:"1px solid "+(active?"var(--accent-primary)":"var(--border-default)"),
+                background:active?"rgba(204,136,0,0.1)":"var(--bg-input)",color:active?"var(--accent-primary)":"var(--text-muted)",
+                fontSize:9,cursor:"pointer",fontWeight:active?600:400}},cs);
+          })))),
+
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"QR BG Color",value:ws.qrBgColor||"#ffffff",onChange:function(v){up("qrBgColor",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"QR Label Color",value:ws.qrLabelColor||ws.accentColor,onChange:function(v){up("qrLabelColor",v);}})),
+
+    React.createElement("div",{className:"imp-wizard-section-label"},"Back Card Colors"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Light BG",value:ws.backLightBg||ws.lightBg,onChange:function(v){up("backLightBg",v);}}),
+      React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Dark BG",value:ws.backDarkBg||ws.darkBg,onChange:function(v){up("backDarkBg",v);}})),
+    React.createElement("div",{style:{marginTop:"8px"}},
+      React.createElement("button",{onClick:function(){
+        setWs(Object.assign({},ws,{backLightBg:ws.lightBg,backDarkBg:ws.darkBg,backTaglineBoldColor:ws.accentColor,backDividerColor:ws.dividerColor}));
+      },style:{padding:"6px 14px",borderRadius:6,border:"1px solid var(--border-default)",background:"var(--bg-input)",
+        color:"var(--text-secondary)",fontSize:11,cursor:"pointer"}},
+        "\u21BB Match Back to Front")));
+}
+
 function WizardCardPreview(props){
   var ws=props.ws;var showBack=props.showBack;var setShowBack=props.setShowBack;
   var dims=getCardDims(ws);
@@ -2963,13 +3169,19 @@ function TemplateWizard(props){
     stepContent=React.createElement(WizardStepColors,{ws:ws,setWs:setWs});
   }else if(currentStepId==="branding"){
     stepContent=React.createElement(WizardStepBranding,{ws:ws,setWs:setWs,wStyles:wStyles,setWStyles:setWStyles});
+  }else if(currentStepId==="layout"){
+    stepContent=React.createElement(WizardStepLayout,{ws:ws,setWs:setWs});
+  }else if(currentStepId==="content"){
+    stepContent=React.createElement(WizardStepContent,{ws:ws,setWs:setWs});
+  }else if(currentStepId==="qrback"){
+    stepContent=React.createElement(WizardStepQRBack,{ws:ws,setWs:setWs,setShowBack:setShowBack});
   }else{
     stepContent=React.createElement("div",null,
       React.createElement("h2",{className:"imp-wizard-step-title"},currentStep?currentStep.label:""),
       React.createElement("p",{className:"imp-wizard-step-subtitle"},"Coming in next sprint..."),
       React.createElement("div",{style:{padding:"40px",textAlign:"center",color:"var(--text-muted)",fontSize:"13px"}},
         React.createElement("span",{style:{fontSize:"48px",display:"block",marginBottom:"12px"}},currentStep?currentStep.icon:""),
-        "This step will be implemented in Sprint W"+(currentStepId==="layout"||currentStepId==="content"||currentStepId==="qrback"?"3":"4")+"."));
+        "This step will be implemented in Sprint W4."));
   }
 
   return React.createElement("div",{className:"imp-wizard-overlay"},
