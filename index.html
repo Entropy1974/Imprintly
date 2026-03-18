@@ -3526,7 +3526,7 @@ function WizardStepStartingPoint(props){
 
 function WizardStepColors(props){
   var ws=props.ws;var setWs=props.setWs;
-  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+  var up=function(k,v){setWs(function(prev){var patch={};patch[k]=v;return Object.assign({},prev,patch);});};
 
   var PRESETS=[
     {name:"Dark Charcoal",light:"#1F2933",dark:"#1F2933",accent:"#2F6BFF",accentEnd:"#0F4C9B",icon:"#2F6BFF",divider:"#2F6BFF"},
@@ -3723,7 +3723,7 @@ function WizardStepBranding(props){
 
 function WizardStepLayout(props){
   var ws=props.ws;var setWs=props.setWs;
-  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+  var up=function(k,v){setWs(function(prev){var patch={};patch[k]=v;return Object.assign({},prev,patch);});};
 
   var layouts=[
     {id:"classic",label:"Classic Split",desc:"Diagonal split with two background zones"},
@@ -3799,7 +3799,7 @@ function WizardStepLayout(props){
 
 function WizardStepContent(props){
   var ws=props.ws;var setWs=props.setWs;
-  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+  var up=function(k,v){setWs(function(prev){var patch={};patch[k]=v;return Object.assign({},prev,patch);});};
 
   var fields=[
     {key:"companyName",label:"Company Name",placeholder:"Acme Corp"},
@@ -3851,7 +3851,7 @@ function WizardStepContent(props){
 
 function WizardStepQRBack(props){
   var ws=props.ws;var setWs=props.setWs;var setShowBack=props.setShowBack;
-  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+  var up=function(k,v){setWs(function(prev){var patch={};patch[k]=v;return Object.assign({},prev,patch);});};
 
   // Auto-switch to back card view
   React.useEffect(function(){if(setShowBack)setShowBack(true);return function(){if(setShowBack)setShowBack(false);};},[]);
@@ -3954,7 +3954,7 @@ function WizardCardPreview(props){
 
 function WizardStepFineTune(props){
   var ws=props.ws;var setWs=props.setWs;
-  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+  var up=function(k,v){setWs(function(prev){var patch={};patch[k]=v;return Object.assign({},prev,patch);});};
   var positions=ws.positions||{};
   var upPos=function(newPositions){setWs(Object.assign({},ws,{positions:newPositions}));};
   var hasContent=function(key){return ws[key]&&ws[key].trim&&ws[key].trim().length>0;};
@@ -4004,7 +4004,7 @@ function WizardStepFineTune(props){
 
 function WizardStepPrintVerify(props){
   var ws=props.ws;var setWs=props.setWs;
-  var up=function(k,v){var patch={};patch[k]=v;setWs(Object.assign({},ws,patch));};
+  var up=function(k,v){setWs(function(prev){var patch={};patch[k]=v;return Object.assign({},prev,patch);});};
   var _s=useState(false);var showBleed=_s[0];var setShowBleed=_s[1];
   var _g=useState(null);var gamutResults=_g[0];var setGamutResults=_g[1];
 
