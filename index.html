@@ -3317,7 +3317,10 @@ function WizardStepPurpose(props){
             React.createElement("div",{style:{aspectRatio:"9/5",overflow:"hidden"}},
               typeof TemplateThumb==="function"?React.createElement(TemplateThumb,{t:t,cfg:cfg}):null),
             React.createElement("div",{style:{padding:"4px 6px",fontSize:"10px",color:"var(--text-muted)",textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},t.name||"Template"));
-        }))));
+        }))),
+    React.createElement("div",{style:{marginTop:"28px",textAlign:"center",paddingBottom:"8px"}},
+      React.createElement("span",{style:{fontSize:"13px",color:"var(--text-muted)"}},"Want to create manually? "),
+      React.createElement("button",{onClick:function(){if(typeof props.onClose==="function")props.onClose();},style:{fontSize:"13px",color:"var(--accent-primary)",background:"none",border:"none",cursor:"pointer",textDecoration:"underline",padding:0,fontWeight:600}},"Click here")));
 }
 
 function WizardStepCardSize(props){
@@ -4286,7 +4289,7 @@ function TemplateWizard(props){
 
   var stepContent=null;
   if(currentStepId==="purpose"){
-    stepContent=React.createElement(WizardStepPurpose,{mode:mode,setMode:setMode});
+    stepContent=React.createElement(WizardStepPurpose,{mode:mode,setMode:setMode,onClose:onClose});
   }else if(currentStepId==="cardsize"){
     stepContent=React.createElement(WizardStepCardSize,{ws:ws,setWs:setWs});
   }else if(currentStepId==="starting"){
