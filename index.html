@@ -2284,7 +2284,7 @@ var BASE_TEMPLATES=[
     {id:"teal",label:"Teal",swatch:"linear-gradient(135deg,#f0fdfa,#134E4A)",lightBg:"#f0fdfa",darkBg:"#134E4A",lightBgEnd:"#ccfbf1",darkBgEnd:"#042f2e",accentColor:"#14B8A6",swooshFadeStart:"#2DD4BF",swooshFadeEnd:"#134E4A",iconColor:"#14B8A6",dividerColor:"#2DD4BF",backLightBg:"#f0fdfa",backDarkBg:"#134E4A",backTaglineBoldColor:"#14B8A6",backTaglineLightColor:"#134E4A",backQrColor:"#134E4A"}
   ]},
 {id:"modern_panel",category:"modern",name:"Modern Panel",description:"Narrow dark left panel with slash accent",
-  baseConfig:{splitPosition:28,splitAngle:90,swooshVisible:true,swooshStyle:"slash",swooshThickness:6,swooshOpacity:80,cornerRadius:2,iconStyle:"circle-outline",bgGradient:false},
+  baseConfig:{accentBorder:true,accentBorderWidth:1,accentBorderInset:12,splitPosition:28,splitAngle:90,swooshVisible:true,swooshStyle:"slash",swooshThickness:6,swooshOpacity:80,cornerRadius:2,iconStyle:"circle-outline",bgGradient:false},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"navy",label:"Navy",swatch:"linear-gradient(135deg,#ffffff,#1e3a5f)",lightBg:"#ffffff",darkBg:"#1e3a5f",accentColor:"#2563EB",swooshFadeStart:"#2563EB",swooshFadeEnd:"#1e3a5f",iconColor:"#2563EB",dividerColor:"#2563EB",backLightBg:"#f8fafc",backDarkBg:"#1e3a5f",backTaglineBoldColor:"#2563EB",backTaglineLightColor:"#1e3a5f",backQrColor:"#1e3a5f"},
@@ -2313,7 +2313,7 @@ var BASE_TEMPLATES=[
     {id:"sage",label:"Sage",swatch:"#F1F8F4",lightBg:"#F1F8F4",darkBg:"#F1F8F4",accentColor:"#166534",iconColor:"#15803D",dividerColor:"#BBF7D0",backLightBg:"#F1F8F4",backDarkBg:"#F1F8F4",backTaglineBoldColor:"#166534",backTaglineLightColor:"#15803D",backQrColor:"#166534"}
   ]},
 {id:"minimal_accent",category:"minimal",name:"Minimal Accent",description:"Clean layout with small color accent bar",
-  baseConfig:{splitPosition:95,splitAngle:90,swooshVisible:false,cornerRadius:8,iconStyle:"circle-soft",bgGradient:false},
+  baseConfig:{dividerStyle:"dashed",splitPosition:95,splitAngle:90,swooshVisible:false,cornerRadius:8,iconStyle:"circle-soft",bgGradient:false},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"blue",label:"Blue Accent",swatch:"linear-gradient(to right,#ffffff 85%,#2563EB)",lightBg:"#ffffff",darkBg:"#2563EB",accentColor:"#2563EB",iconColor:"#2563EB",dividerColor:"#DBEAFE",backLightBg:"#ffffff",backDarkBg:"#2563EB",backTaglineBoldColor:"#2563EB",backTaglineLightColor:"#1E40AF",backQrColor:"#1E40AF"},
@@ -2334,7 +2334,7 @@ var BASE_TEMPLATES=[
     {id:"forest",label:"Forest",swatch:"linear-gradient(135deg,#f0fdf4,#14532d)",lightBg:"#f0fdf4",darkBg:"#14532d",accentColor:"#15803D",swooshFadeStart:"#22C55E",swooshFadeEnd:"#14532d",iconColor:"#15803D",dividerColor:"#22C55E",backLightBg:"#f0fdf4",backDarkBg:"#14532d",backTaglineBoldColor:"#15803D",backTaglineLightColor:"#14532d",backQrColor:"#14532d"}
   ]},
 {id:"executive_bar",category:"executive",name:"Executive Bar",description:"Dark header bar with gold accent line",
-  baseConfig:{splitPosition:100,splitAngle:90,swooshVisible:true,swooshStyle:"arc_top",swooshThickness:4,swooshOpacity:90,cornerRadius:4,iconStyle:"circle-outline",bgGradient:false},
+  baseConfig:{accentBorder:true,accentBorderWidth:2,accentBorderInset:8,splitPosition:100,splitAngle:90,swooshVisible:true,swooshStyle:"arc_top",swooshThickness:4,swooshOpacity:90,cornerRadius:4,iconStyle:"circle-outline",bgGradient:false},
   fonts:[{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"blackgold",label:"Black Gold",swatch:"linear-gradient(180deg,#1a1a1a 30%,#ffffff)",lightBg:"#ffffff",darkBg:"#ffffff",accentColor:"#B8860B",swooshFadeStart:"#B8860B",swooshFadeEnd:"#DAA520",iconColor:"#B8860B",dividerColor:"#B8860B",backLightBg:"#1a1a1a",backDarkBg:"#1a1a1a",backTaglineBoldColor:"#DAA520",backTaglineLightColor:"#B8860B",backQrColor:"#DAA520"},
@@ -2342,7 +2342,7 @@ var BASE_TEMPLATES=[
     {id:"espresso",label:"Espresso",swatch:"linear-gradient(180deg,#3C1518 30%,#FFFBF0)",lightBg:"#FFFBF0",darkBg:"#FFFBF0",accentColor:"#78350F",swooshFadeStart:"#92400E",swooshFadeEnd:"#B45309",iconColor:"#78350F",dividerColor:"#92400E",backLightBg:"#3C1518",backDarkBg:"#3C1518",backTaglineBoldColor:"#D97706",backTaglineLightColor:"#92400E",backQrColor:"#D97706"}
   ]},
 {id:"executive_column",category:"executive",name:"Executive Column",description:"Narrow dark left column with contacts right",
-  baseConfig:{splitPosition:25,splitAngle:90,swooshVisible:false,cornerRadius:6,iconStyle:"pill-filled",bgGradient:false},
+  baseConfig:{decorativePreset:"geometric-frame",decorativePresetOpacity:25,splitPosition:25,splitAngle:90,swooshVisible:false,cornerRadius:6,iconStyle:"pill-filled",bgGradient:false},
   fonts:[{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"navy",label:"Navy",swatch:"linear-gradient(90deg,#1B2A4A 25%,#ffffff)",lightBg:"#ffffff",darkBg:"#1B2A4A",accentColor:"#1B2A4A",iconColor:"#1B2A4A",dividerColor:"#CBD5E1",backLightBg:"#f8fafc",backDarkBg:"#1B2A4A",backTaglineBoldColor:"#1B2A4A",backTaglineLightColor:"#64748B",backQrColor:"#1B2A4A"},
@@ -2354,7 +2354,7 @@ var BASE_TEMPLATES=[
 // Feature: Vivid colors, large swooshes, pattern backgrounds
 // ────────────────────────────────────────────────────────
 {id:"bold_block",category:"bold",name:"Bold Block",description:"Large color block with wave swoosh",
-  baseConfig:{splitPosition:65,splitAngle:80,swooshVisible:true,swooshStyle:"wave",swooshThickness:18,swooshOpacity:70,cornerRadius:0,iconStyle:"square-filled",bgGradient:false},
+  baseConfig:{decorativePreset:"corner-triangles",decorativePresetOpacity:30,splitPosition:65,splitAngle:80,swooshVisible:true,swooshStyle:"wave",swooshThickness:18,swooshOpacity:70,cornerRadius:0,iconStyle:"square-filled",bgGradient:false},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"bold",label:"Bold",family:"'Arial Black', sans-serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"crimson",label:"Crimson",swatch:"linear-gradient(135deg,#FEE2E2,#991B1B)",lightBg:"#FEE2E2",darkBg:"#991B1B",accentColor:"#EF4444",swooshFadeStart:"#EF4444",swooshFadeEnd:"#7F1D1D",iconColor:"#EF4444",dividerColor:"#EF4444",backLightBg:"#991B1B",backDarkBg:"#7F1D1D",backTaglineBoldColor:"#FCA5A5",backTaglineLightColor:"#FECACA",backQrColor:"#FCA5A5"},
@@ -2363,7 +2363,7 @@ var BASE_TEMPLATES=[
     {id:"lime",label:"Lime",swatch:"linear-gradient(135deg,#ECFCCB,#3F6212)",lightBg:"#ECFCCB",darkBg:"#3F6212",accentColor:"#84CC16",swooshFadeStart:"#A3E635",swooshFadeEnd:"#3F6212",iconColor:"#84CC16",dividerColor:"#A3E635",backLightBg:"#3F6212",backDarkBg:"#365314",backTaglineBoldColor:"#BEF264",backTaglineLightColor:"#D9F99D",backQrColor:"#BEF264"}
   ]},
 {id:"bold_stripe",category:"bold",name:"Bold Stripe",description:"Diagonal stripe with brand ribbon accent",
-  baseConfig:{splitPosition:50,splitAngle:75,swooshVisible:true,swooshStyle:"brand_ribbon",swooshThickness:22,swooshOpacity:85,cornerRadius:0,iconStyle:"square-filled",bgGradient:false},
+  baseConfig:{ribbons:[{swooshStyle:"diagonal",swooshThickness:10,swooshOpacity:20,swooshOffY:-20,swooshColor:"#ffffff22"}],splitPosition:50,splitAngle:75,swooshVisible:true,swooshStyle:"brand_ribbon",swooshThickness:22,swooshOpacity:85,cornerRadius:0,iconStyle:"square-filled",bgGradient:false},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"bold",label:"Bold",family:"'Arial Black', sans-serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"fire",label:"Fire",swatch:"linear-gradient(135deg,#FFF7ED,#C2410C)",lightBg:"#FFF7ED",darkBg:"#C2410C",accentColor:"#F97316",swooshFadeStart:"#FB923C",swooshFadeEnd:"#9A3412",iconColor:"#F97316",dividerColor:"#FB923C",backLightBg:"#C2410C",backDarkBg:"#9A3412",backTaglineBoldColor:"#FDBA74",backTaglineLightColor:"#FED7AA",backQrColor:"#FDBA74"},
@@ -2383,7 +2383,7 @@ var BASE_TEMPLATES=[
 // Feature: Dark backgrounds, metallic accents, premium feel
 // ────────────────────────────────────────────────────────
 {id:"dark_noir",category:"dark",name:"Dark Noir",description:"Pure black with gold accent arc",
-  baseConfig:{splitPosition:100,splitAngle:90,swooshVisible:true,swooshStyle:"arc",swooshThickness:8,swooshOpacity:70,cornerRadius:8,iconStyle:"pill-filled",bgGradient:false},
+  baseConfig:{ribbons:[{swooshStyle:"arc_low",swooshThickness:6,swooshOpacity:25,swooshOffY:30,swooshColor:"#DAA52044"}],accentBorder:true,accentBorderWidth:1,accentBorderInset:10,decorativePreset:"corner-dots",decorativePresetOpacity:30,splitPosition:100,splitAngle:90,swooshVisible:true,swooshStyle:"arc",swooshThickness:8,swooshOpacity:70,cornerRadius:8,iconStyle:"pill-filled",bgGradient:false},
   fonts:[{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"gold",label:"Gold",swatch:"linear-gradient(135deg,#1a1a1a,#DAA520)",lightBg:"#1a1a1a",darkBg:"#1a1a1a",accentColor:"#DAA520",swooshFadeStart:"#DAA520",swooshFadeEnd:"#B8860B",iconColor:"#DAA520",dividerColor:"#B8860B",backLightBg:"#1a1a1a",backDarkBg:"#111111",backTaglineBoldColor:"#DAA520",backTaglineLightColor:"#B8860B",backQrColor:"#DAA520"},
@@ -2392,7 +2392,7 @@ var BASE_TEMPLATES=[
     {id:"emerald",label:"Emerald",swatch:"linear-gradient(135deg,#1a1a1a,#047857)",lightBg:"#1a1a1a",darkBg:"#1a1a1a",accentColor:"#10B981",swooshFadeStart:"#34D399",swooshFadeEnd:"#047857",iconColor:"#10B981",dividerColor:"#047857",backLightBg:"#1a1a1a",backDarkBg:"#111111",backTaglineBoldColor:"#34D399",backTaglineLightColor:"#047857",backQrColor:"#10B981"}
   ]},
 {id:"dark_ember",category:"dark",name:"Dark Ember",description:"Charcoal split with ember glow swoosh",
-  baseConfig:{splitPosition:42,splitAngle:84,swooshVisible:true,swooshStyle:"arc_fade",swooshThickness:12,swooshOpacity:80,cornerRadius:0,iconStyle:"circle-filled",bgGradient:false},
+  baseConfig:{decorativePreset:"diagonal-lines",decorativePresetOpacity:25,splitPosition:42,splitAngle:84,swooshVisible:true,swooshStyle:"arc_fade",swooshThickness:12,swooshOpacity:80,cornerRadius:0,iconStyle:"circle-filled",bgGradient:false},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"ember",label:"Ember",swatch:"linear-gradient(135deg,#292524,#F97316)",lightBg:"#292524",darkBg:"#1C1917",accentColor:"#F97316",swooshFadeStart:"#FB923C",swooshFadeEnd:"#EA580C",iconColor:"#F97316",dividerColor:"#EA580C",backLightBg:"#292524",backDarkBg:"#1C1917",backTaglineBoldColor:"#FB923C",backTaglineLightColor:"#EA580C",backQrColor:"#F97316"},
@@ -2412,7 +2412,7 @@ var BASE_TEMPLATES=[
 // Feature: Serif fonts, soft corners, luxurious feel
 // ────────────────────────────────────────────────────────
 {id:"elegant_classic",category:"elegant",name:"Elegant Classic",description:"Ivory and cream with refined serif typography",
-  baseConfig:{splitPosition:48,splitAngle:88,swooshVisible:true,swooshStyle:"arc_low",swooshThickness:4,swooshOpacity:50,cornerRadius:20,iconStyle:"pill-filled",bgGradient:false},
+  baseConfig:{ribbons:[{swooshStyle:"arc",swooshThickness:4,swooshOpacity:30,swooshOffY:-40,swooshColor:"#C8A95188"}],accentBorder:true,accentBorderWidth:1,accentBorderInset:14,decorativePreset:"geometric-frame",decorativePresetOpacity:40,splitPosition:48,splitAngle:88,swooshVisible:true,swooshStyle:"arc_low",swooshThickness:4,swooshOpacity:50,cornerRadius:20,iconStyle:"pill-filled",bgGradient:false},
   fonts:[{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"champagne",label:"Champagne",swatch:"linear-gradient(135deg,#FFFDF7,#78716C)",lightBg:"#FFFDF7",darkBg:"#78716C",accentColor:"#A16207",swooshFadeStart:"#CA8A04",swooshFadeEnd:"#78716C",iconColor:"#A16207",dividerColor:"#CA8A04",backLightBg:"#FFFDF7",backDarkBg:"#78716C",backTaglineBoldColor:"#CA8A04",backTaglineLightColor:"#78716C",backQrColor:"#78716C"},
@@ -2421,7 +2421,7 @@ var BASE_TEMPLATES=[
     {id:"ivory",label:"Ivory",swatch:"linear-gradient(135deg,#FEFCE8,#854D0E)",lightBg:"#FEFCE8",darkBg:"#854D0E",accentColor:"#A16207",swooshFadeStart:"#CA8A04",swooshFadeEnd:"#854D0E",iconColor:"#A16207",dividerColor:"#CA8A04",backLightBg:"#FEFCE8",backDarkBg:"#854D0E",backTaglineBoldColor:"#CA8A04",backTaglineLightColor:"#854D0E",backQrColor:"#854D0E"}
   ]},
 {id:"elegant_deco",category:"elegant",name:"Elegant Deco",description:"Art deco inspired with geometric accents",
-  baseConfig:{splitPosition:40,splitAngle:85,swooshVisible:true,swooshStyle:"crescent_bl",swooshThickness:10,swooshOpacity:60,cornerRadius:14,iconStyle:"pill-filled",bgGradient:false},
+  baseConfig:{decorativePreset:"corner-triangles",decorativePresetOpacity:35,splitPosition:40,splitAngle:85,swooshVisible:true,swooshStyle:"crescent_bl",swooshThickness:10,swooshOpacity:60,cornerRadius:14,iconStyle:"pill-filled",bgGradient:false},
   fonts:[{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"blackgold",label:"Black Gold",swatch:"linear-gradient(135deg,#FAF9F6,#1a1a1a)",lightBg:"#FAF9F6",darkBg:"#1a1a1a",accentColor:"#DAA520",swooshFadeStart:"#DAA520",swooshFadeEnd:"#1a1a1a",iconColor:"#DAA520",dividerColor:"#B8860B",backLightBg:"#FAF9F6",backDarkBg:"#1a1a1a",backTaglineBoldColor:"#DAA520",backTaglineLightColor:"#1a1a1a",backQrColor:"#1a1a1a"},
@@ -2442,7 +2442,7 @@ var BASE_TEMPLATES=[
     {id:"stone",label:"Stone",swatch:"linear-gradient(135deg,#F5F5F0,#696969)",lightBg:"#F5F5F0",darkBg:"#696969",accentColor:"#808080",swooshFadeStart:"#A9A9A9",swooshFadeEnd:"#696969",iconColor:"#808080",dividerColor:"#A9A9A9",backLightBg:"#F5F5F0",backDarkBg:"#696969",backTaglineBoldColor:"#A9A9A9",backTaglineLightColor:"#696969",backQrColor:"#696969"}
   ]},
 {id:"nature_ocean",category:"nature",name:"Nature Ocean",description:"Deep ocean blues with layered flow swoosh",
-  baseConfig:{splitPosition:45,splitAngle:84,swooshVisible:true,swooshStyle:"flow_layered",swooshThickness:14,swooshOpacity:55,cornerRadius:10,iconStyle:"circle-soft",bgGradient:true,bgGradientAngle:200},
+  baseConfig:{decorativePreset:"accent-circle",decorativePresetOpacity:15,splitPosition:45,splitAngle:84,swooshVisible:true,swooshStyle:"flow_layered",swooshThickness:14,swooshOpacity:55,cornerRadius:10,iconStyle:"circle-soft",bgGradient:true,bgGradientAngle:200},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"deep",label:"Deep Blue",swatch:"linear-gradient(135deg,#E0F2FE,#0C4A6E)",lightBg:"#E0F2FE",darkBg:"#0C4A6E",lightBgEnd:"#BAE6FD",darkBgEnd:"#082F49",accentColor:"#0369A1",swooshFadeStart:"#38BDF8",swooshFadeEnd:"#0C4A6E",iconColor:"#0369A1",dividerColor:"#38BDF8",backLightBg:"#E0F2FE",backDarkBg:"#0C4A6E",backTaglineBoldColor:"#38BDF8",backTaglineLightColor:"#0C4A6E",backQrColor:"#0C4A6E"},
@@ -2462,7 +2462,7 @@ var BASE_TEMPLATES=[
 // Feature: Dark backgrounds, neon accent colors, sharp edges
 // ────────────────────────────────────────────────────────
 {id:"neon_glow",category:"neon",name:"Neon Glow",description:"Dark background with neon accent lines",
-  baseConfig:{splitPosition:40,splitAngle:82,swooshVisible:true,swooshStyle:"arc",swooshThickness:10,swooshOpacity:85,cornerRadius:0,iconStyle:"square-outline",bgGradient:false},
+  baseConfig:{dividerStyle:"dotted",dividerWidth:2,splitPosition:40,splitAngle:82,swooshVisible:true,swooshStyle:"arc",swooshThickness:10,swooshOpacity:85,cornerRadius:0,iconStyle:"square-outline",bgGradient:false},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"mono",label:"Mono",family:"'Courier New', monospace"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"green",label:"Matrix Green",swatch:"linear-gradient(135deg,#0a0a0a,#00FF41)",lightBg:"#0a0a0a",darkBg:"#050505",accentColor:"#00FF41",swooshFadeStart:"#00FF41",swooshFadeEnd:"#008F11",iconColor:"#00FF41",dividerColor:"#008F11",backLightBg:"#0a0a0a",backDarkBg:"#050505",backTaglineBoldColor:"#00FF41",backTaglineLightColor:"#008F11",backQrColor:"#00FF41"},
@@ -2471,7 +2471,7 @@ var BASE_TEMPLATES=[
     {id:"orange",label:"Neon Orange",swatch:"linear-gradient(135deg,#0a0a0a,#FF6B00)",lightBg:"#0a0a0a",darkBg:"#050505",accentColor:"#FF6B00",swooshFadeStart:"#FF6B00",swooshFadeEnd:"#CC5500",iconColor:"#FF6B00",dividerColor:"#CC5500",backLightBg:"#0a0a0a",backDarkBg:"#050505",backTaglineBoldColor:"#FF6B00",backTaglineLightColor:"#CC5500",backQrColor:"#FF6B00"}
   ]},
 {id:"neon_synthwave",category:"neon",name:"Neon Synthwave",description:"Retro synthwave aesthetic with diagonal swoosh",
-  baseConfig:{splitPosition:35,splitAngle:78,swooshVisible:true,swooshStyle:"diagonal",swooshThickness:16,swooshOpacity:80,cornerRadius:2,iconStyle:"square-filled",bgGradient:true,bgGradientAngle:135},
+  baseConfig:{decorativePreset:"diagonal-lines",decorativePresetOpacity:20,dividerStyle:"dashed",splitPosition:35,splitAngle:78,swooshVisible:true,swooshStyle:"diagonal",swooshThickness:16,swooshOpacity:80,cornerRadius:2,iconStyle:"square-filled",bgGradient:true,bgGradientAngle:135},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"mono",label:"Mono",family:"'Courier New', monospace"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"retro",label:"Retro Purple",swatch:"linear-gradient(135deg,#2D1B69,#FF1493)",lightBg:"#2D1B69",darkBg:"#1a0f3c",lightBgEnd:"#3D2B79",darkBgEnd:"#0F0825",accentColor:"#FF1493",swooshFadeStart:"#FF1493",swooshFadeEnd:"#8B008B",iconColor:"#FF1493",dividerColor:"#8B008B",backLightBg:"#2D1B69",backDarkBg:"#1a0f3c",backTaglineBoldColor:"#FF1493",backTaglineLightColor:"#8B008B",backQrColor:"#FF1493"},
@@ -2491,7 +2491,7 @@ var BASE_TEMPLATES=[
     {id:"golden",label:"Golden Hour",swatch:"linear-gradient(135deg,#FBBF24,#DC2626)",lightBg:"#FBBF24",darkBg:"#DC2626",lightBgEnd:"#F59E0B",darkBgEnd:"#B91C1C",accentColor:"#7F1D1D",swooshFadeStart:"#ffffff88",swooshFadeEnd:"#ffffff00",iconColor:"#7F1D1D",dividerColor:"#991B1B",backLightBg:"#FBBF24",backDarkBg:"#DC2626",backTaglineBoldColor:"#7F1D1D",backTaglineLightColor:"#991B1B",backQrColor:"#7F1D1D"}
   ]},
 {id:"gradient_aurora",category:"gradient",name:"Gradient Aurora",description:"Cool aurora borealis gradient with wave swoosh",
-  baseConfig:{splitPosition:48,splitAngle:86,swooshVisible:true,swooshStyle:"wave",swooshThickness:10,swooshOpacity:50,cornerRadius:8,iconStyle:"circle-soft",bgGradient:true,bgGradientAngle:160},
+  baseConfig:{accentBorder:true,accentBorderWidth:1,accentBorderInset:10,splitPosition:48,splitAngle:86,swooshVisible:true,swooshStyle:"wave",swooshThickness:10,swooshOpacity:50,cornerRadius:8,iconStyle:"circle-soft",bgGradient:true,bgGradientAngle:160},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"northern",label:"Northern",swatch:"linear-gradient(160deg,#06B6D4,#8B5CF6)",lightBg:"#06B6D4",darkBg:"#8B5CF6",lightBgEnd:"#0891B2",darkBgEnd:"#7C3AED",accentColor:"#1E1B4B",swooshFadeStart:"#ffffff66",swooshFadeEnd:"#ffffff00",iconColor:"#1E1B4B",dividerColor:"#312E81",backLightBg:"#06B6D4",backDarkBg:"#8B5CF6",backTaglineBoldColor:"#1E1B4B",backTaglineLightColor:"#312E81",backQrColor:"#1E1B4B"},
@@ -2512,7 +2512,7 @@ var BASE_TEMPLATES=[
 // Feature: bgPattern enabled (dots, stripes, grid, diamonds, crosses)
 // ────────────────────────────────────────────────────────
 {id:"pattern_dots",category:"pattern",name:"Pattern Dots",description:"Subtle dot pattern overlay on clean layout",
-  baseConfig:{splitPosition:44,splitAngle:86,swooshVisible:true,swooshStyle:"flow_up",swooshThickness:8,swooshOpacity:50,cornerRadius:4,iconStyle:"circle-outline",bgGradient:false,bgPattern:"dots",bgPatternScale:80,bgPatternOpacity:15},
+  baseConfig:{decorativePreset:"accent-circle",decorativePresetOpacity:20,splitPosition:44,splitAngle:86,swooshVisible:true,swooshStyle:"flow_up",swooshThickness:8,swooshOpacity:50,cornerRadius:4,iconStyle:"circle-outline",bgGradient:false,bgPattern:"dots",bgPatternScale:80,bgPatternOpacity:15},
   fonts:[{id:"sans",label:"Sans",family:"'Montserrat', sans-serif"},{id:"serif",label:"Serif",family:"'Georgia', serif"},{id:"grotesk",label:"Grotesk",family:"'Trebuchet MS', sans-serif"}],
   variations:[
     {id:"navy",label:"Navy",swatch:"linear-gradient(135deg,#f0f4f8,#1B2A4A)",lightBg:"#f0f4f8",darkBg:"#1B2A4A",accentColor:"#2563EB",swooshFadeStart:"#3B82F6",swooshFadeEnd:"#1B2A4A",iconColor:"#2563EB",dividerColor:"#3B82F6",backLightBg:"#f0f4f8",backDarkBg:"#1B2A4A",backTaglineBoldColor:"#2563EB",backTaglineLightColor:"#1B2A4A",backQrColor:"#1B2A4A"},
