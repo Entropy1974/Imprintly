@@ -3295,7 +3295,7 @@ function WizardStepPurpose(props){
   return React.createElement("div",null,
     React.createElement("h2",{className:"imp-wizard-step-title"},"What type of card are you creating?"),
     React.createElement("p",{className:"imp-wizard-step-subtitle"},"This determines which options and validation checks appear."),
-    React.createElement("div",{className:"imp-wizard-choice-grid cols-3"},
+    React.createElement("div",{className:"imp-wizard-choice-grid cols-2"},
       choices.map(function(c){
         return React.createElement("div",{key:c.id,
           className:"imp-wizard-choice"+(mode===c.id?" selected":""),
@@ -3449,7 +3449,8 @@ function WizardStepStartingPoint(props){
   var choices=[
     {id:"template",icon:"\uD83D\uDDC2\uFE0F",label:"Pick a Template",desc:"Browse the template gallery and start with a proven design."},
     {id:"blank",icon:"\u2B1C",label:"Build from Scratch",desc:"Start with a blank canvas and create your own design."},
-    {id:"import",icon:"\uD83D\uDCF7",label:"Import from Card Photo",desc:"Take a photo of an existing business card and auto-extract its content."}
+    {id:"import",icon:"\uD83D\uDCF7",label:"Import from Card Photo",desc:"Take a photo of an existing business card and auto-extract its content."},
+    {id:"bgupload",icon:"\uD83D\uDDBC\uFE0F",label:"Upload Background",desc:"Upload a background image to start your card design."}
   ];
 
   var bgUploadRef=React.useRef(null);
@@ -3518,10 +3519,14 @@ function WizardStepStartingPoint(props){
             React.createElement("div",{className:"imp-wizard-tpl-card-name"},t.name||t.id));
         }))),
 
-    source==="blank"&&React.createElement("div",{style:{marginTop:16}},
-      React.createElement("div",{className:"imp-wizard-section-label"},"Optional: Upload a Background Image"),
+    source==="blank"&&React.createElement("div",{style:{marginTop:16,padding:"20px",textAlign:"center",borderRadius:"8px",background:"var(--bg-input)",border:"1px solid var(--border-subtle)"}},
+      React.createElement("div",{style:{fontSize:"14px",fontWeight:600,color:"var(--text-primary)",marginBottom:"8px"}},"⬜ Starting with a Blank Canvas"),
+      React.createElement("div",{style:{fontSize:"12px",color:"var(--text-muted)"}},"Customize your card design in the following steps.")),
+    source==="bgupload"&&React.createElement("div",{style:{marginTop:16}},
+      React.createElement("div",{className:"imp-wizard-section-label"},"Upload a Background Image"),
       React.createElement("div",{onDragOver:function(e){e.preventDefault();},onDrop:function(e){e.preventDefault();var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&bgUploadRef.current){var dt=new DataTransfer();dt.items.add(f);bgUploadRef.current.files=dt.files;bgUploadRef.current.dispatchEvent(new Event("change",{bubbles:true}));}},onClick:function(){if(bgUploadRef.current)bgUploadRef.current.click();},style:{border:"2px dashed var(--border-default)",borderRadius:10,padding:24,textAlign:"center",cursor:"pointer",background:"var(--bg-input)",fontSize:12,color:"var(--text-muted)"}},"\uD83D\uDDBC\uFE0F  Drop or click to upload a background image"),
-      ws.bgImage&&ws.bgImage.url&&React.createElement("div",{style:{marginTop:8,fontSize:11,color:"var(--text-secondary)"}},"\\u2713 Front background image loaded"),
+      ws.bgImage&&ws.bgImage.url&&React.createElement("div",{style:{marginTop:8,fontSize:11,color:"var(--text-secondary)"}},"\u2713 Front background image loaded"),
+      ws.bgImage&&ws.bgImage.url&&React.createElement("div",null,
         React.createElement("div",{style:{fontSize:11,fontWeight:600,color:"var(--text-primary)",marginTop:8,marginBottom:6}},"Back Card Background:"),
         React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap"}},
           React.createElement("button",{onClick:function(){setWs(function(prev){var dims=typeof getCardDims==="function"?getCardDims(prev):{w:880,h:500};return Object.assign({},prev,{bgImageBack:{url:prev.bgImage.url,x:0,y:0,width:dims.w,height:dims.h,opacity:100},bgImageFxBack:{brightness:100,contrast:100,saturation:100}});});},
@@ -3680,6 +3685,22 @@ function WizardStepBranding(props){
       React.createElement(SL,{label:"X Position",value:ws.logoX!=null?ws.logoX:45,onChange:function(v){setWs(function(prev){return Object.assign({},prev,{logoX:v});});},min:0,max:800,unit:"px"}),
       React.createElement(SL,{label:"Y Position",value:ws.logoY!=null?ws.logoY:40,onChange:function(v){setWs(function(prev){return Object.assign({},prev,{logoY:v});});},min:0,max:400,unit:"px"}),
       React.createElement(SL,{label:"Width",value:ws.logoWidth!=null?ws.logoWidth:180,onChange:function(v){setWs(function(prev){return Object.assign({},prev,{logoWidth:v});});},min:20,max:300,unit:"px"})
+    ):null,
+
+    // Back Card Logo section
+    React.createElement("div",{className:"imp-wizard-section-label",style:{marginTop:"16px"}},"Back Card Logo"),
+    React.createElement("div",{style:{display:"flex",gap:"6px",marginBottom:"12px"}},
+      React.createElement("button",{onClick:function(){setWs(function(prev){return Object.assign({},prev,{uploadedLogoBack:prev.uploadedLogo,logoModeBack:"upload"});});},
+        style:{flex:1,padding:"8px 6px",borderRadius:"6px",border:"2px solid "+(ws.uploadedLogoBack&&ws.logoModeBack==="upload"&&ws.uploadedLogoBack===ws.uploadedLogo?"var(--accent-primary)":"var(--border-default)"),background:ws.uploadedLogoBack&&ws.logoModeBack==="upload"&&ws.uploadedLogoBack===ws.uploadedLogo?"rgba(204,136,0,0.08)":"var(--bg-card)",color:"var(--text-primary)",fontSize:"11px",fontWeight:600,cursor:"pointer",textAlign:"center"}},"Same as Front"),
+      React.createElement("button",{onClick:function(){var inp=document.createElement("input");inp.type="file";inp.accept="image/*,.svg,.txt";inp.onchange=function(e){var f=e.target.files&&e.target.files[0];if(!f)return;processUploadFile(f,function(result,err){if(err){alert(err);return;}setWs(function(prev){return Object.assign({},prev,{uploadedLogoBack:result.url,logoModeBack:"upload"});});});};inp.click();},
+        style:{flex:1,padding:"8px 6px",borderRadius:"6px",border:"2px solid "+(ws.logoModeBack==="upload"&&ws.uploadedLogoBack&&ws.uploadedLogoBack!==ws.uploadedLogo?"var(--accent-primary)":"var(--border-default)"),background:ws.logoModeBack==="upload"&&ws.uploadedLogoBack&&ws.uploadedLogoBack!==ws.uploadedLogo?"rgba(204,136,0,0.08)":"var(--bg-card)",color:"var(--text-primary)",fontSize:"11px",fontWeight:600,cursor:"pointer",textAlign:"center"}},"Upload Different"),
+      React.createElement("button",{onClick:function(){setWs(function(prev){return Object.assign({},prev,{logoModeBack:"none",uploadedLogoBack:null});});},
+        style:{flex:1,padding:"8px 6px",borderRadius:"6px",border:"2px solid "+(ws.logoModeBack==="none"||!ws.uploadedLogoBack?"var(--accent-primary)":"var(--border-default)"),background:ws.logoModeBack==="none"||!ws.uploadedLogoBack?"rgba(204,136,0,0.08)":"var(--bg-card)",color:"var(--text-primary)",fontSize:"11px",fontWeight:600,cursor:"pointer",textAlign:"center"}},"No Back Logo")),
+    ws.uploadedLogoBack&&ws.logoModeBack==="upload"?React.createElement("div",{style:{padding:"10px 12px",borderRadius:"8px",background:"var(--bg-input)",border:"1px solid var(--border-subtle)",marginBottom:"12px"}},
+      React.createElement("div",{style:{fontSize:"10px",fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:"8px"}},"Back Logo Position"),
+      React.createElement(SL,{label:"X Position",value:ws.backLogoX!=null?ws.backLogoX:45,onChange:function(v){setWs(function(prev){return Object.assign({},prev,{backLogoX:v});});},min:0,max:800,unit:"px"}),
+      React.createElement(SL,{label:"Y Position",value:ws.backLogoY!=null?ws.backLogoY:130,onChange:function(v){setWs(function(prev){return Object.assign({},prev,{backLogoY:v});});},min:0,max:400,unit:"px"}),
+      React.createElement(SL,{label:"Width",value:ws.backLogoWidth!=null?ws.backLogoWidth:180,onChange:function(v){setWs(function(prev){return Object.assign({},prev,{backLogoWidth:v});});},min:20,max:300,unit:"px"})
     ):null,
 
     // Brand Kit section
@@ -3936,11 +3957,6 @@ function WizardStepQRBack(props){
       React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"QR BG Color",value:ws.qrBgColor||"#ffffff",onChange:function(v){up("qrBgColor",v);}}),
       React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"QR Label Color",value:ws.qrLabelColor||ws.accentColor,onChange:function(v){up("qrLabelColor",v);}})),
 
-    React.createElement("div",{className:"imp-wizard-section-label",style:{marginTop:16}},"Logo Position & Size"),
-    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}},
-      React.createElement(SL,{label:"X",value:ws.logoX!=null?ws.logoX:45,onChange:function(v){up("logoX",v);},min:0,max:800,unit:"px"}),
-      React.createElement(SL,{label:"Y",value:ws.logoY!=null?ws.logoY:40,onChange:function(v){up("logoY",v);},min:0,max:400,unit:"px"}),
-      React.createElement(SL,{label:"Size",value:ws.logoWidth!=null?ws.logoWidth:180,onChange:function(v){up("logoWidth",v);},min:40,max:500,unit:"px"})),
     React.createElement("div",{className:"imp-wizard-section-label"},"Back Card Colors"),
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
       React.createElement(CF,{cmykPreview:ws.cmykPreview,label:"Back Light BG",value:ws.backLightBg||ws.lightBg,onChange:function(v){up("backLightBg",v);}}),
@@ -3950,13 +3966,193 @@ function WizardStepQRBack(props){
         setWs(function(prev){return Object.assign({},prev,{backLightBg:prev.lightBg,backDarkBg:prev.darkBg,backTaglineBoldColor:prev.accentColor,backDividerColor:prev.dividerColor});});
       },style:{padding:"6px 14px",borderRadius:6,border:"1px solid var(--border-default)",background:"var(--bg-input)",
         color:"var(--text-secondary)",fontSize:11,cursor:"pointer"}},
-        "\u21BB Match Back to Front")));
+        "\u21BB Match Back to Front"),
+    React.createElement(Sec,{title:"Back Tagline Colors",defaultOpen:false},
+      React.createElement(CF,{label:"Tagline Bold",value:ws.backTaglineBoldColor||"#2F6BFF",onChange:function(v){up("backTaglineBoldColor",v);},cmykPreview:ws.cmykPreview}),
+      React.createElement(CF,{label:"Tagline Light",value:ws.backTaglineLightColor||"#aaaaaa",onChange:function(v){up("backTaglineLightColor",v);},cmykPreview:ws.cmykPreview}),
+      React.createElement(CF,{label:"QR Code Color",value:ws.backQrColor||ws.darkBg,onChange:function(v){up("backQrColor",v);},cmykPreview:ws.cmykPreview})),
+    React.createElement(Sec,{title:"QR Code Position",defaultOpen:false},
+      React.createElement(SL,{label:"QR X Position",value:ws.qrX!=null?ws.qrX:548,min:0,max:800,unit:"px",onChange:function(v){up("qrX",v);},onReset:function(){up("qrX",548);}}),
+      React.createElement(SL,{label:"QR Y Position",value:ws.qrY!=null?ws.qrY:102,min:0,max:400,unit:"px",onChange:function(v){up("qrY",v);},onReset:function(){up("qrY",102);}}))));
+}
+
+function getElementHitMap(s, side, W, H) {
+  var els = [];
+  var pos = s.positions || {};
+  if (side === "front") {
+    var lw = s.logoWidth || 160;
+    els.push({id:"logo",type:"toplevel",xKey:"logoX",yKey:"logoY",x:s.logoX||45,y:s.logoY||40,w:lw,h:lw*(s.logoAspect||0.5)});
+    var sp = s.splitPosition || 50;
+    var baseX = sp >= 95 ? 50 : Math.round(sp/100*W) + 30;
+    var st = s.styles || {};
+    els.push({id:"name",type:"positions",xKey:"nameX",yKey:"nameY",x:pos.nameX||baseX,y:pos.nameY||170,w:350,h:(st.personName&&st.personName.fontSize)||38});
+    els.push({id:"title",type:"positions",xKey:"titleX",yKey:"titleY",x:pos.titleX||baseX,y:pos.titleY||210,w:300,h:(st.title&&st.title.fontSize)||22});
+    var contactY = 260;
+    ["phone","email","website","address"].forEach(function(f) {
+      if (s[f]) {
+        els.push({id:f,type:"positions",xKey:f+"X",yKey:f+"Y",x:pos[f+"X"]||baseX,y:pos[f+"Y"]||contactY,w:280,h:20});
+        contactY += 24;
+      }
+    });
+    ["linkedin","twitter","instagram"].forEach(function(f) {
+      if (s[f]) {
+        els.push({id:f,type:"positions",xKey:f+"X",yKey:f+"Y",x:pos[f+"X"]||baseX,y:pos[f+"Y"]||contactY,w:200,h:20});
+        contactY += 24;
+      }
+    });
+    if (s.taglineBold) els.push({id:"taglineBold",type:"positions",xKey:"taglineBoldX",yKey:"taglineBoldY",x:pos.taglineBoldX||250,y:pos.taglineBoldY||390,w:400,h:24});
+    if (s.taglineLight) els.push({id:"taglineLight",type:"positions",xKey:"taglineLightX",yKey:"taglineLightY",x:pos.taglineLightX||250,y:pos.taglineLightY||420,w:400,h:20});
+  } else {
+    var blw = s.backLogoWidth || 180;
+    els.push({id:"backLogo",type:"toplevel",xKey:"backLogoX",yKey:"backLogoY",x:s.backLogoX||45,y:s.backLogoY||130,w:blw,h:blw*(s.logoAspect||0.5)});
+    els.push({id:"qr",type:"toplevel",xKey:"qrX",yKey:"qrY",x:s.qrX||548,y:s.qrY||102,w:250,h:250});
+    if (s.taglineBold) els.push({id:"backTagBold",type:"toplevel",xKey:"backTaglineBoldX",yKey:"backTaglineBoldY",x:s.backTaglineBoldX||250,y:s.backTaglineBoldY||200,w:400,h:24});
+    if (s.taglineLight) els.push({id:"backTagLight",type:"toplevel",xKey:"backTaglineLightX",yKey:"backTaglineLightY",x:s.backTaglineLightX||250,y:s.backTaglineLightY||240,w:400,h:20});
+  }
+  return els;
+}
+
+function DraggableCardPreview(props){
+  var s=props.s;var side=props.side;var onUpdate=props.onUpdate;var W=props.W;var H=props.H;
+  var curves=props.curves||[];var showAlignGuides=props.showAlignGuides!==false;
+  var dragRef=React.useRef(null);
+  var guidesRef=React.useRef([]);
+  var svgRef=React.useRef(null);
+  var _fr=React.useState(0);var forceRender=_fr[1];
+  var _hov=React.useState(null);var hoverId=_hov[0];var setHoverId=_hov[1];
+
+  var toLocal=function(e){
+    var el=svgRef.current;
+    if(!el)return{x:0,y:0};
+    var rect=el.getBoundingClientRect();
+    var scaleX=W/rect.width;var scaleY=H/rect.height;
+    var ptr=typeof getPointerXY==="function"?getPointerXY(e):{clientX:e.clientX||0,clientY:e.clientY||0};
+    return{x:(ptr.clientX-rect.left)*scaleX,y:(ptr.clientY-rect.top)*scaleY};
+  };
+
+  var findHit=function(pt){
+    var hitMap=getElementHitMap(s,side,W,H);
+    var hit=null;var minArea=Infinity;
+    hitMap.forEach(function(el){
+      if(pt.x>=el.x&&pt.x<=el.x+el.w&&pt.y>=el.y&&pt.y<=el.y+el.h){
+        var area=el.w*el.h;
+        if(area<minArea){hit=el;minArea=area;}
+      }
+    });
+    return hit;
+  };
+
+  var handlePointerDown=function(e){
+    e.preventDefault();
+    var pt=toLocal(e);
+    var hit=findHit(pt);
+    if(hit){
+      dragRef.current={id:hit.id,xKey:hit.xKey,yKey:hit.yKey,type:hit.type,offsetX:pt.x-hit.x,offsetY:pt.y-hit.y,w:hit.w,h:hit.h};
+      document.addEventListener("mousemove",handlePointerMove);
+      document.addEventListener("mouseup",handlePointerUp);
+      document.addEventListener("touchmove",handlePointerMove,{passive:false});
+      document.addEventListener("touchend",handlePointerUp);
+    }
+  };
+
+  var handlePointerMove=function(e){
+    if(!dragRef.current)return;
+    e.preventDefault();
+    var pt=toLocal(e);
+    var d=dragRef.current;
+    var newX=Math.round(Math.max(0,Math.min(W-d.w,pt.x-d.offsetX)));
+    var newY=Math.round(Math.max(0,Math.min(H-d.h,pt.y-d.offsetY)));
+    var guides=[];
+    if(showAlignGuides){
+      var SNAP=5;
+      var hitMap=getElementHitMap(s,side,W,H);
+      var cx=newX+d.w/2;var cy=newY+d.h/2;
+      if(Math.abs(cx-W/2)<SNAP){newX=Math.round(W/2-d.w/2);guides.push({type:"v",val:Math.round(W/2),src:"center"});}
+      if(Math.abs(cy-H/2)<SNAP){newY=Math.round(H/2-d.h/2);guides.push({type:"h",val:Math.round(H/2),src:"center"});}
+      if(Math.abs(newX-20)<SNAP){newX=20;guides.push({type:"v",val:20,src:"margin"});}
+      if(Math.abs(newX+d.w-(W-20))<SNAP){newX=W-20-d.w;guides.push({type:"v",val:W-20,src:"margin"});}
+      if(Math.abs(newY-20)<SNAP){newY=20;guides.push({type:"h",val:20,src:"margin"});}
+      if(Math.abs(newY+d.h-(H-20))<SNAP){newY=H-20-d.h;guides.push({type:"h",val:H-20,src:"margin"});}
+      hitMap.forEach(function(el){
+        if(el.id===d.id)return;
+        if(Math.abs(newX-el.x)<SNAP){newX=el.x;guides.push({type:"v",val:el.x,src:el.id});}
+        if(Math.abs(newY-el.y)<SNAP){newY=el.y;guides.push({type:"h",val:el.y,src:el.id});}
+        var elCX=el.x+el.w/2;
+        if(Math.abs(cx-elCX)<SNAP){newX=Math.round(elCX-d.w/2);guides.push({type:"v",val:Math.round(elCX),src:el.id});}
+      });
+    }
+    guidesRef.current=guides;
+    var patch={};
+    patch[d.xKey]=newX;
+    patch[d.yKey]=newY;
+    if(typeof onUpdate==="function")onUpdate(patch,d.type);
+  };
+
+  var handlePointerUp=function(){
+    dragRef.current=null;
+    guidesRef.current=[];
+    document.removeEventListener("mousemove",handlePointerMove);
+    document.removeEventListener("mouseup",handlePointerUp);
+    document.removeEventListener("touchmove",handlePointerMove);
+    document.removeEventListener("touchend",handlePointerUp);
+    forceRender(Date.now());
+  };
+
+  var handleMouseMove=function(e){
+    if(dragRef.current)return;
+    var pt=toLocal(e);
+    var hit=findHit(pt);
+    setHoverId(hit?hit.id:null);
+  };
+
+  var handleMouseLeave=function(){
+    if(!dragRef.current)setHoverId(null);
+  };
+
+  var guideLines=guidesRef.current.map(function(g,i){
+    return React.createElement("line",{key:"guide"+i,
+      x1:g.type==="v"?g.val:0,y1:g.type==="h"?g.val:0,
+      x2:g.type==="v"?g.val:W,y2:g.type==="h"?g.val:H,
+      stroke:g.src==="center"?"#ff00ff":"#00ffff",
+      strokeWidth:1,strokeDasharray:"6,3",opacity:0.8,
+      pointerEvents:"none"});
+  });
+
+  var hoverRect=null;
+  if(hoverId&&!dragRef.current){
+    var hitMap=getElementHitMap(s,side,W,H);
+    var hEl=null;
+    hitMap.forEach(function(el){if(el.id===hoverId)hEl=el;});
+    if(hEl){
+      hoverRect=React.createElement("rect",{x:hEl.x,y:hEl.y,width:hEl.w,height:hEl.h,
+        fill:"rgba(0,200,255,0.08)",stroke:"#00c8ff",strokeWidth:1.5,strokeDasharray:"4,2",
+        rx:3,pointerEvents:"none"});
+    }
+  }
+
+  return React.createElement("div",{style:{position:"relative",cursor:dragRef.current?"grabbing":"default"}},
+    React.createElement("svg",{ref:svgRef,viewBox:"0 0 "+W+" "+H,
+      style:{width:"100%",borderRadius:"8px",boxShadow:"0 4px 24px rgba(0,0,0,0.4)",display:"block"},
+      onMouseDown:handlePointerDown,onTouchStart:handlePointerDown,
+      onMouseMove:handleMouseMove,onMouseLeave:handleMouseLeave},
+      side==="front"?
+        React.createElement(CardFront,{s:s,curves:curves,scale:1}):
+        React.createElement(CardBack,{s:s,curves:curves,scale:1}),
+      hoverRect,
+      guideLines));
 }
 
 function WizardCardPreview(props){
-  var ws=props.ws;var showBack=props.showBack;var setShowBack=props.setShowBack;
+  var ws=props.ws;var setWs=props.setWs;var showBack=props.showBack;var setShowBack=props.setShowBack;
   var dims=getCardDims(ws);
   var W=dims.w;var H=dims.h;
+  var handleUpdate=function(patch,type){
+    if(type==="positions"){
+      setWs(function(prev){return Object.assign({},prev,{positions:Object.assign({},prev.positions||{},patch)});});
+    }else{
+      setWs(function(prev){return Object.assign({},prev,patch);});
+    }
+  };
   return React.createElement("div",{className:"imp-wizard-preview"},
     React.createElement("div",{style:{display:"flex",gap:"6px",marginBottom:"12px"}},
       React.createElement("button",{onClick:function(){setShowBack(false);},
@@ -3968,14 +4164,7 @@ function WizardCardPreview(props){
           background:showBack?"var(--accent-primary)":"var(--bg-input)",
           color:showBack?"#000":"var(--text-secondary)",fontSize:"11px",fontWeight:600,cursor:"pointer"}},"Back")),
     React.createElement("div",{className:"imp-wizard-preview-card"},
-      !showBack&&typeof CardFront==="function"?
-        React.createElement("svg",{viewBox:"0 0 "+W+" "+H,
-          style:{width:"100%",borderRadius:"8px",boxShadow:"0 4px 24px rgba(0,0,0,0.4)"}},
-          React.createElement(CardFront,{s:ws,W:W,H:H,curves:[],previewZoom:100})):null,
-      showBack&&typeof CardBack==="function"?
-        React.createElement("svg",{viewBox:"0 0 "+W+" "+H,
-          style:{width:"100%",borderRadius:"8px",boxShadow:"0 4px 24px rgba(0,0,0,0.4)"}},
-          React.createElement(CardBack,{s:ws,W:W,H:H})):null));
+      React.createElement(DraggableCardPreview,{s:ws,side:showBack?"back":"front",onUpdate:handleUpdate,W:W,H:H,curves:[],showAlignGuides:true})));
 }
 
 
@@ -4005,7 +4194,9 @@ function WizardStepFineTune(props){
       React.createElement(SL,{label:"Back Logo Y",value:ws.backLogoY!=null?ws.backLogoY:130,onChange:function(v){up("backLogoY",v);},min:0,max:400,unit:"px",onReset:function(){up("backLogoY",130);}}),
       React.createElement(SL,{label:"Back Logo Width",value:ws.backLogoWidth!=null?ws.backLogoWidth:180,onChange:function(v){up("backLogoWidth",v);},min:40,max:400,unit:"px",onReset:function(){up("backLogoWidth",180);}}),
       React.createElement(SL,{label:"Back Tagline Bold X",value:ws.backTaglineBoldX!=null?ws.backTaglineBoldX:340,onChange:function(v){up("backTaglineBoldX",v);},min:0,max:800,unit:"px",onReset:function(){up("backTaglineBoldX",340);}}),
-      React.createElement(SL,{label:"Back Tagline Bold Y",value:ws.backTaglineBoldY!=null?ws.backTaglineBoldY:400,onChange:function(v){up("backTaglineBoldY",v);},min:0,max:500,unit:"px",onReset:function(){up("backTaglineBoldY",400);}})),
+      React.createElement(SL,{label:"Back Tagline Bold Y",value:ws.backTaglineBoldY!=null?ws.backTaglineBoldY:400,onChange:function(v){up("backTaglineBoldY",v);},min:0,max:500,unit:"px",onReset:function(){up("backTaglineBoldY",400);}}),
+      React.createElement(SL,{label:"QR X",value:ws.qrX!=null?ws.qrX:548,min:0,max:800,unit:"px",onChange:function(v){up("qrX",v);},onReset:function(){up("qrX",548);}}),
+      React.createElement(SL,{label:"QR Y",value:ws.qrY!=null?ws.qrY:102,min:0,max:400,unit:"px",onChange:function(v){up("qrY",v);},onReset:function(){up("qrY",102);}})),
 
     React.createElement(Sec,{title:"Logo Position",startOpen:true},
       React.createElement(SL,{label:"Logo X",value:ws.logoX!=null?ws.logoX:45,min:0,max:800,onChange:function(v){up("logoX",v);}}),
@@ -4028,6 +4219,11 @@ function WizardStepFineTune(props){
       hasContent("linkedin")?React.createElement(PosControl,{label:"LinkedIn",xKey:"linkedinX",yKey:"linkedinY",positions:positions,onChange:upPos,defaultX:440,defaultY:310}):null,
       hasContent("twitter")?React.createElement(PosControl,{label:"Twitter/X",xKey:"twitterX",yKey:"twitterY",positions:positions,onChange:upPos,defaultX:440,defaultY:335}):null,
       hasContent("instagram")?React.createElement(PosControl,{label:"Instagram",xKey:"instagramX",yKey:"instagramY",positions:positions,onChange:upPos,defaultX:440,defaultY:360}):null):null,
+
+    (hasContent("taglineBold")||hasContent("taglineLight"))?
+    React.createElement(Sec,{title:"Front Taglines",defaultOpen:false},
+      hasContent("taglineBold")?React.createElement(PosControl,{label:"Bold Tagline",xKey:"taglineBoldX",yKey:"taglineBoldY",positions:positions,onChange:upPos,defaultX:250,defaultY:390}):null,
+      hasContent("taglineLight")?React.createElement(PosControl,{label:"Light Tagline",xKey:"taglineLightX",yKey:"taglineLightY",positions:positions,onChange:upPos,defaultX:250,defaultY:420}):null):null,
 
     (hasContent("taglineBold")||hasContent("taglineLight"))?
     React.createElement(Sec,{title:"Taglines (Back Card)"},
@@ -4079,7 +4275,7 @@ function WizardStepPrintVerify(props){
       React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"12px"}},
         React.createElement("button",{onClick:function(){var nb=!showBleed;setShowBleed(nb);up("showBleed",nb);},
           className:"imp-wizard-choice"+(showBleed?" selected":""),
-          style:{padding:"8px 16px",fontSize:"12px",color:showBleed?"#000":"var(--text-secondary)"}},showBleed?"Bleed ON":"Bleed OFF"),
+          style:{padding:"8px 16px",fontSize:"12px",fontWeight:showBleed?700:400,color:showBleed?"#000":"var(--text-secondary)",background:showBleed?"#00cc00":undefined,borderColor:showBleed?"#00cc00":undefined}},showBleed?"Bleed ON":"Bleed OFF"),
         React.createElement("span",{style:{fontSize:"11px",color:"var(--text-muted)"}},"Standard 0.125\" (3mm) bleed area"))),
 
     React.createElement("div",{style:{marginBottom:"20px"}},
@@ -4364,7 +4560,7 @@ function TemplateWizard(props){
     pendingUpload&&React.createElement(SvgPreviewModal,{show:true,imageUrl:pendingUpload.url,fileName:pendingUpload.fileName||"",fileSize:pendingUpload.fileSize||0,imgWidth:pendingUpload.width||0,imgHeight:pendingUpload.height||0,previewLabel:pendingUpload.type==="background"?"Background Preview":"Logo Preview",onCancel:function(){setPendingUpload(null);},onApply:function(){if(!pendingUpload)return;if(pendingUpload.type==="logo"){setWs(function(prev){return Object.assign({},prev,{uploadedLogo:pendingUpload.url,logoMode:"upload",processedLogoFront:null,processedLogoBack:null,logoColorSwapsFront:[],logoColorSwapsBack:[],logoAspect:pendingUpload.aspect||0.5});});}else if(pendingUpload.type==="background"){var dims=typeof getCardDims==="function"?getCardDims(ws):{w:880,h:500};setWs(function(prev){return Object.assign({},prev,{bgImage:{url:pendingUpload.url,x:0,y:0,width:dims.w,height:dims.h,opacity:100},bgImageFx:{brightness:100,contrast:100,saturation:100}});});}setPendingUpload(null);}}),
     React.createElement("div",{className:"imp-wizard-body"},
       React.createElement("div",{className:"imp-wizard-content"},stepContent),
-      React.createElement(WizardCardPreview,{ws:ws,showBack:showBack,setShowBack:setShowBack})),
+      React.createElement(WizardCardPreview,{ws:ws,setWs:setWs,showBack:showBack,setShowBack:setShowBack})),
     React.createElement("div",{className:"imp-wizard-nav"},
       React.createElement("button",{className:"imp-wizard-btn secondary",
         onClick:stepIdx===0?onClose:handleBack,
