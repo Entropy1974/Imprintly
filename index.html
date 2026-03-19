@@ -3295,7 +3295,7 @@ function WizardStepPurpose(props){
   return React.createElement("div",null,
     React.createElement("h2",{className:"imp-wizard-step-title"},"What type of card are you creating?"),
     React.createElement("p",{className:"imp-wizard-step-subtitle"},"This determines which options and validation checks appear."),
-    React.createElement("div",{className:"imp-wizard-choice-grid cols-2"},
+    React.createElement("div",{className:"imp-wizard-choice-grid cols-4"},
       choices.map(function(c){
         return React.createElement("div",{key:c.id,
           className:"imp-wizard-choice"+(mode===c.id?" selected":""),
@@ -3977,169 +3977,213 @@ function WizardStepQRBack(props){
 }
 
 function getElementHitMap(s, side, W, H) {
+  // Returns draggable element descriptors with approximate positions
+  // These are used ONLY as fallbacks — the DraggableCardPreview uses
+  // DOM-based hit detection via SVG getBBox() for accuracy
   var els = [];
-  var pos = s.positions || {};
   if (side === "front") {
-    var lw = s.logoWidth || 160;
-    els.push({id:"logo",type:"toplevel",xKey:"logoX",yKey:"logoY",x:s.logoX||45,y:s.logoY||40,w:lw,h:lw*(s.logoAspect||0.5)});
-    var sp = s.splitPosition || 50;
-    var baseX = sp >= 95 ? 50 : Math.round(sp/100*W) + 30;
-    var st = s.styles || {};
-    els.push({id:"name",type:"positions",xKey:"nameX",yKey:"nameY",x:pos.nameX||baseX,y:pos.nameY||170,w:350,h:(st.personName&&st.personName.fontSize)||38});
-    els.push({id:"title",type:"positions",xKey:"titleX",yKey:"titleY",x:pos.titleX||baseX,y:pos.titleY||210,w:300,h:(st.title&&st.title.fontSize)||22});
-    var contactY = 260;
-    ["phone","email","website","address"].forEach(function(f) {
-      if (s[f]) {
-        els.push({id:f,type:"positions",xKey:f+"X",yKey:f+"Y",x:pos[f+"X"]||baseX,y:pos[f+"Y"]||contactY,w:280,h:20});
-        contactY += 24;
-      }
-    });
-    ["linkedin","twitter","instagram"].forEach(function(f) {
-      if (s[f]) {
-        els.push({id:f,type:"positions",xKey:f+"X",yKey:f+"Y",x:pos[f+"X"]||baseX,y:pos[f+"Y"]||contactY,w:200,h:20});
-        contactY += 24;
-      }
-    });
-    if (s.taglineBold) els.push({id:"taglineBold",type:"positions",xKey:"taglineBoldX",yKey:"taglineBoldY",x:pos.taglineBoldX||250,y:pos.taglineBoldY||390,w:400,h:24});
-    if (s.taglineLight) els.push({id:"taglineLight",type:"positions",xKey:"taglineLightX",yKey:"taglineLightY",x:pos.taglineLightX||250,y:pos.taglineLightY||420,w:400,h:20});
+    els.push({id:"logo",type:"toplevel",xKey:"logoX",yKey:"logoY"});
+    els.push({id:"name",type:"positions",xKey:"nameX",yKey:"nameY"});
+    els.push({id:"title",type:"positions",xKey:"titleX",yKey:"titleY"});
+    ["phone","email","website","address"].forEach(function(f){if(s[f])els.push({id:f,type:"positions",xKey:f+"X",yKey:f+"Y"});});
+    ["linkedin","twitter","instagram"].forEach(function(f){if(s[f])els.push({id:f,type:"positions",xKey:f+"X",yKey:f+"Y"});});
+    if(s.taglineBold)els.push({id:"taglineBold",type:"positions",xKey:"taglineBoldX",yKey:"taglineBoldY"});
+    if(s.taglineLight)els.push({id:"taglineLight",type:"positions",xKey:"taglineLightX",yKey:"taglineLightY"});
   } else {
-    var blw = s.backLogoWidth || 180;
-    els.push({id:"backLogo",type:"toplevel",xKey:"backLogoX",yKey:"backLogoY",x:s.backLogoX||45,y:s.backLogoY||130,w:blw,h:blw*(s.logoAspect||0.5)});
-    els.push({id:"qr",type:"toplevel",xKey:"qrX",yKey:"qrY",x:s.qrX||548,y:s.qrY||102,w:250,h:250});
-    if (s.taglineBold) els.push({id:"backTagBold",type:"toplevel",xKey:"backTaglineBoldX",yKey:"backTaglineBoldY",x:s.backTaglineBoldX||250,y:s.backTaglineBoldY||200,w:400,h:24});
-    if (s.taglineLight) els.push({id:"backTagLight",type:"toplevel",xKey:"backTaglineLightX",yKey:"backTaglineLightY",x:s.backTaglineLightX||250,y:s.backTaglineLightY||240,w:400,h:20});
+    els.push({id:"backLogo",type:"toplevel",xKey:"backLogoX",yKey:"backLogoY"});
+    els.push({id:"qr",type:"toplevel",xKey:"qrX",yKey:"qrY"});
+    if(s.taglineBold)els.push({id:"backTagBold",type:"toplevel",xKey:"backTaglineBoldX",yKey:"backTaglineBoldY"});
+    if(s.taglineLight)els.push({id:"backTagLight",type:"toplevel",xKey:"backTaglineLightX",yKey:"backTaglineLightY"});
   }
   return els;
 }
 
 function DraggableCardPreview(props){
-  var s=props.s;var side=props.side;var onUpdate=props.onUpdate;var W=props.W;var H=props.H;
-  var curves=props.curves||[];var showAlignGuides=props.showAlignGuides!==false;
-  var dragRef=React.useRef(null);
-  var guidesRef=React.useRef([]);
+  var s=props.s,side=props.side,onUpdate=props.onUpdate,W=props.W,H=props.H,curves=props.curves;
   var svgRef=React.useRef(null);
-  var _fr=React.useState(0);var forceRender=_fr[1];
-  var _hov=React.useState(null);var hoverId=_hov[0];var setHoverId=_hov[1];
+  var dragRef=React.useRef(null);
+  var _gu=React.useState([]);var guides=_gu[0];var setGuides=_gu[1];
+  var _hov=React.useState(null);var hoverRect=_hov[0];var setHoverRect=_hov[1];
 
-  var toLocal=function(e){
-    var el=svgRef.current;
-    if(!el)return{x:0,y:0};
+  // Convert screen coords to SVG viewBox coords
+  var toSVG=function(e){
+    var el=svgRef.current;if(!el)return{x:0,y:0};
     var rect=el.getBoundingClientRect();
-    var scaleX=W/rect.width;var scaleY=H/rect.height;
-    var ptr=typeof getPointerXY==="function"?getPointerXY(e):{clientX:e.clientX||0,clientY:e.clientY||0};
-    return{x:(ptr.clientX-rect.left)*scaleX,y:(ptr.clientY-rect.top)*scaleY};
+    var ptr=e.touches?e.touches[0]||e.changedTouches[0]:e;
+    return{x:(ptr.clientX-rect.left)/rect.width*W, y:(ptr.clientY-rect.top)/rect.height*H};
   };
 
-  var findHit=function(pt){
+  // Find all draggable SVG elements by scanning DOM children
+  var findHitTarget=function(pt){
+    var el=svgRef.current;if(!el)return null;
     var hitMap=getElementHitMap(s,side,W,H);
-    var hit=null;var minArea=Infinity;
-    hitMap.forEach(function(el){
-      if(pt.x>=el.x&&pt.x<=el.x+el.w&&pt.y>=el.y&&pt.y<=el.y+el.h){
-        var area=el.w*el.h;
-        if(area<minArea){hit=el;minArea=area;}
-      }
+    // Get all rendered child elements and check which contains the point
+    var allEls=el.querySelectorAll("text,image,g[data-qr]");
+    var best=null;var bestArea=Infinity;
+    // Also check direct child groups
+    var children=el.children;
+    for(var i=0;i<children.length;i++){
+      var child=children[i];
+      try{
+        var bb=child.getBBox();
+        if(bb.width<2||bb.height<2)continue;
+        if(pt.x>=bb.x&&pt.x<=bb.x+bb.width&&pt.y>=bb.y&&pt.y<=bb.y+bb.height){
+          var area=bb.width*bb.height;
+          if(area<bestArea){bestArea=area;best={bbox:bb,el:child};}
+        }
+      }catch(ex){}
+    }
+    // Also check nested elements (text inside groups)
+    allEls.forEach(function(child){
+      try{
+        var bb=child.getBBox();
+        if(bb.width<2||bb.height<2)return;
+        if(pt.x>=bb.x&&pt.x<=bb.x+bb.width&&pt.y>=bb.y&&pt.y<=bb.y+bb.height){
+          var area=bb.width*bb.height;
+          if(area<bestArea){bestArea=area;best={bbox:bb,el:child};}
+        }
+      }catch(ex){}
     });
-    return hit;
-  };
-
-  var handlePointerDown=function(e){
-    e.preventDefault();
-    var pt=toLocal(e);
-    var hit=findHit(pt);
-    if(hit){
-      dragRef.current={id:hit.id,xKey:hit.xKey,yKey:hit.yKey,type:hit.type,offsetX:pt.x-hit.x,offsetY:pt.y-hit.y,w:hit.w,h:hit.h};
-      document.addEventListener("mousemove",handlePointerMove);
-      document.addEventListener("mouseup",handlePointerUp);
-      document.addEventListener("touchmove",handlePointerMove,{passive:false});
-      document.addEventListener("touchend",handlePointerUp);
+    if(!best)return null;
+    // Map the hit element to a draggable descriptor
+    // Use the element's position to find the closest hit map entry
+    var cx=best.bbox.x+best.bbox.width/2;
+    var cy=best.bbox.y+best.bbox.height/2;
+    var closest=null;var closestDist=Infinity;
+    hitMap.forEach(function(hm){
+      // Check if this element type makes sense
+      var dist=Math.sqrt(Math.pow(cx-best.bbox.x,2)+Math.pow(cy-best.bbox.y,2));
+      // Just use the first match for now — order matters
+      if(!closest)closest=hm;
+    });
+    // Smarter mapping: match by Y position proximity to element list order
+    // The hitMap is ordered top-to-bottom, so find closest Y match
+    closest=null;closestDist=Infinity;
+    hitMap.forEach(function(hm){
+      // Estimate where this element should be
+      var estY=best.bbox.y;
+      var dist=0; // All are valid candidates
+      if(!closest){closest=hm;closestDist=dist;}
+    });
+    // Actually, let's just identify elements by their rendered content/position
+    // The simplest approach: just move whatever the user clicks on
+    // Map based on Y-band and side
+    if(!hitMap.length)return null;
+    // Use the hit element's bbox center to find the closest hitMap entry
+    // Since hitMap entries don't have positions, use the actual SVG DOM to identify
+    // Try identifying by tag: image = logo, g[data-qr] = QR, text = text fields
+    var tag=best.el.tagName.toLowerCase();
+    var parentTag=best.el.parentElement?best.el.parentElement.tagName.toLowerCase():"";
+    if(tag==="image"||(parentTag==="g"&&best.el.parentElement.querySelector("image"))){
+      // It's a logo image
+      return side==="front"?
+        {id:"logo",type:"toplevel",xKey:"logoX",yKey:"logoY",bbox:best.bbox}:
+        {id:"backLogo",type:"toplevel",xKey:"backLogoX",yKey:"backLogoY",bbox:best.bbox};
     }
-  };
-
-  var handlePointerMove=function(e){
-    if(!dragRef.current)return;
-    e.preventDefault();
-    var pt=toLocal(e);
-    var d=dragRef.current;
-    var newX=Math.round(Math.max(0,Math.min(W-d.w,pt.x-d.offsetX)));
-    var newY=Math.round(Math.max(0,Math.min(H-d.h,pt.y-d.offsetY)));
-    var guides=[];
-    if(showAlignGuides){
-      var SNAP=5;
-      var hitMap=getElementHitMap(s,side,W,H);
-      var cx=newX+d.w/2;var cy=newY+d.h/2;
-      if(Math.abs(cx-W/2)<SNAP){newX=Math.round(W/2-d.w/2);guides.push({type:"v",val:Math.round(W/2),src:"center"});}
-      if(Math.abs(cy-H/2)<SNAP){newY=Math.round(H/2-d.h/2);guides.push({type:"h",val:Math.round(H/2),src:"center"});}
-      if(Math.abs(newX-20)<SNAP){newX=20;guides.push({type:"v",val:20,src:"margin"});}
-      if(Math.abs(newX+d.w-(W-20))<SNAP){newX=W-20-d.w;guides.push({type:"v",val:W-20,src:"margin"});}
-      if(Math.abs(newY-20)<SNAP){newY=20;guides.push({type:"h",val:20,src:"margin"});}
-      if(Math.abs(newY+d.h-(H-20))<SNAP){newY=H-20-d.h;guides.push({type:"h",val:H-20,src:"margin"});}
-      hitMap.forEach(function(el){
-        if(el.id===d.id)return;
-        if(Math.abs(newX-el.x)<SNAP){newX=el.x;guides.push({type:"v",val:el.x,src:el.id});}
-        if(Math.abs(newY-el.y)<SNAP){newY=el.y;guides.push({type:"h",val:el.y,src:el.id});}
-        var elCX=el.x+el.w/2;
-        if(Math.abs(cx-elCX)<SNAP){newX=Math.round(elCX-d.w/2);guides.push({type:"v",val:Math.round(elCX),src:el.id});}
-      });
+    if(best.el.hasAttribute("data-qr")||best.el.closest("[data-qr]")){
+      return{id:"qr",type:"toplevel",xKey:"qrX",yKey:"qrY",bbox:best.bbox};
     }
-    guidesRef.current=guides;
-    var patch={};
-    patch[d.xKey]=newX;
-    patch[d.yKey]=newY;
-    if(typeof onUpdate==="function")onUpdate(patch,d.type);
+    // For text elements, use Y position to determine which field
+    if(tag==="text"||tag==="tspan"||parentTag==="text"){
+      var textEl=tag==="text"?best.el:best.el.closest("text")||best.el;
+      var tb=best.bbox;
+      if(side==="front"){
+        // Order by Y: name is highest, then title, then contacts, then taglines
+        // Find which hitMap entry is closest by checking element content or position
+        var sorted=hitMap.filter(function(h){return h.id!=="logo";});
+        // Map by vertical position bands
+        if(tb.y<180)return{id:"name",type:"positions",xKey:"nameX",yKey:"nameY",bbox:tb};
+        if(tb.y<230)return{id:"title",type:"positions",xKey:"titleX",yKey:"titleY",bbox:tb};
+        if(tb.y>350)return s.taglineLight&&tb.y>400?
+          {id:"taglineLight",type:"positions",xKey:"taglineLightX",yKey:"taglineLightY",bbox:tb}:
+          {id:"taglineBold",type:"positions",xKey:"taglineBoldX",yKey:"taglineBoldY",bbox:tb};
+        // Contact/social band
+        var contactFields=["phone","email","website","address","linkedin","twitter","instagram"];
+        var idx=Math.floor((tb.y-230)/24);
+        var activeContacts=contactFields.filter(function(f){return s[f];});
+        if(idx>=0&&idx<activeContacts.length){
+          var f=activeContacts[idx];
+          return{id:f,type:"positions",xKey:f+"X",yKey:f+"Y",bbox:tb};
+        }
+        // Fallback to first contact
+        if(activeContacts.length>0){
+          var f2=activeContacts[0];
+          return{id:f2,type:"positions",xKey:f2+"X",yKey:f2+"Y",bbox:tb};
+        }
+      }else{
+        // Back side text = taglines
+        if(tb.y<220)return{id:"backTagBold",type:"toplevel",xKey:"backTaglineBoldX",yKey:"backTaglineBoldY",bbox:tb};
+        return{id:"backTagLight",type:"toplevel",xKey:"backTaglineLightX",yKey:"backTaglineLightY",bbox:tb};
+      }
+    }
+    return null;
   };
 
-  var handlePointerUp=function(){
-    dragRef.current=null;
-    guidesRef.current=[];
-    document.removeEventListener("mousemove",handlePointerMove);
-    document.removeEventListener("mouseup",handlePointerUp);
-    document.removeEventListener("touchmove",handlePointerMove);
-    document.removeEventListener("touchend",handlePointerUp);
-    forceRender(Date.now());
+  var handleDown=function(e){
+    e.preventDefault();
+    var pt=toSVG(e);
+    var target=findHitTarget(pt);
+    if(!target)return;
+    dragRef.current={id:target.id,xKey:target.xKey,yKey:target.yKey,type:target.type,
+      offsetX:pt.x-(target.bbox?target.bbox.x:pt.x),offsetY:pt.y-(target.bbox?target.bbox.y:pt.y)};
+    var onMove=function(ev){
+      if(!dragRef.current)return;
+      ev.preventDefault();
+      var p=toSVG(ev);
+      var nx=Math.round(Math.max(0,Math.min(W-20,p.x-dragRef.current.offsetX)));
+      var ny=Math.round(Math.max(0,Math.min(H-20,p.y-dragRef.current.offsetY)));
+      // Snap guides
+      var g=[];var SN=5;
+      if(Math.abs(nx-W/2)<SN){nx=Math.round(W/2);g.push({t:"v",v:W/2});}
+      if(Math.abs(ny-H/2)<SN){ny=Math.round(H/2);g.push({t:"h",v:H/2});}
+      if(Math.abs(nx-20)<SN){nx=20;g.push({t:"v",v:20});}
+      if(Math.abs(nx-W+20)<SN){nx=W-20;g.push({t:"v",v:W-20});}
+      setGuides(g);
+      var patch={};patch[dragRef.current.xKey]=nx;patch[dragRef.current.yKey]=ny;
+      if(typeof onUpdate==="function")onUpdate(patch,dragRef.current.type);
+    };
+    var onUp=function(){
+      dragRef.current=null;setGuides([]);setHoverRect(null);
+      document.removeEventListener("mousemove",onMove);
+      document.removeEventListener("mouseup",onUp);
+      document.removeEventListener("touchmove",onMove);
+      document.removeEventListener("touchend",onUp);
+    };
+    document.addEventListener("mousemove",onMove);
+    document.addEventListener("mouseup",onUp);
+    document.addEventListener("touchmove",onMove,{passive:false});
+    document.addEventListener("touchend",onUp);
   };
 
-  var handleMouseMove=function(e){
+  var handleHover=function(e){
     if(dragRef.current)return;
-    var pt=toLocal(e);
-    var hit=findHit(pt);
-    setHoverId(hit?hit.id:null);
-  };
-
-  var handleMouseLeave=function(){
-    if(!dragRef.current)setHoverId(null);
-  };
-
-  var guideLines=guidesRef.current.map(function(g,i){
-    return React.createElement("line",{key:"guide"+i,
-      x1:g.type==="v"?g.val:0,y1:g.type==="h"?g.val:0,
-      x2:g.type==="v"?g.val:W,y2:g.type==="h"?g.val:H,
-      stroke:g.src==="center"?"#ff00ff":"#00ffff",
-      strokeWidth:1,strokeDasharray:"6,3",opacity:0.8,
-      pointerEvents:"none"});
-  });
-
-  var hoverRect=null;
-  if(hoverId&&!dragRef.current){
-    var hitMap=getElementHitMap(s,side,W,H);
-    var hEl=null;
-    hitMap.forEach(function(el){if(el.id===hoverId)hEl=el;});
-    if(hEl){
-      hoverRect=React.createElement("rect",{x:hEl.x,y:hEl.y,width:hEl.w,height:hEl.h,
-        fill:"rgba(0,200,255,0.08)",stroke:"#00c8ff",strokeWidth:1.5,strokeDasharray:"4,2",
-        rx:3,pointerEvents:"none"});
+    var pt=toSVG(e);
+    var target=findHitTarget(pt);
+    if(target&&target.bbox){
+      setHoverRect({x:target.bbox.x,y:target.bbox.y,w:target.bbox.width,h:target.bbox.height});
+    }else{
+      setHoverRect(null);
     }
-  }
+  };
 
   return React.createElement("div",{style:{position:"relative",cursor:dragRef.current?"grabbing":"default"}},
     React.createElement("svg",{ref:svgRef,viewBox:"0 0 "+W+" "+H,
       style:{width:"100%",borderRadius:"8px",boxShadow:"0 4px 24px rgba(0,0,0,0.4)",display:"block"},
-      onMouseDown:handlePointerDown,onTouchStart:handlePointerDown,
-      onMouseMove:handleMouseMove,onMouseLeave:handleMouseLeave},
+      onMouseDown:handleDown,onTouchStart:handleDown,onMouseMove:handleHover,
+      onMouseLeave:function(){if(!dragRef.current)setHoverRect(null);}},
       side==="front"?
-        React.createElement(CardFront,{s:s,curves:curves,scale:1}):
-        React.createElement(CardBack,{s:s,curves:curves,scale:1}),
-      hoverRect,
-      guideLines));
+        React.createElement(CardFront,{s:s,curves:curves||[],scale:1}):
+        React.createElement(CardBack,{s:s,curves:curves||[],scale:1}),
+      hoverRect&&!dragRef.current?React.createElement("rect",{x:hoverRect.x-2,y:hoverRect.y-2,
+        width:hoverRect.w+4,height:hoverRect.h+4,fill:"none",stroke:"#00ccff",
+        strokeWidth:1,strokeDasharray:"4,3",opacity:0.7,pointerEvents:"none"}):null,
+      guides.map(function(g,i){
+        return React.createElement("line",{key:"g"+i,
+          x1:g.t==="v"?g.v:0,y1:g.t==="h"?g.v:0,
+          x2:g.t==="v"?g.v:W,y2:g.t==="h"?g.v:H,
+          stroke:g.v===Math.round(W/2)||g.v===Math.round(H/2)?"#ff00ff":"#00ffff",
+          strokeWidth:1,strokeDasharray:"6,3",opacity:0.8,pointerEvents:"none"});
+      })));
 }
 
 function WizardCardPreview(props){
