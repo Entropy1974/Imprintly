@@ -3817,6 +3817,15 @@ function WizardStepLayout(props){
       })),React.createElement("p",{style:{fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",fontStyle:"italic",margin:"16px 0 0",padding:"10px 14px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",borderLeft:"3px solid var(--accent-primary)"}},"\uD83D\uDCA1 You\u2019ll be able to fine-tune exact positions of all elements in the Fine-Tune step before saving."));
 }
 
+function WizardTextField(p){
+  return React.createElement("div",{style:{marginBottom:"8px"}},
+    React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:2}},p.label),
+    React.createElement("input",{type:"text",value:p.value||"",onChange:function(e){p.onChange(e.target.value);},
+      placeholder:p.placeholder||"",
+      style:{width:"100%",padding:"8px 10px",borderRadius:6,border:"1px solid var(--border-default)",
+        background:"var(--bg-deep)",color:"var(--text-primary)",fontSize:12,boxSizing:"border-box"}}));
+}
+
 function WizardStepContent(props){
   var ws=props.ws;var setWs=props.setWs;
   var up=function(k,v){setWs(function(prev){var patch={};patch[k]=v;return Object.assign({},prev,patch);});};
@@ -3836,14 +3845,7 @@ function WizardStepContent(props){
     {key:"instagram",label:"Instagram",placeholder:"@janedoe"}
   ];
 
-  var TF_=function(p){
-    return React.createElement("div",{style:{marginBottom:"8px"}},
-      React.createElement("label",{style:{fontSize:"11px",color:"var(--text-secondary)",display:"block",marginBottom:2}},p.label),
-      React.createElement("input",{type:"text",value:p.value||"",onChange:function(e){p.onChange(e.target.value);},
-        placeholder:p.placeholder||"",
-        style:{width:"100%",padding:"8px 10px",borderRadius:6,border:"1px solid var(--border-default)",
-          background:"var(--bg-deep)",color:"var(--text-primary)",fontSize:12,boxSizing:"border-box"}}));
-  };
+  // TF_ moved to WizardTextField (stable component)
 
   return React.createElement("div",null,
     React.createElement("h2",{className:"imp-wizard-step-title"},"Content & Details"),
@@ -3851,22 +3853,22 @@ function WizardStepContent(props){
 
     React.createElement("div",{className:"imp-wizard-section-label"},"Company & Person"),
     fields.slice(0,3).map(function(f){
-      return React.createElement(TF_,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
+      return React.createElement(WizardTextField,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
     }),
 
     React.createElement("div",{className:"imp-wizard-section-label"},"Contact Details"),
     fields.slice(3).map(function(f){
-      return React.createElement(TF_,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
+      return React.createElement(WizardTextField,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
     }),
 
     React.createElement("div",{className:"imp-wizard-section-label"},"Social Media"),
     socialFields.map(function(f){
-      return React.createElement(TF_,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
+      return React.createElement(WizardTextField,{key:f.key,label:f.label,value:ws[f.key],placeholder:f.placeholder,onChange:function(v){up(f.key,v);}});
     }),
 
     React.createElement("div",{className:"imp-wizard-section-label"},"Taglines"),
-    React.createElement(TF_,{label:"Primary Tagline",value:ws.taglineBold,placeholder:"Design the Impression you Leave.",onChange:function(v){up("taglineBold",v);}}),
-    React.createElement(TF_,{label:"Secondary Tagline (optional)",value:ws.taglineLight,placeholder:"",onChange:function(v){up("taglineLight",v);}}),React.createElement("p",{style:{fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",fontStyle:"italic",margin:"16px 0 0",padding:"10px 14px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",borderLeft:"3px solid var(--accent-primary)"}},"\uD83D\uDCA1 Element positions can be adjusted precisely in the upcoming Fine-Tune step."));
+    React.createElement(WizardTextField,{label:"Primary Tagline",value:ws.taglineBold,placeholder:"Design the Impression you Leave.",onChange:function(v){up("taglineBold",v);}}),
+    React.createElement(WizardTextField,{label:"Secondary Tagline (optional)",value:ws.taglineLight,placeholder:"",onChange:function(v){up("taglineLight",v);}}),React.createElement("p",{style:{fontSize:"var(--fs-sm)",color:"var(--text-tertiary)",fontStyle:"italic",margin:"16px 0 0",padding:"10px 14px",background:"var(--bg-input)",borderRadius:"var(--radius-md)",borderLeft:"3px solid var(--accent-primary)"}},"\uD83D\uDCA1 Element positions can be adjusted precisely in the upcoming Fine-Tune step."));
 }
 
 function WizardStepQRBack(props){
