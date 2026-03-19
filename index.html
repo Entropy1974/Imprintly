@@ -3998,6 +3998,56 @@ function getElementHitMap(s, side, W, H) {
   return els;
 }
 
+function getAlignmentSnap(svgEl,dragId,nx,ny,dw,dh,W,H,SN){
+  // Returns {x, y, guides[]} after checking snap against:
+  // 1. Card center and margins
+  // 2. All other rendered elements (edges + centers)
+  SN=SN||5;var guides=[];
+  var cx=nx+dw/2;var cy=ny+dh/2;
+  var rx=nx+dw;var by=ny+dh;
+  // Card center
+  if(Math.abs(cx-W/2)<SN){nx=Math.round(W/2-dw/2);guides.push({t:"v",v:Math.round(W/2),src:"center"});}
+  if(Math.abs(cy-H/2)<SN){ny=Math.round(H/2-dh/2);guides.push({t:"h",v:Math.round(H/2),src:"center"});}
+  // Card margins (20px)
+  if(Math.abs(nx-20)<SN){nx=20;guides.push({t:"v",v:20,src:"margin"});}
+  if(Math.abs(rx-W+20)<SN){nx=W-20-dw;guides.push({t:"v",v:W-20,src:"margin"});}
+  if(Math.abs(ny-20)<SN){ny=20;guides.push({t:"h",v:20,src:"margin"});}
+  if(Math.abs(by-H+20)<SN){ny=H-20-dh;guides.push({t:"h",v:H-20,src:"margin"});}
+  // Other elements
+  if(svgEl){
+    var others=svgEl.querySelectorAll("text,image,g");
+    others.forEach(function(el){
+      try{
+        var bb=el.getBBox();
+        if(bb.width<5||bb.height<5)return;
+        var ocx=bb.x+bb.width/2;var ocy=bb.y+bb.height/2;
+        // Skip if this is the element being dragged (overlap check)
+        if(Math.abs(bb.x-nx)<2&&Math.abs(bb.y-ny)<2)return;
+        // Left edge to left edge
+        if(Math.abs(nx-bb.x)<SN){nx=bb.x;guides.push({t:"v",v:bb.x,src:"el"});}
+        // Right edge to right edge
+        if(Math.abs(rx-(bb.x+bb.width))<SN){nx=bb.x+bb.width-dw;guides.push({t:"v",v:Math.round(bb.x+bb.width),src:"el"});}
+        // Center X to center X
+        if(Math.abs(cx-ocx)<SN){nx=Math.round(ocx-dw/2);guides.push({t:"v",v:Math.round(ocx),src:"el"});}
+        // Top edge to top edge
+        if(Math.abs(ny-bb.y)<SN){ny=bb.y;guides.push({t:"h",v:bb.y,src:"el"});}
+        // Bottom edge to bottom edge
+        if(Math.abs(by-(bb.y+bb.height))<SN){ny=bb.y+bb.height-dh;guides.push({t:"h",v:Math.round(bb.y+bb.height),src:"el"});}
+        // Center Y to center Y
+        if(Math.abs(cy-ocy)<SN){ny=Math.round(ocy-dh/2);guides.push({t:"h",v:Math.round(ocy),src:"el"});}
+        // Top of dragged to bottom of other (stacking alignment)
+        if(Math.abs(ny-(bb.y+bb.height))<SN){ny=Math.round(bb.y+bb.height);guides.push({t:"h",v:Math.round(bb.y+bb.height),src:"el"});}
+        // Bottom of dragged to top of other
+        if(Math.abs(by-bb.y)<SN){ny=Math.round(bb.y-dh);guides.push({t:"h",v:Math.round(bb.y),src:"el"});}
+      }catch(ex){}
+    });
+  }
+  // Deduplicate guides
+  var seen={};var unique=[];
+  guides.forEach(function(g){var k=g.t+g.v;if(!seen[k]){seen[k]=true;unique.push(g);}});
+  return{x:nx,y:ny,guides:unique};
+}
+
 function findHitTargetInSVG(svgEl,s,side,pt,W,H){
   if(!svgEl)return null;
   var hitMap=getElementHitMap(s,side,W,H);
@@ -4175,12 +4225,9 @@ function DraggableCardPreview(props){
       var nx=Math.round(Math.max(0,Math.min(W-20,p.x-dragRef.current.offsetX)));
       var ny=Math.round(Math.max(0,Math.min(H-20,p.y-dragRef.current.offsetY)));
       // Snap guides
-      var g=[];var SN=5;
-      if(Math.abs(nx-W/2)<SN){nx=Math.round(W/2);g.push({t:"v",v:W/2});}
-      if(Math.abs(ny-H/2)<SN){ny=Math.round(H/2);g.push({t:"h",v:H/2});}
-      if(Math.abs(nx-20)<SN){nx=20;g.push({t:"v",v:20});}
-      if(Math.abs(nx-W+20)<SN){nx=W-20;g.push({t:"v",v:W-20});}
-      setGuides(g);
+      var snap=getAlignmentSnap(svgRef.current,dragRef.current.id,nx,ny,40,20,W,H,5);
+      nx=snap.x;ny=snap.y;
+      setGuides(snap.guides);
       var patch={};patch[dragRef.current.xKey]=nx;patch[dragRef.current.yKey]=ny;
       if(typeof onUpdate==="function")onUpdate(patch,dragRef.current.type);
     };
@@ -4223,7 +4270,7 @@ function DraggableCardPreview(props){
         return React.createElement("line",{key:"g"+i,
           x1:g.t==="v"?g.v:0,y1:g.t==="h"?g.v:0,
           x2:g.t==="v"?g.v:W,y2:g.t==="h"?g.v:H,
-          stroke:g.v===Math.round(W/2)||g.v===Math.round(H/2)?"#ff00ff":"#00ffff",
+          stroke:g.src==="center"?"#ff00ff":g.src==="margin"?"#ffaa00":"#00ffff",
           strokeWidth:1,strokeDasharray:"6,3",opacity:0.8,pointerEvents:"none"});
       })));
 }
@@ -5036,10 +5083,10 @@ var pIdx=(pt.y*900+pt.x)*4;var tR=imageData.data[pIdx],tG=imageData.data[pIdx+1]
     var mp=toCardCoords(ev,mr);var W=dims.w;var H=dims.h;
     var nx=Math.round(Math.max(0,Math.min(W-20,mp.x-_dragTargetRef.current.offX)));
     var ny=Math.round(Math.max(0,Math.min(H-20,mp.y-_dragTargetRef.current.offY)));
-    var g=[];var SN=5;
-    if(Math.abs(nx-W/2)<SN){nx=Math.round(W/2);g.push({t:"v",v:W/2});}
-    if(Math.abs(ny-H/2)<SN){ny=Math.round(H/2);g.push({t:"h",v:H/2});}
-    setDragGuides(g);
+    var svgInner=mr.current&&mr.current.querySelector?mr.current.querySelector("svg"):mr.current;
+    var snap=getAlignmentSnap(svgInner,_dragTargetRef.current.id,nx,ny,40,20,W,H,5);
+    nx=snap.x;ny=snap.y;
+    setDragGuides(snap.guides);
     if(_dragTargetRef.current.type==="positions"){
       setS(function(p){var pos=Object.assign({},p.positions||{});pos[_dragTargetRef.current.xKey]=nx;pos[_dragTargetRef.current.yKey]=ny;return Object.assign({},p,{positions:pos});});
     }else{
