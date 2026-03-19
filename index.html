@@ -3411,6 +3411,7 @@ function WizardStepStartingPoint(props){
     {id:"template",icon:"\uD83D\uDDC2\uFE0F",label:"Pick a Template",desc:"Browse the template gallery and start with a proven design."},
     {id:"blank",icon:"\u2B1C",label:"Build from Scratch",desc:"Start with a blank canvas and create your own design."},
     {id:"import",icon:"\uD83D\uDCF7",label:"Import from Card Photo",desc:"Take a photo of an existing business card and auto-extract its content."},
+    {id:"stock",icon:"\uD83D\uDDBC\uFE0F",label:"Search for Background",desc:"Browse free stock photos from Unsplash and Pixabay to use as your card background."},
     {id:"bgupload",icon:"\uD83D\uDDBC\uFE0F",label:"Upload Background",desc:"Upload a background image to start your card design."}
   ];
 
@@ -3497,7 +3498,7 @@ function WizardStepStartingPoint(props){
           React.createElement("button",{onClick:function(){setWs(function(prev){return Object.assign({},prev,{bgImageBack:null,bgImageFxBack:null});});},
             style:{padding:"6px 12px",borderRadius:6,border:"1px solid "+(!ws.bgImageBack||!ws.bgImageBack.url?"var(--accent-primary)":"var(--border-default)"),background:!ws.bgImageBack||!ws.bgImageBack.url?"var(--accent-primary)":"var(--bg-input)",color:!ws.bgImageBack||!ws.bgImageBack.url?"#000":"var(--text-secondary)",fontSize:10,fontWeight:600,cursor:"pointer"}},"\u274C No Background")),
         ws.bgImageBack&&ws.bgImageBack.url&&React.createElement("div",{style:{fontSize:10,color:"var(--text-muted)",marginTop:4}},ws.bgImage&&ws.bgImageBack.url===ws.bgImage.url?"\u2713 Same as front":"\u2713 Different image loaded"))),
-    source==="import"&&React.createElement(WizardImportInline,{ws:ws,setWs:setWs,setWStyles:props.setWStyles,onDone:props.onImportDone})
+    source==="stock"&&React.createElement("div",{style:{marginTop:20}},React.createElement("div",{className:"imp-wizard-section-label"},"Search Stock Photos"),typeof StockImageSearch==="function"?React.createElement(StockImageSearch,{onSelect:function(url,attr){if(typeof props.onPendingUpload==="function")props.onPendingUpload({url:url,fileName:"stock-bg.jpg",fileSize:0,width:1920,height:1080,aspect:1.78,type:"background"});setWs(function(prev){return Object.assign({},prev,{bgImageAttribution:attr});});},onClose:function(){}}):React.createElement("p",{style:{fontSize:12,color:"var(--text-muted)"}},"Configure API keys in Settings to enable stock photo search.")),source==="import"&&React.createElement(WizardImportInline,{ws:ws,setWs:setWs,setWStyles:props.setWStyles,onDone:props.onImportDone})
   );
 }
 
